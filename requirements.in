@@ -17,4 +17,4 @@ openpyxl
 pandas
 sqlalchemy
 requests
-git+https://github.com/drkane/django-sql-dashboard.git@dk/issue-141
+caradoc

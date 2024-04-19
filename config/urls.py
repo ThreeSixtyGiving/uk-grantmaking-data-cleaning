@@ -18,7 +18,18 @@ from django.contrib import admin
 from django.contrib.auth import views as auth_views
 from django.urls import include, path
 
+from ukgrantmaking.views import financial_year as financial_year_view
+from ukgrantmaking.views import index as index_view
+
 urlpatterns = [
+    path("", index_view, name="index"),
+    path(
+        "financial-year/<str:fy>.xlsx",
+        financial_year_view,
+        {"filetype": "xlsx"},
+        name="financial_year_xlsx",
+    ),
+    path("financial-year/<str:fy>", financial_year_view, name="financial_year"),
     path("admin/", admin.site.urls),
     path(
         "accounts/login/",
@@ -31,5 +42,4 @@ urlpatterns = [
         name="logout",
     ),
     path("__debug__/", include("debug_toolbar.urls")),
-    # path("dashboard/", include("django_sql_dashboard.urls")),
 ]

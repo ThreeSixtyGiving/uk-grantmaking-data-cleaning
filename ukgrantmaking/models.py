@@ -1,5 +1,5 @@
 from django.db import models
-from django.db.models.functions import Coalesce, Left, StrIndex
+from django.db.models.functions import Coalesce, Left, Length, Right, StrIndex
 from django.db.models.lookups import IsNull
 
 
@@ -36,7 +36,10 @@ class FinancialYears(models.TextChoices):
     FY_2000_01 = "2000-01", "2000-01"
 
 
-class FunderType(models.TextChoices):
+DEFAULT_FINANCIAL_YEAR = FinancialYears.FY_2022_23
+
+
+class FunderSegment(models.TextChoices):
     DONOR_ADVISED_FUND = "Donor Advised Fund", "Donor Advised Fund"
     WELLCOME_TRUST = "Wellcome Trust", "Wellcome Trust"
     CHARITY = "Charity", "Charity"
@@ -57,6 +60,38 @@ class FunderType(models.TextChoices):
     LOCAL = "Local", "Local"
     CENTRAL = "Central", "Central"
     DEVOLVED = "Devolved", "Devolved"
+
+    def category(self):
+        return FUNDER_CATEGORIES[self]
+
+
+class FunderCategory(models.TextChoices):
+    GRANTMAKER = "Grantmaker", "Grantmaker"
+    LOTTERY = "Lottery", "Lottery"
+    CHARITY = "Charity", "Charity"
+    GOVERNMENT = "Government", "Government"
+    OTHER = "Other", "Other"
+
+
+FUNDER_CATEGORIES = {
+    FunderSegment.COMMUNITY_FOUNDATION: FunderCategory.GRANTMAKER,
+    FunderSegment.CORPORATE_FOUNDATION: FunderCategory.GRANTMAKER,
+    FunderSegment.FAMILY_FOUNDATION: FunderCategory.GRANTMAKER,
+    FunderSegment.FUNDRAISING_GRANTMAKER: FunderCategory.GRANTMAKER,
+    FunderSegment.GENERAL_GRANTMAKER: FunderCategory.GRANTMAKER,
+    FunderSegment.GOVERNMENT_LOTTERY_ENDOWED: FunderCategory.GRANTMAKER,
+    FunderSegment.MEMBER_TRADE_FUNDED: FunderCategory.GRANTMAKER,
+    FunderSegment.SMALL_GRANTMAKER: FunderCategory.GRANTMAKER,
+    FunderSegment.WELLCOME_TRUST: FunderCategory.GRANTMAKER,
+    FunderSegment.LOTTERY_DISTRIBUTOR: FunderCategory.LOTTERY,
+    FunderSegment.CHARITY: FunderCategory.CHARITY,
+    FunderSegment.NHS_HOSPITAL_FOUNDATION: FunderCategory.CHARITY,
+    FunderSegment.LOCAL: FunderCategory.GOVERNMENT,
+    FunderSegment.CENTRAL: FunderCategory.GOVERNMENT,
+    FunderSegment.DEVOLVED: FunderCategory.GOVERNMENT,
+    FunderSegment.ARMS_LENGTH_BODY: FunderCategory.GOVERNMENT,
+    FunderSegment.DONOR_ADVISED_FUND: FunderCategory.OTHER,
+}
 
 
 class FunderTag(models.Model):
@@ -85,8 +120,8 @@ class Funder(models.Model):
     name_manual = models.CharField(max_length=255, null=True, blank=True)
     segment = models.CharField(
         max_length=50,
-        choices=FunderType.choices,
-        default=FunderType.GENERAL_GRANTMAKER,
+        choices=FunderSegment.choices,
+        default=FunderSegment.GENERAL_GRANTMAKER,
         null=True,
         blank=True,
         db_index=True,
@@ -190,7 +225,19 @@ class Funder(models.Model):
     tags = models.ManyToManyField(FunderTag, blank=True)
 
     name = models.GeneratedField(
-        expression=Coalesce("name_manual", "name_registered"),
+        expression=Coalesce(
+            "name_manual",
+            models.Case(
+                models.When(
+                    name_registered__startswith="The ",
+                    then=Right(
+                        models.F("name_registered"),
+                        Length(models.F("name_registered")) - 4,
+                    ),
+                ),
+                default=models.F("name_registered"),
+            ),
+        ),
         output_field=models.CharField(max_length=255),
         db_persist=True,
     )
@@ -200,6 +247,33 @@ class Funder(models.Model):
 
     def __str__(self):
         return f"{self.name} ({self.org_id})"
+
+    def save(self, *args, **kwargs):
+        latest_fy = (
+            self.funderyear_set.filter(financial_year=DEFAULT_FINANCIAL_YEAR)
+            .order_by("-financial_year_end")
+            .first()
+        )
+        if latest_fy:
+            self.latest_year = latest_fy
+            if latest_fy.spending_grant_making is not None:
+                self.latest_grantmaking = latest_fy.spending_grant_making
+            elif latest_fy.spending_grant_making_institutions:
+                self.latest_grantmaking = latest_fy.spending_grant_making_institutions
+            elif latest_fy.spending_charitable:
+                self.latest_grantmaking = latest_fy.spending_charitable
+            elif latest_fy.spending:
+                self.latest_grantmaking = latest_fy.spending
+            else:
+                self.latest_grantmaking = None
+
+            if latest_fy.spending_grant_making_individuals > 0:
+                self.makes_grants_to_individuals = True
+        else:
+            self.latest_year = None
+            self.latest_grantmaking = None
+
+        super().save(*args, **kwargs)
 
 
 class FunderYear(models.Model):
@@ -372,3 +446,12 @@ class FunderYear(models.Model):
 
     def __str__(self):
         return f"{self.funder.name} ({self.financial_year_end})"
+
+    def save(self, *args, **kwargs):
+        if self.financial_year_end:
+            if self.financial_year_end.month < 4:
+                self.financial_year = f"{self.financial_year_end.year - 1}-{self.financial_year_end.year % 100:02d}"
+            else:
+                self.financial_year = f"{self.financial_year_end.year}-{(self.financial_year_end.year + 1) % 100:02d}"
+        self.funder.save()
+        super().save(*args, **kwargs)

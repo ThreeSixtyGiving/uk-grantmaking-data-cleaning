@@ -1,0 +1,75 @@
+{% extends "base.html.j2" %}
+
+{% block content %}
+<h1>Financial year {{ fy }}</h1>
+
+<a href="{{ xlsx_link }}">Download as Excel</a>
+
+<h2 id="contents">Contents</h2>
+<ul>
+    {% for sheet_name, tables in output.sheets.items() %}
+    <li><a href="#{{ sheet_name|slugify }}">{{ sheet_name }}</a></li>
+    {% if tables|length > 1 %}
+    <ul>
+        {% for  table in tables %}
+        {% if table.title %}
+        <li><a href="#{{ table.title|slugify }}">{{ table.title }}</a></li>
+        {% elif tables|length > 1 %}
+        <li><a href="#{{ sheet_name|slugify }}-{{ loop.index }}">{{ sheet_name }} table {{ loop.index }}</a></li>
+        {% endif %}
+        {% endfor %}
+    </ul>
+    {% endif %}
+    {% endfor %}
+</ul>
+
+{% for sheet_name, tables in output.sheets.items() %}
+<h2 id="{{ sheet_name|slugify }}">{{ sheet_name }}</h2>
+
+{% for table in tables %}
+
+{% if table.title %}
+<h3 id="{{ table.title|slugify }}">{{ table.title }}</h3>
+{% elif tables|length > 1 %}
+<span id="{{ sheet_name|slugify }}-{{ loop.index }}">{{ sheet_name }} table {{ loop.index }}</span>
+{% endif %}
+<a href="#contents" class="f7">Back to contents</a>
+
+{% if table.summary %}
+<p>{{ table.summary }}</p>
+{% endif %}
+
+<table class="collapse ba br2 b--black-10 pv2 ph3 f6">
+    <thead>
+        <tr>
+            {% for column in table.df.columns %}
+            <th class="pv2 ph3 tl f6 fw6 ttu">{{ column }}</th>
+            {% endfor %}
+        </tr>
+    </thead>
+    <tbody>
+        {% for row in table.df.itertuples(index=False) %}
+        <tr class="striped--light-gray">
+            {% for value in row %}
+            {% if value is none %}
+            <td class="pv2 ph3 grey tr">-</td>
+            {% elif value is integer or value is float %}
+            <td class="pv2 ph3 tr">{{ value }}</td>
+            {% else %}
+            <td class="pv2 ph3">{{ value }}</td>
+            {% endif %}
+            {% endfor %}
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+
+
+{% if table.notes %}
+<p>{{ table.notes }}</p>
+{% endif %}
+{% endfor %}
+
+{% endfor %}
+{% endblock content %}

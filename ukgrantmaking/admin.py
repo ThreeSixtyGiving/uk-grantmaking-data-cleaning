@@ -153,6 +153,7 @@ class FunderYearAdmin(admin.ModelAdmin):
         "checked_on",
         "date_added",
         "date_updated",
+        "financial_year",
     )
     raw_id_fields = ("funder",)
     fieldsets = (
@@ -161,7 +162,7 @@ class FunderYearAdmin(admin.ModelAdmin):
             {
                 "fields": [
                     "funder",
-                    ("financial_year_end", "financial_year_start"),
+                    ("financial_year_end", "financial_year_start", "financial_year"),
                 ]
             },
         ),
