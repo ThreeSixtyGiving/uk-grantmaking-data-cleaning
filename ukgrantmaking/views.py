@@ -3,6 +3,7 @@ from io import BytesIO
 import numpy as np
 import pandas as pd
 from caradoc import DataOutput
+from django.contrib.auth.decorators import login_required
 from django.db import models
 from django.http import HttpResponse
 from django.shortcuts import render
@@ -17,6 +18,7 @@ from ukgrantmaking.models import (
 )
 
 
+@login_required
 def index(request):
     return render(request, "index.html.j2")
 
@@ -79,6 +81,7 @@ def funder_table(columns, **filters):
     )
 
 
+@login_required
 def financial_year(request, fy, filetype="html"):
     output = DataOutput()
 
