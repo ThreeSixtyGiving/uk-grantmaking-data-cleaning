@@ -111,7 +111,6 @@ WSGI_APPLICATION = "config.wsgi.application"
 
 DATABASES = {
     "default": dj_database_url.config(conn_max_age=600, default="sqlite:///db.sqlite3"),
-    "dashboard": dj_database_url.config(env="DATABASE_DASHBOARD_URL"),
 }
 
 # Caching
