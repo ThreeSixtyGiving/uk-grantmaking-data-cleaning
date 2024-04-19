@@ -4,7 +4,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("ukgrantmaking", "0004_alter_funder_charity_number"),
     ]
