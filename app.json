@@ -1,0 +1,13 @@
+{
+    "formation": {
+        "web": {
+            "quantity": 4
+        }
+    },
+    "cron": [
+        {
+            "command": "sh ./update_daily.sh",
+            "schedule": "@daily"
+        }
+    ]
+}
