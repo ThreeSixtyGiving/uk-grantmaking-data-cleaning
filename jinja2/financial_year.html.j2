@@ -53,8 +53,10 @@
             {% for value in row %}
             {% if value is none %}
             <td class="pv2 ph3 grey tr">-</td>
-            {% elif value is integer or value is float %}
-            <td class="pv2 ph3 tr">{{ value }}</td>
+            {% elif value is integer %}
+            <td class="pv2 ph3 tr">{{ "{:,.0f}".format(value) }}</td>
+            {% elif value is float %}
+            <td class="pv2 ph3 tr">{{ "{:,.1f}".format(value) }}</td>
             {% else %}
             <td class="pv2 ph3">{{ value }}</td>
             {% endif %}
