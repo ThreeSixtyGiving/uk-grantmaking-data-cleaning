@@ -2,7 +2,7 @@ from io import BytesIO
 
 import numpy as np
 import pandas as pd
-from caradoc import DataOutput
+from caradoc import DataOutput, FinancialYear
 from django.contrib.auth.decorators import login_required
 from django.db import models
 from django.db.models.lookups import GreaterThan
@@ -24,7 +24,60 @@ def index(request):
     return render(request, "index.html.j2")
 
 
-def funder_table(columns, n=100, sortby="-latest_grantmaking", **filters):
+def funder_table(current_fy, columns, n=100, sortby="-latest_grantmaking", **filters):
+    agg_fields = [
+        ("income", "Income"),
+        ("spending", "Spending"),
+        ("spending_grant_making", "Grant Making Spending"),
+        ("spending_grant_making_institutions", "Grant Making Spending (Institutions)"),
+        ("spending_grant_making_individuals", "Grant Making Spending (Individuals)"),
+        ("total_net_assets", "Net Assets"),
+        ("employees", "Employees"),
+    ]
+    tags = [
+        ("Living Wage Funder", "Living Wage Funder"),
+        ("360Giving Publisher", "360Giving Publisher"),
+        ("ACO", "ACO Member"),
+    ]
+    annotations = {}
+    assignments = {}
+    for field, field_name in agg_fields:
+        agg = models.Max if field in ("total_net_assets",) else models.Sum
+        annotations[f"cy_{field}"] = agg(
+            models.Case(
+                models.When(
+                    funderyear__financial_year=current_fy,
+                    then=models.F(f"funderyear__{field}"),
+                ),
+                default=0,
+                output_field=models.IntegerField(),
+            )
+        )
+        annotations[f"py_{field}"] = agg(
+            models.Case(
+                models.When(
+                    funderyear__financial_year=(current_fy - 1),
+                    then=models.F(f"funderyear__{field}"),
+                ),
+                default=0,
+                output_field=models.IntegerField(),
+            )
+        )
+    for tag, tag_name in tags:
+        annotations[slugify(tag).replace("-", "_")] = GreaterThan(
+            models.Sum(
+                models.Case(
+                    models.When(tags__tag=tag, then=1),
+                    default=0,
+                    output_field=models.IntegerField(),
+                )
+            ),
+            models.Value(0),
+        )
+        assignments[slugify(tag).replace("-", "_")] = (
+            (lambda x: x["cy_income"].divide(1_000_000).round(1)),
+        )
+
     query = (
         Funder.objects.filter(**filters)
         .order_by(sortby)
@@ -33,87 +86,41 @@ def funder_table(columns, n=100, sortby="-latest_grantmaking", **filters):
             "name",
             "segment",
             "makes_grants_to_individuals",
-            "latest_year__income",
-            "latest_year__spending",
-            "latest_year__spending_grant_making",
-            "latest_year__spending_grant_making_institutions",
-            "latest_year__spending_grant_making_individuals",
-            "latest_year__total_net_assets",
-            "latest_year__employees",
         )
         .annotate(
-            living_wage_funder=GreaterThan(
-                models.Sum(
-                    models.Case(
-                        models.When(tags__tag="Living Wage Funder", then=1),
-                        default=0,
-                        output_field=models.IntegerField(),
-                    )
-                ),
-                models.Value(0),
-            ),
-            tsg_publisher=GreaterThan(
-                models.Sum(
-                    models.Case(
-                        models.When(tags__tag="360Giving Publisher", then=1),
-                        default=0,
-                        output_field=models.IntegerField(),
-                    )
-                ),
-                models.Value(0),
-            ),
-            aco_member=GreaterThan(
-                models.Sum(
-                    models.Case(
-                        models.When(tags__tag="ACO", then=1),
-                        default=0,
-                        output_field=models.IntegerField(),
-                    )
-                ),
-                models.Value(0),
-            ),
+            **annotations,
         )
     )
 
-    return (
+    df = (
         pd.DataFrame.from_records(query[0:n])
         .assign(
-            makes_grants_to_individuals=(
-                lambda x: x["makes_grants_to_individuals"].map({True: "✓", False: ""})
-            ),
-            living_wage_funder=(
-                lambda x: x["living_wage_funder"].map({True: "✓", False: ""})
-            ),
-            tsg_publisher=(lambda x: x["tsg_publisher"].map({True: "✓", False: ""})),
-            aco_member=(lambda x: x["aco_member"].map({True: "✓", False: ""})),
-            latest_year__income=(
-                lambda x: x["latest_year__income"].divide(1_000_000).round(1)
-            ),
-            latest_year__spending=(
-                lambda x: x["latest_year__spending"].divide(1_000_000).round(1)
-            ),
-            latest_year__spending_grant_making=lambda x: (
-                x["latest_year__spending_grant_making"].divide(1_000_000).round(1)
-            ),
-            latest_year__spending_grant_making_institutions=lambda x: (
-                x["latest_year__spending_grant_making_institutions"]
-                .divide(1_000_000)
-                .round(1)
-            ),
-            latest_year__spending_grant_making_individuals=lambda x: (
-                x["latest_year__spending_grant_making_individuals"]
-                .divide(1_000_000)
-                .round(1)
-            ),
-            latest_year__total_net_assets=lambda x: (
-                x["latest_year__total_net_assets"].divide(1_000_000).round(1)
-            ),
-            latest_year__employees=lambda x: (x["latest_year__employees"].round(0)),
             rank=lambda x: np.arange(x.shape[0]),
         )
         .assign(
             rank=lambda x: x["rank"] + 1,
         )
+    )
+    df["segment"] = (
+        df["segment"].fillna("Unknown").replace({"Wellcome Trust": "Family Foundation"})
+    )
+
+    for tag, tag_name in tags + [
+        ("makes_grants_to_individuals", "Makes grants to individuals")
+    ]:
+        tag_field = slugify(tag).replace("-", "_")
+        df[tag_field] = df[tag_field].map({True: "✓", False: ""})
+
+    for field, field_name in agg_fields:
+        if field in ("employees",):
+            df[f"cy_{field}"] = df[f"cy_{field}"].round(0)
+            df[f"py_{field}"] = df[f"py_{field}"].round(0)
+        else:
+            df[f"cy_{field}"] = df[f"cy_{field}"].divide(1_000_000).round(1)
+            df[f"py_{field}"] = df[f"py_{field}"].divide(1_000_000).round(1)
+
+    return (
+        df[columns]
         .rename(
             columns={
                 "rank": "#",
@@ -121,24 +128,22 @@ def funder_table(columns, n=100, sortby="-latest_grantmaking", **filters):
                 "name": "Name",
                 "segment": "Segment",
                 "makes_grants_to_individuals": "Grants to Individuals",
-                "living_wage_funder": "Living Wage Funder",
-                "tsg_publisher": "360Giving Publisher",
-                "aco_member": "ACO Member",
-                "latest_year__income": "Income",
-                "latest_year__spending": "Spending",
-                "latest_year__spending_grant_making": "Grant Making Spending",
-                "latest_year__spending_grant_making_institutions": "Grant Making Spending (Institutions)",
-                "latest_year__spending_grant_making_individuals": "Grant Making Spending (Individuals)",
-                "latest_year__total_net_assets": "Net Assets",
-                "latest_year__employees": "Employees",
+                **{slugify(tag).replace("-", "_"): tag_name for tag, tag_name in tags},
+                **{f"cy_{field}": field_name for field, field_name in agg_fields},
+                **{
+                    f"py_{field}": f"{field_name} (Previous year)"
+                    for field, field_name in agg_fields
+                },
             }
         )
-        .replace({np.nan: None, pd.NA: None})[columns]
+        .replace({np.nan: None, pd.NA: None})
     )
 
 
 @login_required
 def financial_year(request, fy, filetype="html"):
+    current_fy = FinancialYear(fy)
+
     output = DataOutput()
 
     # summary table
@@ -149,10 +154,46 @@ def financial_year(request, fy, filetype="html"):
             )
             .values("segment")
             .annotate(
-                count=models.Count("segment"),
-                income=models.Sum("latest_year__income"),
-                spending=models.Sum("latest_year__spending"),
-                grantmaking=models.Sum("latest_year__spending_grant_making"),
+                count=models.Sum(
+                    models.Case(
+                        models.When(
+                            funderyear__financial_year=current_fy,
+                            then=1,
+                        ),
+                        default=0,
+                        output_field=models.IntegerField(),
+                    )
+                ),
+                income=models.Sum(
+                    models.Case(
+                        models.When(
+                            funderyear__financial_year=current_fy,
+                            then=models.F("funderyear__income"),
+                        ),
+                        default=0,
+                        output_field=models.IntegerField(),
+                    )
+                ),
+                spending=models.Sum(
+                    models.Case(
+                        models.When(
+                            funderyear__financial_year=current_fy,
+                            then=models.F("funderyear__spending"),
+                        ),
+                        default=0,
+                        output_field=models.IntegerField(),
+                    )
+                ),
+                grantmaking=models.Sum(
+                    models.Case(
+                        models.When(
+                            funderyear__financial_year=current_fy,
+                            then=models.F("funderyear__spending_grant_making"),
+                        ),
+                        default=0,
+                        output_field=models.IntegerField(),
+                    )
+                ),
                 individuals=models.Sum("makes_grants_to_individuals"),
             )
         )
@@ -192,8 +233,14 @@ def financial_year(request, fy, filetype="html"):
                 zero_spend=models.Sum(
                     models.Case(
                         models.When(
-                            models.Q(latest_year__spending=0)
-                            | models.Q(latest_year__spending__isnull=True),
+                            models.Q(
+                                funderyear__spending=0,
+                                funderyear__financial_year=current_fy,
+                            )
+                            | models.Q(
+                                funderyear__spending__isnull=True,
+                                funderyear__financial_year=current_fy,
+                            ),
                             then=1,
                         ),
                         default=0,
@@ -203,8 +250,9 @@ def financial_year(request, fy, filetype="html"):
                 under_100k=models.Sum(
                     models.Case(
                         models.When(
-                            latest_year__spending__lt=100_000,
-                            latest_year__spending__gt=0,
+                            funderyear__financial_year=current_fy,
+                            funderyear__spending__lt=100_000,
+                            funderyear__spending__gt=0,
                             then=1,
                         ),
                         default=0,
@@ -214,8 +262,9 @@ def financial_year(request, fy, filetype="html"):
                 _100k_1m=models.Sum(
                     models.Case(
                         models.When(
-                            latest_year__spending__lt=1_000_000,
-                            latest_year__spending__gte=100_000,
+                            funderyear__financial_year=current_fy,
+                            funderyear__spending__lt=1_000_000,
+                            funderyear__spending__gte=100_000,
                             then=1,
                         ),
                         default=0,
@@ -225,8 +274,9 @@ def financial_year(request, fy, filetype="html"):
                 _1m_10m=models.Sum(
                     models.Case(
                         models.When(
-                            latest_year__spending__lt=10_000_000,
-                            latest_year__spending__gte=1_000_000,
+                            funderyear__financial_year=current_fy,
+                            funderyear__spending__lt=10_000_000,
+                            funderyear__spending__gte=1_000_000,
                             then=1,
                         ),
                         default=0,
@@ -236,8 +286,9 @@ def financial_year(request, fy, filetype="html"):
                 _10m_100m=models.Sum(
                     models.Case(
                         models.When(
-                            latest_year__spending__lt=100_000_000,
-                            latest_year__spending__gte=10_000_000,
+                            funderyear__financial_year=current_fy,
+                            funderyear__spending__lt=100_000_000,
+                            funderyear__spending__gte=10_000_000,
                             then=1,
                         ),
                         default=0,
@@ -247,7 +298,8 @@ def financial_year(request, fy, filetype="html"):
                 over_100m=models.Sum(
                     models.Case(
                         models.When(
-                            latest_year__spending__gte=100_000_000,
+                            funderyear__financial_year=current_fy,
+                            funderyear__spending__gte=100_000_000,
                             then=1,
                         ),
                         default=0,
@@ -282,17 +334,17 @@ def financial_year(request, fy, filetype="html"):
     output.add_table(summary_by_size, "Summary", title="Grantmakers by grant spending")
 
     # trends over time
-    fields = {
-        "spending": "Spending",
-        "income": "Income",
-        "spending_grant_making": "Spending on grantmaking",
-        "total_net_assets": "Net Assets",
-    }
-    years = ["2018-19", "2019-20", "2020-21", "2021-22", "2022-23"]
-    for field, field_name in fields.items():
+    fields = [
+        ("spending", "Spending", models.Sum),
+        ("income", "Income", models.Sum),
+        ("spending_grant_making", "Spending on grantmaking", models.Sum),
+        ("total_net_assets", "Net Assets", models.Max),
+    ]
+    years = [str(fy) for fy in current_fy.previous_n_years(4)]
+    for field, field_name, aggregation in fields:
         year_annotations = {}
         for year in years:
-            year_annotations[year] = models.Sum(
+            year_annotations[year] = aggregation(
                 models.Case(
                     models.When(
                         funderyear__financial_year=year,
@@ -356,17 +408,18 @@ def financial_year(request, fy, filetype="html"):
         funder_type_name = FunderSegment(funder_type).label
         output.add_table(
             funder_table(
+                current_fy,
                 [
-                    "#",
-                    "Org ID",
-                    "Name",
-                    "Grants to Individuals",
-                    "Living Wage Funder",
-                    "360Giving Publisher",
-                    "Income",
-                    "Spending",
-                    "Grant Making Spending",
-                    "Net Assets",
+                    "rank",
+                    "org_id",
+                    "name",
+                    "makes_grants_to_individuals",
+                    "living_wage_funder",
+                    "360giving_publisher",
+                    "cy_income",
+                    "cy_spending",
+                    "cy_spending_grant_making",
+                    "cy_total_net_assets",
                 ],
                 segment=funder_type,
                 included=True,
@@ -377,19 +430,20 @@ def financial_year(request, fy, filetype="html"):
 
     output.add_table(
         funder_table(
+            current_fy,
             [
-                "#",
-                "Org ID",
-                "Name",
-                "Segment",
-                "Living Wage Funder",
-                "360Giving Publisher",
-                "ACO Member",
-                "Income",
-                "Spending",
-                "Grant Making Spending",
-                "Grant Making Spending (Individuals)",
-                "Net Assets",
+                "rank",
+                "org_id",
+                "name",
+                "segment",
+                "living_wage_funder",
+                "360giving_publisher",
+                "aco",
+                "cy_income",
+                "cy_spending",
+                "cy_spending_grant_making",
+                "cy_spending_grant_making_individuals",
+                "cy_total_net_assets",
             ],
             makes_grants_to_individuals=True,
             included=True,
@@ -399,20 +453,24 @@ def financial_year(request, fy, filetype="html"):
 
     output.add_table(
         funder_table(
+            current_fy,
             [
-                "#",
-                "Org ID",
-                "Name",
-                "Segment",
-                "Living Wage Funder",
-                "360Giving Publisher",
-                "ACO Member",
-                "Income",
-                "Spending",
-                "Grant Making Spending",
-                "Grant Making Spending (Individuals)",
-                "Net Assets",
-                "Employees",
+                "rank",
+                "org_id",
+                "name",
+                "segment",
+                "living_wage_funder",
+                "360giving_publisher",
+                "aco",
+                "makes_grants_to_individuals",
+                "cy_income",
+                "cy_spending",
+                "cy_spending_grant_making",
+                "cy_spending_grant_making_individuals",
+                "cy_total_net_assets",
+                "cy_employees",
+                "py_spending_grant_making",
+                "py_total_net_assets",
             ],
             n=300,
             included=True,
@@ -431,16 +489,17 @@ def financial_year(request, fy, filetype="html"):
         funder_tag_obj = FunderTag.objects.get(tag=funder_tag)
         output.add_table(
             funder_table(
+                current_fy,
                 [
-                    "#",
-                    "Org ID",
-                    "Name",
-                    "Segment",
-                    "Grants to Individuals",
-                    "Income",
-                    "Spending",
-                    "Grant Making Spending",
-                    "Net Assets",
+                    "rank",
+                    "org_id",
+                    "name",
+                    "segment",
+                    "makes_grants_to_individuals",
+                    "cy_income",
+                    "cy_spending",
+                    "cy_spending_grant_making",
+                    "cy_total_net_assets",
                 ],
                 org_id__in=funder_tag_obj.funder_set.values_list("org_id", flat=True),
             ),
