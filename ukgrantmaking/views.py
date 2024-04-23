@@ -63,22 +63,8 @@ def funder_table(current_fy, columns, n=100, sortby="-latest_grantmaking", **fil
                 output_field=models.IntegerField(),
             )
         )
-    for tag, tag_name in tags:
-        annotations[slugify(tag).replace("-", "_")] = GreaterThan(
-            models.Sum(
-                models.Case(
-                    models.When(tags__tag=tag, then=1),
-                    default=0,
-                    output_field=models.IntegerField(),
-                )
-            ),
-            models.Value(0),
-        )
-        assignments[slugify(tag).replace("-", "_")] = (
-            (lambda x: x["cy_income"].divide(1_000_000).round(1)),
-        )
 
-    query = (
+    funder_year_query = (
         Funder.objects.filter(**filters)
         .order_by(sortby)
         .values(
@@ -92,8 +78,40 @@ def funder_table(current_fy, columns, n=100, sortby="-latest_grantmaking", **fil
         )
     )
 
+    tag_annotations = {}
+    for tag, tag_name in tags:
+        tag_annotations[slugify(tag).replace("-", "_")] = GreaterThan(
+            models.Sum(
+                models.Case(
+                    models.When(tags__tag=tag, then=1),
+                    default=0,
+                    output_field=models.IntegerField(),
+                )
+            ),
+            models.Value(0),
+        )
+        assignments[slugify(tag).replace("-", "_")] = (
+            (lambda x: x["cy_income"].divide(1_000_000).round(1)),
+        )
+
+    funder_tag_query = (
+        Funder.objects.filter(**filters)
+        .order_by(sortby)
+        .values(
+            "org_id",
+        )
+        .annotate(
+            **tag_annotations,
+        )
+    )
+
     df = (
-        pd.DataFrame.from_records(query[0:n])
+        pd.DataFrame.from_records(funder_year_query[0:n])
+        .join(
+            pd.DataFrame.from_records(funder_tag_query).set_index("org_id"),
+            on="org_id",
+            how="left",
+        )
         .assign(
             rank=lambda x: np.arange(x.shape[0]),
         )
@@ -527,3 +545,54 @@ def financial_year(request, fy, filetype="html"):
             "xlsx_link": reverse("financial_year_xlsx", kwargs={"fy": fy}),
         },
     )
+
+
+@login_required
+def all_grantmakers_export(request, fy, filetype):
+    current_fy = FinancialYear(fy)
+    output = DataOutput()
+    output.add_table(
+        funder_table(
+            current_fy,
+            [
+                "rank",
+                "org_id",
+                "name",
+                "segment",
+                "living_wage_funder",
+                "360giving_publisher",
+                "aco",
+                "makes_grants_to_individuals",
+                "cy_income",
+                "cy_spending",
+                "cy_spending_grant_making",
+                "cy_spending_grant_making_institutions",
+                "cy_spending_grant_making_individuals",
+                "cy_total_net_assets",
+                "cy_employees",
+                "py_income",
+                "py_spending",
+                "py_spending_grant_making",
+                "py_spending_grant_making_institutions",
+                "py_spending_grant_making_individuals",
+                "py_total_net_assets",
+                "py_employees",
+            ],
+            n=100_000,
+        ),
+        "All funders",
+    )
+    if filetype == "xlsx":
+        buffer = BytesIO()
+        output.write(buffer)
+        buffer.seek(0)
+        response = HttpResponse(
+            buffer.read(),
+            content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        )
+        response["Content-Disposition"] = (
+            f"attachment; filename=grantmakers-all.{filetype}"
+        )
+        return response
+
+    raise ValueError(f"Unknown filetype: {filetype}")
