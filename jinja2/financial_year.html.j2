@@ -56,7 +56,12 @@
             {% elif value is integer %}
             <td class="pv2 ph3 tr">{{ "{:,.0f}".format(value) }}</td>
             {% elif value is float %}
-            <td class="pv2 ph3 tr">{{ "{:,.1f}".format(value) }}</td>
+            <td class="pv2 ph3 tr">
+                {% if value >= 0.1 %}{{ "{:,.1f}".format(value) }}
+                {% elif value > 0 %}&lt;0.1
+                {% elif value == 0 %}0
+                {% else %}{{ "{:,.1f}".format(value) }}{% endif %}
+            </td>
             {% else %}
             <td class="pv2 ph3">{{ value }}</td>
             {% endif %}

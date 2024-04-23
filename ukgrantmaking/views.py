@@ -5,7 +5,6 @@ import pandas as pd
 from caradoc import DataOutput, FinancialYear
 from django.contrib.auth.decorators import login_required
 from django.db import models
-from django.db.models.lookups import GreaterThan
 from django.http import HttpResponse
 from django.shortcuts import render
 from django.urls import reverse
@@ -16,6 +15,7 @@ from ukgrantmaking.models import (
     Funder,
     FunderSegment,
     FunderTag,
+    FunderYear,
 )
 
 
@@ -24,7 +24,12 @@ def index(request):
     return render(request, "index.html.j2")
 
 
-def funder_table(current_fy, columns, n=100, sortby="-latest_grantmaking", **filters):
+def funder_table(current_fy, columns, n=100, sortby="-cy_scale", **filters):
+    ascending = True
+    if sortby.startswith("-"):
+        sortby = sortby[1:]
+        ascending = False
+
     agg_fields = [
         ("income", "Income"),
         ("spending", "Spending"),
@@ -39,86 +44,118 @@ def funder_table(current_fy, columns, n=100, sortby="-latest_grantmaking", **fil
         ("360Giving Publisher", "360Giving Publisher"),
         ("ACO", "ACO Member"),
     ]
-    annotations = {}
-    assignments = {}
-    for field, field_name in agg_fields:
-        agg = models.Max if field in ("total_net_assets",) else models.Sum
-        annotations[f"cy_{field}"] = agg(
-            models.Case(
-                models.When(
-                    funderyear__financial_year=current_fy,
-                    then=models.F(f"funderyear__{field}"),
-                ),
-                default=0,
-                output_field=models.IntegerField(),
-            )
-        )
-        annotations[f"py_{field}"] = agg(
-            models.Case(
-                models.When(
-                    funderyear__financial_year=(current_fy - 1),
-                    then=models.F(f"funderyear__{field}"),
-                ),
-                default=0,
-                output_field=models.IntegerField(),
-            )
-        )
 
-    funder_year_query = (
-        Funder.objects.filter(**filters)
-        .order_by(sortby)
-        .values(
+    # fetch all the data
+    funders = pd.DataFrame.from_records(
+        Funder.objects.filter(**filters).values(
             "org_id",
             "name",
             "segment",
             "makes_grants_to_individuals",
-        )
-        .annotate(
-            **annotations,
+            "included",
+            "date_of_registration",
         )
     )
-
-    tag_annotations = {}
-    for tag, tag_name in tags:
-        tag_annotations[slugify(tag).replace("-", "_")] = GreaterThan(
-            models.Sum(
-                models.Case(
-                    models.When(tags__tag=tag, then=1),
-                    default=0,
-                    output_field=models.IntegerField(),
-                )
+    cy_data = pd.DataFrame.from_records(
+        FunderYear.objects.filter(
+            financial_year=current_fy,
+            funder__in=Funder.objects.filter(**filters).values_list(
+                "org_id", flat=True
             ),
-            models.Value(0),
         )
-        assignments[slugify(tag).replace("-", "_")] = (
-            (lambda x: x["cy_income"].divide(1_000_000).round(1)),
+        .order_by("funder_id", "-financial_year_end")
+        .values("funder_id", "financial_year_end", *[field for field, _ in agg_fields]),
+        columns=[
+            "funder_id",
+            "financial_year_end",
+            *[field for field, _ in agg_fields],
+        ],
+    )
+    py_data = pd.DataFrame.from_records(
+        FunderYear.objects.filter(
+            financial_year=current_fy - 1,
+            funder__in=Funder.objects.filter(**filters).values_list(
+                "org_id", flat=True
+            ),
         )
-
-    funder_tag_query = (
-        Funder.objects.filter(**filters)
-        .order_by(sortby)
-        .values(
-            "org_id",
-        )
-        .annotate(
-            **tag_annotations,
-        )
+        .order_by("funder_id", "-financial_year_end")
+        .values("funder_id", "financial_year_end", *[field for field, _ in agg_fields]),
+        columns=[
+            "funder_id",
+            "financial_year_end",
+            *[field for field, _ in agg_fields],
+        ],
     )
 
-    df = (
-        pd.DataFrame.from_records(funder_year_query[0:n])
-        .join(
-            pd.DataFrame.from_records(funder_tag_query).set_index("org_id"),
-            on="org_id",
-            how="left",
-        )
-        .assign(
-            rank=lambda x: np.arange(x.shape[0]),
-        )
-        .assign(
-            rank=lambda x: x["rank"] + 1,
+    cy_data["scale"] = cy_data["spending_grant_making"].fillna(cy_data["spending"])
+    py_data["scale"] = py_data["spending_grant_making"].fillna(py_data["spending"])
+    df = funders.join(
+        cy_data.groupby("funder_id").agg(
+            cy_income=("income", "sum"),
+            cy_spending=("spending", "sum"),
+            cy_spending_grant_making=("spending_grant_making", "sum"),
+            cy_spending_grant_making_institutions=(
+                "spending_grant_making_institutions",
+                "sum",
+            ),
+            cy_spending_grant_making_individuals=(
+                "spending_grant_making_individuals",
+                "sum",
+            ),
+            cy_total_net_assets=("total_net_assets", "max"),
+            cy_employees=("employees", "max"),
+            cy_scale=("scale", "sum"),
+        ),
+        on="org_id",
+        how="left",
+    ).join(
+        py_data.groupby("funder_id").agg(
+            py_income=("income", "sum"),
+            py_spending=("spending", "sum"),
+            py_spending_grant_making=("spending_grant_making", "sum"),
+            py_spending_grant_making_institutions=(
+                "spending_grant_making_institutions",
+                "sum",
+            ),
+            py_spending_grant_making_individuals=(
+                "spending_grant_making_individuals",
+                "sum",
+            ),
+            py_total_net_assets=("total_net_assets", "max"),
+            py_employees=("employees", "max"),
+            py_scale=("scale", "sum"),
+        ),
+        on="org_id",
+        how="left",
+    )
+
+    df["cy_rank"] = (
+        df[sortby]
+        .rank(ascending=ascending, method="min", na_option="bottom")
+        .astype(int)
+    )
+    df["py_rank"] = (
+        df[sortby.replace("cy_", "py_")]
+        .rank(ascending=ascending, method="min", na_option="bottom")
+        .astype(int)
+    )
+
+    funder_tags = pd.DataFrame.from_records(
+        Funder.tags.through.objects.filter(
+            funder__in=Funder.objects.filter(**filters).values_list(
+                "org_id", flat=True
+            ),
+            fundertag__tag__in=[tag for tag, _ in tags],
+        ).values(
+            "funder_id",
+            "fundertag",
         )
     )
+    for tag, _ in tags:
+        df[slugify(tag).replace("-", "_")] = df["org_id"].isin(
+            funder_tags[funder_tags["fundertag"] == tag]["funder_id"]
+        )
+
     df["segment"] = (
         df["segment"].fillna("Unknown").replace({"Wellcome Trust": "Family Foundation"})
     )
@@ -134,14 +171,15 @@ def funder_table(current_fy, columns, n=100, sortby="-latest_grantmaking", **fil
             df[f"cy_{field}"] = df[f"cy_{field}"].round(0)
             df[f"py_{field}"] = df[f"py_{field}"].round(0)
         else:
-            df[f"cy_{field}"] = df[f"cy_{field}"].divide(1_000_000).round(1)
-            df[f"py_{field}"] = df[f"py_{field}"].divide(1_000_000).round(1)
+            df[f"cy_{field}"] = df[f"cy_{field}"].divide(1_000_000)
+            df[f"py_{field}"] = df[f"py_{field}"].divide(1_000_000)
 
     return (
-        df[columns]
+        df.sort_values(sortby, ascending=ascending, ignore_index=True)[columns][0:n]
         .rename(
             columns={
-                "rank": "#",
+                "cy_rank": "#",
+                "py_rank": "Rank (Previous year)",
                 "org_id": "Org ID",
                 "name": "Name",
                 "segment": "Segment",
@@ -212,6 +250,18 @@ def financial_year(request, fy, filetype="html"):
                         output_field=models.IntegerField(),
                     )
                 ),
+                grantmaking_to_individuals=models.Sum(
+                    models.Case(
+                        models.When(
+                            funderyear__financial_year=current_fy,
+                            then=models.F(
+                                "funderyear__spending_grant_making_individuals"
+                            ),
+                        ),
+                        default=0,
+                        output_field=models.IntegerField(),
+                    )
+                ),
                 individuals=models.Sum("makes_grants_to_individuals"),
             )
         )
@@ -221,6 +271,9 @@ def financial_year(request, fy, filetype="html"):
             income=lambda x: x["income"].divide(1_000_000).round(1),
             spending=lambda x: x["spending"].divide(1_000_000).round(1),
             grantmaking=lambda x: x["grantmaking"].divide(1_000_000).round(1),
+            grantmaking_to_individuals=lambda x: x["grantmaking_to_individuals"]
+            .divide(1_000_000)
+            .round(1),
         )
         .rename(
             columns={
@@ -230,6 +283,7 @@ def financial_year(request, fy, filetype="html"):
                 "income": "Total income",
                 "spending": "Total spending",
                 "grantmaking": "Spending on grants",
+                "grantmaking_to_individuals": "Grants to individuals",
                 "individuals": "Make grants to individuals",
             }
         )
@@ -428,7 +482,7 @@ def financial_year(request, fy, filetype="html"):
             funder_table(
                 current_fy,
                 [
-                    "rank",
+                    "cy_rank",
                     "org_id",
                     "name",
                     "makes_grants_to_individuals",
@@ -437,7 +491,16 @@ def financial_year(request, fy, filetype="html"):
                     "cy_income",
                     "cy_spending",
                     "cy_spending_grant_making",
+                    "cy_spending_grant_making_individuals",
                     "cy_total_net_assets",
+                    "cy_employees",
+                    "py_rank",
+                    "py_income",
+                    "py_spending",
+                    "py_spending_grant_making",
+                    "py_spending_grant_making_individuals",
+                    "py_total_net_assets",
+                    "py_employees",
                 ],
                 segment=funder_type,
                 included=True,
@@ -450,7 +513,7 @@ def financial_year(request, fy, filetype="html"):
         funder_table(
             current_fy,
             [
-                "rank",
+                "cy_rank",
                 "org_id",
                 "name",
                 "segment",
@@ -462,7 +525,13 @@ def financial_year(request, fy, filetype="html"):
                 "cy_spending_grant_making",
                 "cy_spending_grant_making_individuals",
                 "cy_total_net_assets",
+                "py_income",
+                "py_spending",
+                "py_spending_grant_making",
+                "py_spending_grant_making_individuals",
+                "py_total_net_assets",
             ],
+            sortby="-cy_spending_grant_making_individuals",
             makes_grants_to_individuals=True,
             included=True,
         ),
@@ -473,7 +542,7 @@ def financial_year(request, fy, filetype="html"):
         funder_table(
             current_fy,
             [
-                "rank",
+                "cy_rank",
                 "org_id",
                 "name",
                 "segment",
@@ -487,6 +556,7 @@ def financial_year(request, fy, filetype="html"):
                 "cy_spending_grant_making_individuals",
                 "cy_total_net_assets",
                 "cy_employees",
+                "py_rank",
                 "py_spending_grant_making",
                 "py_total_net_assets",
             ],
@@ -509,7 +579,7 @@ def financial_year(request, fy, filetype="html"):
             funder_table(
                 current_fy,
                 [
-                    "rank",
+                    "cy_rank",
                     "org_id",
                     "name",
                     "segment",
@@ -520,6 +590,7 @@ def financial_year(request, fy, filetype="html"):
                     "cy_total_net_assets",
                 ],
                 org_id__in=funder_tag_obj.funder_set.values_list("org_id", flat=True),
+                n=1_000_000,
             ),
             slugify(funder_tag) if filetype == "xlsx" else "Funder tag lists",
             title=funder_tag if filetype != "xlsx" else None,
@@ -555,7 +626,7 @@ def all_grantmakers_export(request, fy, filetype):
         funder_table(
             current_fy,
             [
-                "rank",
+                "cy_rank",
                 "org_id",
                 "name",
                 "segment",
