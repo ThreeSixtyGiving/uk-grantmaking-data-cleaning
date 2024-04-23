@@ -282,7 +282,7 @@ def tags(file, orgid_column, tag_column, tag, name_column):
         "Funder created": 0,
         "Funder found": 0,
     }
-    for record in df.replace({np.nan: None}).itertuples():
+    for index, record in df.replace({np.nan: None}).iterrows():
         # skip if no orgid
         if not getattr(record, orgid_column, None):
             continue
