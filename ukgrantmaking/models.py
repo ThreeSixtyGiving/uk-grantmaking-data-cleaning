@@ -267,7 +267,10 @@ class Funder(models.Model):
             else:
                 self.latest_grantmaking = None
 
-            if latest_fy.spending_grant_making_individuals > 0:
+            if (
+                latest_fy.spending_grant_making_individuals
+                and latest_fy.spending_grant_making_individuals > 0
+            ):
                 self.makes_grants_to_individuals = True
         else:
             self.latest_year = None
