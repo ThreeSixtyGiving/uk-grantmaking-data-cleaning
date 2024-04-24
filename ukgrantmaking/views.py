@@ -45,6 +45,7 @@ def funder_table(
         ("spending_grant_making_institutions", "Grant Making Spending (Institutions)"),
         ("spending_grant_making_individuals", "Grant Making Spending (Individuals)"),
         ("total_net_assets", "Net Assets"),
+        ("funds_endowment", "Endowment Funds"),
         ("employees", "Employees"),
     ]
     tags = [
@@ -111,6 +112,7 @@ def funder_table(
                 "sum",
             ),
             cy_total_net_assets=("total_net_assets", "max"),
+            cy_funds_endowment=("funds_endowment", "max"),
             cy_employees=("employees", "max"),
             cy_scale=("scale", "sum"),
         ),
@@ -130,6 +132,7 @@ def funder_table(
                 "sum",
             ),
             py_total_net_assets=("total_net_assets", "max"),
+            py_funds_endowment=("funds_endowment", "max"),
             py_employees=("employees", "max"),
             py_scale=("scale", "sum"),
         ),
@@ -235,6 +238,68 @@ def funder_table(
         )
         .replace({np.nan: None, pd.NA: None})
     )
+
+
+def funders_over_time(
+    current_fy: FinancialYear,
+    columns: list[tuple[str, str, models.Aggregate]],
+    n: int = 100,
+    n_years: int = 5,
+    sortby: str = "-cy_scale",
+    **filters,
+):
+    orgs = funder_table(
+        current_fy,
+        [
+            "org_id",
+        ],
+        sortby=sortby,
+        **filters,
+        n=n,
+    )["Org ID"].tolist()
+    years = [str(fy) for fy in current_fy.previous_n_years(n_years - 1)]
+    year_annotations = {}
+    column_renames = {}
+    for field, field_name, aggregation in columns:
+        for year in years:
+            year_annotations[f"{field}_{year}"] = aggregation(
+                models.Case(
+                    models.When(
+                        funderyear__financial_year=year,
+                        then=models.F(f"funderyear__{field}"),
+                    ),
+                    default=0,
+                    output_field=models.IntegerField(),
+                )
+            )
+            column_renames[f"{field}_{year}"] = f"{field_name} {year}"
+    trends_query = (
+        Funder.objects.filter(
+            org_id__in=orgs,
+        )
+        .values("org_id", "name")
+        .annotate(**year_annotations)
+    )
+    trends_over_time = (
+        pd.DataFrame.from_records(trends_query)
+        .rename(
+            columns={
+                "org_id": "Org ID",
+                "name": "Funder name",
+                **column_renames,
+            }
+        )
+        .set_index("Org ID")
+        .replace({False: pd.NA, np.nan: pd.NA, True: 1, 0: pd.NA})
+        .replace({pd.NA: None})
+        .loc[orgs, :]
+    )
+    for year in years:
+        for field, field_name, aggregation in columns:
+            trends_over_time[f"{field_name} {year}"] = (
+                trends_over_time[f"{field_name} {year}"].divide(1_000_000).round(1)
+            )
+    return trends_over_time
 
 
 @login_required
@@ -516,9 +581,47 @@ def financial_year(request, fy, filetype="html"):
             trends_over_time, "Trends", title=f"Trend over time ({field_name})"
         )
 
+    # trends by segment
+    trend_segments = [
+        ("Family Foundation", 100),
+        ("Corporate Foundation", 50),
+        ("General grantmaker", 100),
+    ]
+    for segment, segment_n in trend_segments:
+        segment_trends_over_time = funders_over_time(
+            current_fy,
+            [
+                ("spending_grant_making", "Spending on grantmaking", models.Sum),
+                ("total_net_assets", "Net Assets", models.Max),
+            ],
+            n=segment_n,
+            included=True,
+            segment=segment,
+        )
+        output.add_table(
+            segment_trends_over_time,
+            "Trends (by segment)",
+            title=f"Trend over time ({segment})",
+        )
+
+    endowment_trends_over_time = funders_over_time(
+        current_fy,
+        [
+            ("funds_endowment", "Endowment Funds", models.Max),
+        ],
+        n=100,
+        sortby="-cy_funds_endowment",
+        included=True,
+    )
+    output.add_table(
+        endowment_trends_over_time,
+        "Trends (by segment)",
+        title="Trend over time (Endowments)",
+    )
+
     # table for each segment
-    for funder_type in FUNDER_CATEGORIES.keys():
-        funder_type_name = FunderSegment(funder_type).label
+    for segment in FUNDER_CATEGORIES.keys():
+        segment_name = FunderSegment(segment).label
         output.add_table(
             funder_table(
                 current_fy,
@@ -543,11 +646,11 @@ def financial_year(request, fy, filetype="html"):
                     "py_total_net_assets",
                     "py_employees",
                 ],
-                segment=funder_type,
+                segment=segment,
                 included=True,
             ),
-            slugify(funder_type_name) if filetype == "xlsx" else "Funder lists",
-            title=funder_type_name if filetype != "xlsx" else None,
+            slugify(segment_name) if filetype == "xlsx" else "Funder lists",
+            title=segment_name if filetype != "xlsx" else None,
         )
 
     output.add_table(
