@@ -1,4 +1,5 @@
 from io import BytesIO
+from typing import Optional
 
 import numpy as np
 import pandas as pd
@@ -24,7 +25,14 @@ def index(request):
     return render(request, "index.html.j2")
 
 
-def funder_table(current_fy, columns, n=100, sortby="-cy_scale", **filters):
+def funder_table(
+    current_fy: FinancialYear,
+    columns: list[str],
+    n: int = 100,
+    sortby: str = "-cy_scale",
+    tag_children: Optional[list[str]] = None,
+    **filters,
+):
     ascending = True
     if sortby.startswith("-"):
         sortby = sortby[1:]
@@ -145,16 +153,29 @@ def funder_table(current_fy, columns, n=100, sortby="-cy_scale", **filters):
             funder__in=Funder.objects.filter(**filters).values_list(
                 "org_id", flat=True
             ),
-            fundertag__tag__in=[tag for tag, _ in tags],
         ).values(
             "funder_id",
             "fundertag",
+            "fundertag__parent",
         )
     )
     for tag, _ in tags:
         df[slugify(tag).replace("-", "_")] = df["org_id"].isin(
             funder_tags[funder_tags["fundertag"] == tag]["funder_id"]
         )
+    if tag_children:
+        tag_children_df = funder_tags[
+            funder_tags["fundertag__parent"].isin(tag_children)
+        ]
+        if not tag_children_df.empty:
+            tag_categories = pd.crosstab(
+                tag_children_df["funder_id"],
+                tag_children_df["fundertag__parent"],
+                values=tag_children_df["fundertag"],
+                aggfunc=lambda x: "; ".join(x),
+            )
+            df = df.join(tag_categories, on="org_id", how="left")
+            columns += tag_children
 
     df["segment"] = (
         df["segment"].fillna("Unknown").replace({"Wellcome Trust": "Family Foundation"})
@@ -166,13 +187,26 @@ def funder_table(current_fy, columns, n=100, sortby="-cy_scale", **filters):
         tag_field = slugify(tag).replace("-", "_")
         df[tag_field] = df[tag_field].map({True: "✓", False: ""})
 
+    max_value = max(
+        [df[f"cy_{field}"].max() for field, _ in agg_fields]
+        + [df[f"py_{field}"].max() for field, _ in agg_fields]
+    )
+    scale_value = 1_000_000
+    scale_suffix = "£m"
+    if max_value < 10_000_000:
+        scale_value = 1_000
+        scale_suffix = "£k"
+    elif max_value < 100_000:
+        scale_value = 1
+        scale_suffix = "£"
+
     for field, field_name in agg_fields:
         if field in ("employees",):
             df[f"cy_{field}"] = df[f"cy_{field}"].round(0)
             df[f"py_{field}"] = df[f"py_{field}"].round(0)
         else:
-            df[f"cy_{field}"] = df[f"cy_{field}"].divide(1_000_000)
-            df[f"py_{field}"] = df[f"py_{field}"].divide(1_000_000)
+            df[f"cy_{field}"] = df[f"cy_{field}"].divide(scale_value)
+            df[f"py_{field}"] = df[f"py_{field}"].divide(scale_value)
 
     return (
         df.sort_values(sortby, ascending=ascending, ignore_index=True)[columns][0:n]
@@ -185,11 +219,18 @@ def funder_table(current_fy, columns, n=100, sortby="-cy_scale", **filters):
                 "segment": "Segment",
                 "makes_grants_to_individuals": "Grants to Individuals",
                 **{slugify(tag).replace("-", "_"): tag_name for tag, tag_name in tags},
-                **{f"cy_{field}": field_name for field, field_name in agg_fields},
                 **{
-                    f"py_{field}": f"{field_name} (Previous year)"
+                    f"cy_{field}": f"{field_name} ({scale_suffix})"
                     for field, field_name in agg_fields
+                    if field != "employees"
                 },
+                **{
+                    f"py_{field}": f"{field_name} ({scale_suffix} - Previous year)"
+                    for field, field_name in agg_fields
+                    if field != "employees"
+                },
+                "cy_employees": "Employees",
+                "py_employees": "Employees (Previous year)",
             }
         )
         .replace({np.nan: None, pd.NA: None})
@@ -569,10 +610,12 @@ def financial_year(request, fy, filetype="html"):
     # table for tags
     for funder_tag in [
         "London Funders",
+        "London Local Giving Scheme",
         "360Giving Publisher",
         "Living Wage Funder",
         "ACF Current",
         "ACO",
+        "Companies & Guilds",
     ]:
         funder_tag_obj = FunderTag.objects.get(tag=funder_tag)
         output.add_table(
@@ -584,12 +627,14 @@ def financial_year(request, fy, filetype="html"):
                     "name",
                     "segment",
                     "makes_grants_to_individuals",
+                    "360giving_publisher",
                     "cy_income",
                     "cy_spending",
                     "cy_spending_grant_making",
                     "cy_total_net_assets",
                 ],
-                org_id__in=funder_tag_obj.funder_set.values_list("org_id", flat=True),
+                tag_children=[funder_tag_obj.tag],
+                org_id__in=funder_tag_obj.funders.values_list("org_id", flat=True),
                 n=1_000_000,
             ),
             slugify(funder_tag) if filetype == "xlsx" else "Funder tag lists",

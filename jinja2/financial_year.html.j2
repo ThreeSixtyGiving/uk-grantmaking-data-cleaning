@@ -26,6 +26,18 @@
 {% for sheet_name, tables in output.sheets.items() %}
 <h2 id="{{ sheet_name|slugify }}">{{ sheet_name }}</h2>
 
+{% if tables|length > 1 %}
+<ul>
+    {% for  table in tables %}
+    {% if table.title %}
+    <li><a href="#{{ table.title|slugify }}">{{ table.title }}</a></li>
+    {% elif tables|length > 1 %}
+    <li><a href="#{{ sheet_name|slugify }}-{{ loop.index }}">{{ sheet_name }} table {{ loop.index }}</a></li>
+    {% endif %}
+    {% endfor %}
+</ul>
+{% endif %}
+
 {% for table in tables %}
 
 {% if table.title %}

@@ -268,12 +268,14 @@ def tags(file, orgid_column, tag_column, tag, name_column):
 
     funder_tags = {}
     if tag_column in df.columns:
-        for tag in df[tag_column].unique():
+        for tag_record in df[tag_column].unique():
+            tag_record = tag_record.strip()
             funder_tag, tag_created = FunderTag.objects.get_or_create(
-                tag=tag,
+                tag=tag_record,
             )
-            funder_tags[tag] = funder_tag
+            funder_tags[tag_record] = funder_tag
     if tag:
+        tag = tag.strip()
         funder_tags[tag], tag_created = FunderTag.objects.get_or_create(
             tag=tag,
         )
@@ -295,11 +297,78 @@ def tags(file, orgid_column, tag_column, tag, name_column):
             defaults=defaults,
         )
         if tag:
-            print(funder, funder_tags[tag])
             funder.tags.add(funder_tags[tag])
-        if getattr(record, tag_column, None):
-            funder.tags.add(funder_tags[getattr(record, tag_column)])
+        if isinstance(getattr(record, tag_column, None), str):
+            tag_value = getattr(record, tag_column).strip()
+            funder.tags.add(funder_tags[tag_value])
         records["Funder created" if created else "Funder found"] += 1
 
     for key, value in records.items():
         click.secho("{}: {}".format(key, value), fg="green")
+
+
+@main.command()
+@click.argument("file")
+def fgt(file):
+    click.secho("Opening {}".format(file), fg="green")
+    df = pd.read_excel(file)
+    with click.progressbar(
+        df.iterrows(),
+        length=len(df),
+        label="Updating finances from FGT",
+    ) as bar:
+        for index, row in bar:
+            try:
+                funder_year = FunderYear.objects.get(
+                    funder_id=row["Org-id"],
+                    financial_year_end=row["Financial Year"],
+                )
+            except FunderYear.DoesNotExist:
+                try:
+                    funder_year = FunderYear.objects.get(
+                        funder_id=row["Org-id"],
+                        financial_year_end__month=row["Financial Year"].month,
+                        financial_year_end__year=row["Financial Year"].year,
+                    )
+                except FunderYear.DoesNotExist:
+                    try:
+                        funder_year = FunderYear.objects.get(
+                            funder_id=row["Org-id"],
+                            financial_year_end__year=row["Financial Year"].year,
+                        )
+                    except FunderYear.DoesNotExist:
+                        funder, funder_created = Funder.objects.get_or_create(
+                            org_id=row["Org-id"],
+                            defaults={"name_registered": row["Name"]},
+                        )
+                        if funder_created:
+                            click.secho(
+                                "Created Funder {} ({})".format(
+                                    funder.name_registered, funder.org_id
+                                ),
+                                fg="green",
+                            )
+                        funder_year = FunderYear(
+                            funder_id=row["Org-id"],
+                            financial_year_end=row["Financial Year"],
+                            notes="Added from Foundation Giving Trends data",
+                        )
+
+            if (
+                not pd.isna(row["Giving £m"])
+                and not funder_year.spending_grant_making_institutions_manual
+            ):
+                funder_year.spending_grant_making_institutions_manual = (
+                    row["Giving £m"] * 1_000_000
+                )
+
+            if (
+                not pd.isna(row["Assets £m"])
+                and not funder_year.total_net_assets_manual
+            ):
+                funder_year.total_net_assets_manual = row["Assets £m"] * 1_000_000
+
+            if not pd.isna(row["Notes"]) and not funder_year.notes:
+                funder_year.notes = row["Notes"]
+
+            funder_year.save()

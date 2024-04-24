@@ -120,7 +120,12 @@ class FunderAdmin(admin.ModelAdmin):
 
 @admin.register(FunderTag)
 class FunderTagAdmin(admin.ModelAdmin):
-    pass
+    list_display = ("tag", "funder_count", "description", "parent")
+    list_editable = ("parent",)
+    ordering = ("parent", "tag")
+
+    def funder_count(self, obj):
+        return obj.funders.count()
 
 
 @admin.register(FunderYear)

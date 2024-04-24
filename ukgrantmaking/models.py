@@ -97,6 +97,13 @@ FUNDER_CATEGORIES = {
 class FunderTag(models.Model):
     tag = models.CharField(max_length=255, primary_key=True)
     description = models.TextField(null=True, blank=True)
+    parent = models.ForeignKey(
+        "self",
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name="children",
+    )
 
     def __str__(self):
         return self.tag
@@ -222,7 +229,7 @@ class Funder(models.Model):
         db_persist=True,
     )
 
-    tags = models.ManyToManyField(FunderTag, blank=True)
+    tags = models.ManyToManyField(FunderTag, blank=True, related_name="funders")
 
     name = models.GeneratedField(
         expression=Coalesce(
