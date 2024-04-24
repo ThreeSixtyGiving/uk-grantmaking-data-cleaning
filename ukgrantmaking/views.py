@@ -484,12 +484,21 @@ def financial_year(request, fy, filetype="html"):
                         output_field=models.IntegerField(),
                     )
                 ),
-                total=models.Count("segment"),
             )
         )
         .assign(
             segment=lambda x: x["segment"].fillna("Unknown"),
             category=lambda x: x["segment"].map(FUNDER_CATEGORIES).fillna("Unknown"),
+            total=lambda x: x[
+                [
+                    "zero_spend",
+                    "under_100k",
+                    "_100k_1m",
+                    "_1m_10m",
+                    "_10m_100m",
+                    "over_100m",
+                ]
+            ].sum(axis=1),
         )
         .rename(
             columns={
