@@ -8,6 +8,7 @@
 <h2 id="contents">Contents</h2>
 <ul>
     {% for sheet_name, tables in output.sheets.items() %}
+    {% if sheet_name not in skip_sheets %}
     <li><a href="#{{ sheet_name|slugify }}">{{ sheet_name }}</a></li>
     {% if tables|length > 1 %}
     <ul>
@@ -20,10 +21,12 @@
         {% endfor %}
     </ul>
     {% endif %}
+    {% endif %}
     {% endfor %}
 </ul>
 
 {% for sheet_name, tables in output.sheets.items() %}
+{% if sheet_name not in skip_sheets %}
 <h2 id="{{ sheet_name|slugify }}">{{ sheet_name }}</h2>
 
 {% if tables|length > 1 %}
@@ -90,5 +93,6 @@
 </figure>
 {% endfor %}
 
+{% endif %}
 {% endfor %}
 {% endblock content %}

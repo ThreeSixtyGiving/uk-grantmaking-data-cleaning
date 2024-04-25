@@ -604,7 +604,9 @@ def financial_year(request, fy, filetype="html"):
             ].astype("int")
             del trends_over_time[f"{year}_count"]
         output.add_table(
-            trends_over_time, "Trends", title=f"Trend over time ({field_name})"
+            trends_over_time,
+            "Trends",
+            title=f"Trend over time ({field_name})",
         )
 
     # trends by segment
@@ -626,8 +628,10 @@ def financial_year(request, fy, filetype="html"):
         )
         output.add_table(
             segment_trends_over_time,
-            "Trends (by segment)",
-            title=f"Trend over time ({segment})",
+            f"trends-{slugify(segment)}"
+            if filetype == "xlsx"
+            else "Trends (by segment)",
+            title=f"Trend over time ({segment})" if filetype != "xlsx" else None,
         )
 
     endowment_trends_over_time = funders_over_time(
@@ -641,12 +645,14 @@ def financial_year(request, fy, filetype="html"):
     )
     output.add_table(
         endowment_trends_over_time,
-        "Trends (by segment)",
-        title="Trend over time (Endowments)",
+        "trends-endowments" if filetype == "xlsx" else "Trends (by segment)",
+        title="Trend over time (Endowments)" if filetype != "xlsx" else None,
     )
 
     # table for each segment
     for segment in FUNDER_CATEGORIES.keys():
+        if segment == FunderSegment.SMALL_GRANTMAKER:
+            continue
         segment_name = FunderSegment(segment).label
         output.add_table(
             funder_table(
@@ -679,6 +685,40 @@ def financial_year(request, fy, filetype="html"):
             slugify(segment_name) if filetype == "xlsx" else "Funder lists",
             title=segment_name if filetype != "xlsx" else None,
         )
+
+    # all general grantmakers
+    output.add_table(
+        funder_table(
+            current_fy,
+            [
+                "cy_rank",
+                "org_id",
+                "name",
+                "makes_grants_to_individuals",
+                "living_wage_funder",
+                "360giving_publisher",
+                "cy_income",
+                "cy_spending",
+                "cy_spending_grant_making",
+                "cy_spending_grant_making_individuals",
+                "cy_total_net_assets",
+                "cy_employees",
+                "py_rank",
+                "py_income",
+                "py_spending",
+                "py_spending_grant_making",
+                "py_spending_grant_making_individuals",
+                "py_total_net_assets",
+                "py_employees",
+                "notes",
+            ],
+            segment=FunderSegment.GENERAL_GRANTMAKER,
+            included=True,
+            n=1_000_000,
+        ),
+        "All general grantmakers",
+        title="All general grantmakers",
+    )
 
     output.add_table(
         funder_table(
@@ -766,6 +806,7 @@ def financial_year(request, fy, filetype="html"):
                     "cy_income",
                     "cy_spending",
                     "cy_spending_grant_making",
+                    "cy_spending_grant_making_individuals",
                     "cy_total_net_assets",
                     "notes",
                 ],
@@ -794,6 +835,7 @@ def financial_year(request, fy, filetype="html"):
         {
             "fy": fy,
             "output": output,
+            "skip_sheets": ["All general grantmakers"],
             "xlsx_link": reverse("financial_year_xlsx", kwargs={"fy": fy}),
         },
     )
