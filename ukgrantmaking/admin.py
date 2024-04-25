@@ -65,6 +65,7 @@ class FunderAdmin(admin.ModelAdmin):
     list_filter = (
         "included",
         "segment",
+        ("segment", admin.EmptyFieldListFilter),
         "tags",
         "makes_grants_to_individuals",
         "org_id_schema",
