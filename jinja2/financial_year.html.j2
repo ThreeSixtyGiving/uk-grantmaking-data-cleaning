@@ -64,7 +64,7 @@
         </thead>
         <tbody>
             {% for row in table.df.itertuples(index=False) %}
-            <tr class="striped--light-gray">
+            <tr class="striped--light-gray {% if row[0] == 'Total' %}ttu b{% endif %}">
                 {% for value in row %}
                 {% if value is none %}
                 <td class="pv2 ph3 grey tr">-</td>
