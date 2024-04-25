@@ -385,7 +385,17 @@ def financial_year(request, fy, filetype="html"):
                         output_field=models.IntegerField(),
                     )
                 ),
-                individuals=models.Sum("makes_grants_to_individuals"),
+                individuals=models.Sum(
+                    models.Case(
+                        models.When(
+                            funderyear__financial_year=current_fy,
+                            makes_grants_to_individuals=True,
+                            then=models.Value(1),
+                        ),
+                        default=0,
+                        output_field=models.IntegerField(),
+                    )
+                ),
             )
         )
         .assign(
@@ -407,7 +417,7 @@ def financial_year(request, fy, filetype="html"):
                 "spending": "Total spending",
                 "grantmaking": "Spending on grants",
                 "grantmaking_to_individuals": "Grants to individuals",
-                "individuals": "Make grants to individuals",
+                "individuals": "No. of Grantmakers that make grants to individuals",
             }
         )
         .set_index(["Category", "Segment"])
@@ -415,6 +425,7 @@ def financial_year(request, fy, filetype="html"):
         .replace({False: pd.NA, np.nan: pd.NA, True: 1})
         .replace({pd.NA: None})
     )
+    summary.loc[("Total", "Total"), :] = summary.sum(axis=0)
     output.add_table(summary, "Summary", title="Summary")
 
     # summary by size
