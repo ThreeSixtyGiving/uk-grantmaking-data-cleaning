@@ -73,10 +73,16 @@ def funder_table(
             ),
         )
         .order_by("funder_id", "-financial_year_end")
-        .values("funder_id", "financial_year_end", *[field for field, _ in agg_fields]),
+        .values(
+            "funder_id",
+            "financial_year_end",
+            "notes",
+            *[field for field, _ in agg_fields],
+        ),
         columns=[
             "funder_id",
             "financial_year_end",
+            "notes",
             *[field for field, _ in agg_fields],
         ],
     )
@@ -88,10 +94,16 @@ def funder_table(
             ),
         )
         .order_by("funder_id", "-financial_year_end")
-        .values("funder_id", "financial_year_end", *[field for field, _ in agg_fields]),
+        .values(
+            "funder_id",
+            "financial_year_end",
+            "notes",
+            *[field for field, _ in agg_fields],
+        ),
         columns=[
             "funder_id",
             "financial_year_end",
+            "notes",
             *[field for field, _ in agg_fields],
         ],
     )
@@ -115,6 +127,7 @@ def funder_table(
             cy_funds_endowment=("funds_endowment", "max"),
             cy_employees=("employees", "max"),
             cy_scale=("scale", "sum"),
+            cy_notes=("notes", "first"),
         ),
         on="org_id",
         how="left",
@@ -135,6 +148,7 @@ def funder_table(
             py_funds_endowment=("funds_endowment", "max"),
             py_employees=("employees", "max"),
             py_scale=("scale", "sum"),
+            py_notes=("notes", "first"),
         ),
         on="org_id",
         how="left",
@@ -183,6 +197,7 @@ def funder_table(
     df["segment"] = (
         df["segment"].fillna("Unknown").replace({"Wellcome Trust": "Family Foundation"})
     )
+    df["notes"] = df["cy_notes"].fillna(df["py_notes"])
 
     for tag, tag_name in tags + [
         ("makes_grants_to_individuals", "Makes grants to individuals")
@@ -234,6 +249,7 @@ def funder_table(
                 },
                 "cy_employees": "Employees",
                 "py_employees": "Employees (Previous year)",
+                "notes": "Notes",
             }
         )
         .replace({np.nan: None, pd.NA: None})
@@ -257,7 +273,7 @@ def funders_over_time(
         **filters,
         n=n,
     )["Org ID"].tolist()
-    years = [str(fy) for fy in current_fy.previous_n_years(n_years - 1)]
+    years = [str(fy) for fy in current_fy.previous_n_years(n_years - 1)][::-1]
     year_annotations = {}
     column_renames = {}
     for field, field_name, aggregation in columns:
@@ -268,7 +284,7 @@ def funders_over_time(
                         funderyear__financial_year=year,
                         then=models.F(f"funderyear__{field}"),
                     ),
-                    default=0,
+                    default=None,
                     output_field=models.IntegerField(),
                 )
             )
@@ -290,8 +306,6 @@ def funders_over_time(
             }
         )
         .set_index("Org ID")
-        .replace({False: pd.NA, np.nan: pd.NA, True: 1, 0: pd.NA})
-        .replace({pd.NA: None})
         .loc[orgs, :]
     )
     for year in years:
@@ -299,6 +313,9 @@ def funders_over_time(
             trends_over_time[f"{field_name} {year}"] = (
                 trends_over_time[f"{field_name} {year}"].divide(1_000_000).round(1)
             )
+    trends_over_time = trends_over_time.replace({False: pd.NA, np.nan: pd.NA}).replace(
+        {pd.NA: None}
+    )
     return trends_over_time
 
 
@@ -527,7 +544,7 @@ def financial_year(request, fy, filetype="html"):
         ("spending_grant_making", "Spending on grantmaking", models.Sum),
         ("total_net_assets", "Net Assets", models.Max),
     ]
-    years = [str(fy) for fy in current_fy.previous_n_years(4)]
+    years = [str(fy) for fy in current_fy.previous_n_years(4)][::-1]
     for field, field_name, aggregation in fields:
         year_annotations = {}
         for year in years:
@@ -654,6 +671,7 @@ def financial_year(request, fy, filetype="html"):
                     "py_spending_grant_making_individuals",
                     "py_total_net_assets",
                     "py_employees",
+                    "notes",
                 ],
                 segment=segment,
                 included=True,
@@ -683,6 +701,7 @@ def financial_year(request, fy, filetype="html"):
                 "py_spending_grant_making",
                 "py_spending_grant_making_individuals",
                 "py_total_net_assets",
+                "notes",
             ],
             sortby="-cy_spending_grant_making_individuals",
             makes_grants_to_individuals=True,
@@ -712,6 +731,7 @@ def financial_year(request, fy, filetype="html"):
                 "py_rank",
                 "py_spending_grant_making",
                 "py_total_net_assets",
+                "notes",
             ],
             n=300,
             included=True,
@@ -728,6 +748,9 @@ def financial_year(request, fy, filetype="html"):
         "ACF Current",
         "ACO",
         "Companies & Guilds",
+        "Funders Forum for NI",
+        "OSCR",
+        "CCNI",
     ]:
         funder_tag_obj = FunderTag.objects.get(tag=funder_tag)
         output.add_table(
@@ -744,6 +767,7 @@ def financial_year(request, fy, filetype="html"):
                     "cy_spending",
                     "cy_spending_grant_making",
                     "cy_total_net_assets",
+                    "notes",
                 ],
                 tag_children=[funder_tag_obj.tag],
                 org_id__in=funder_tag_obj.funders.values_list("org_id", flat=True),
@@ -798,6 +822,7 @@ def all_grantmakers_export(request, fy, filetype):
                 "cy_spending_grant_making_individuals",
                 "cy_total_net_assets",
                 "cy_employees",
+                "cy_notes",
                 "py_income",
                 "py_spending",
                 "py_spending_grant_making",
@@ -805,6 +830,7 @@ def all_grantmakers_export(request, fy, filetype):
                 "py_spending_grant_making_individuals",
                 "py_total_net_assets",
                 "py_employees",
+                "py_notes",
             ],
             n=100_000,
         ),

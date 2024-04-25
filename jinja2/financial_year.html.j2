@@ -47,47 +47,47 @@
 {% endif %}
 <a href="#contents" class="f7">Back to contents</a>
 
-{% if table.summary %}
-<p>{{ table.summary }}</p>
-{% endif %}
-
-<table class="collapse ba br2 b--black-10 pv2 ph3 f6">
-    <thead>
-        <tr>
-            {% for column in table.df.columns %}
-            <th class="pv2 ph3 tl f6 fw6 ttu">{{ column }}</th>
+<figure class="pa0 ma0 mw-100 overflow-scroll">
+    {% if table.summary %}
+    <figcaption>{{ table.summary }}</figcaption>
+    {% endif %}
+    <table class="collapse ba br2 b--black-10 pv2 ph3 f6">
+        <thead>
+            <tr>
+                {% for column in table.df.columns %}
+                <th class="pv2 ph3 tl f6 fw6 ttu {% if column in ('Name', 'Notes') %}w5{% endif %}">{{ column }}</th>
+                {% endfor %}
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in table.df.itertuples(index=False) %}
+            <tr class="striped--light-gray">
+                {% for value in row %}
+                {% if value is none %}
+                <td class="pv2 ph3 grey tr">-</td>
+                {% elif value is integer %}
+                <td class="pv2 ph3 tr">{{ "{:,.0f}".format(value) }}</td>
+                {% elif value is float %}
+                <td class="pv2 ph3 tr">
+                    {% if value >= 0.1 %}{{ "{:,.1f}".format(value) }}
+                    {% elif value > 0 %}&lt;0.1
+                    {% elif value == 0 %}0
+                    {% else %}{{ "{:,.1f}".format(value) }}{% endif %}
+                </td>
+                {% elif value is string %}
+                <td class="pv2 ph3 w5">{{ value }}</td>
+                {% else %}
+                <td class="pv2 ph3">{{ value }}</td>
+                {% endif %}
+                {% endfor %}
+            </tr>
             {% endfor %}
-        </tr>
-    </thead>
-    <tbody>
-        {% for row in table.df.itertuples(index=False) %}
-        <tr class="striped--light-gray">
-            {% for value in row %}
-            {% if value is none %}
-            <td class="pv2 ph3 grey tr">-</td>
-            {% elif value is integer %}
-            <td class="pv2 ph3 tr">{{ "{:,.0f}".format(value) }}</td>
-            {% elif value is float %}
-            <td class="pv2 ph3 tr">
-                {% if value >= 0.1 %}{{ "{:,.1f}".format(value) }}
-                {% elif value > 0 %}&lt;0.1
-                {% elif value == 0 %}0
-                {% else %}{{ "{:,.1f}".format(value) }}{% endif %}
-            </td>
-            {% else %}
-            <td class="pv2 ph3">{{ value }}</td>
-            {% endif %}
-            {% endfor %}
-        </tr>
-        {% endfor %}
-    </tbody>
-</table>
-
-
-
-{% if table.notes %}
-<p>{{ table.notes }}</p>
-{% endif %}
+        </tbody>
+    </table>
+    {% if table.notes %}
+    <figcaption>{{ table.notes }}</figcaption>
+    {% endif %}
+</figure>
 {% endfor %}
 
 {% endfor %}
