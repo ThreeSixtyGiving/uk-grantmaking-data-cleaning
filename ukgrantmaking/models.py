@@ -444,7 +444,7 @@ class FunderYear(models.Model):
         db_persist=True,
     )
 
-    checked_on = models.DateTimeField(auto_now=True)
+    checked_on = models.DateTimeField(null=True, blank=True)
     checked_by = models.CharField(max_length=255, null=True, blank=True)
     notes = models.TextField(null=True, blank=True)
     date_added = models.DateTimeField(auto_now_add=True)
