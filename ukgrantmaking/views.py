@@ -665,6 +665,9 @@ def financial_year(request, fy, filetype="html"):
         if segment == FunderSegment.SMALL_GRANTMAKER:
             continue
         segment_name = FunderSegment(segment).label
+        n = 100
+        if segment == FunderSegment.FAMILY_FOUNDATION:
+            n = 150
         output.add_table(
             funder_table(
                 current_fy,
@@ -690,6 +693,7 @@ def financial_year(request, fy, filetype="html"):
                     "py_employees",
                     "notes",
                 ],
+                n=n,
                 segment=segment,
                 included=True,
             ),
