@@ -31,6 +31,7 @@ def funder_table(
     n: int = 100,
     sortby: str = "-cy_scale",
     tag_children: Optional[list[str]] = None,
+    spending_threshold: int = 25_000,
     **filters,
 ):
     ascending = True
@@ -164,6 +165,9 @@ def funder_table(
         .rank(ascending=ascending, method="min", na_option="bottom")
         .astype(int)
     )
+
+    if spending_threshold is not None:
+        df = df[df["cy_spending"] >= spending_threshold]
 
     funder_tags = pd.DataFrame.from_records(
         Funder.tags.through.objects.filter(
