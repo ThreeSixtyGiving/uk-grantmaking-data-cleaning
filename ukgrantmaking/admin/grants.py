@@ -9,6 +9,10 @@ from ukgrantmaking.models import Grant
 class CurrencyConverterAdmin(admin.ModelAdmin):
     list_display = ("currency", "date", "rate", "link")
     list_editable = ("rate",)
+    list_filter = (
+        "currency",
+        ("rate", admin.EmptyFieldListFilter),
+    )
     ordering = (
         "currency",
         "-date",
@@ -111,10 +115,11 @@ class GrantAdmin(admin.ModelAdmin):
         "inclusion",
         "funder_text",
         "recipient_text",
+        "recipient_type_manual",
         "title",
     )
     date_hierarchy = "award_date"
-    list_editable = ("inclusion",)
+    list_editable = ("inclusion", "recipient_type_manual")
     raw_id_fields = ("funder",)
     search_fields = (
         "title",
@@ -129,6 +134,8 @@ class GrantAdmin(admin.ModelAdmin):
         AwardDateYearFilter,
         GrantAmountListFilter,
         "recipient_type",
+        "recipient_type_manual",
+        ("recipient_type_manual", admin.EmptyFieldListFilter),
         "funding_organisation_type",
         "funding_organisation_name",
     )
@@ -189,7 +196,7 @@ class GrantAdmin(admin.ModelAdmin):
             "Recipient",
             {
                 "fields": [
-                    "recipient_type",
+                    ("recipient_type", "recipient_type_manual"),
                     ("recipient_organisation_id", "recipient_organisation_name"),
                     ("recipient_individual_id", "recipient_individual_name"),
                     "recipient_individual_primary_grant_reason",

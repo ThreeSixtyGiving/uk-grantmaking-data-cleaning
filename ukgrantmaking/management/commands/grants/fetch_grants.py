@@ -58,9 +58,6 @@ def grants(db_con, start_date, end_date):
 
     # To clean the data we need to make sure that the values are in the right format.
 
-    # Start with the `amount_awarded` column, which should be an integer.
-    df["amount_awarded"] = df["amount_awarded"].astype(float).astype(int)
-
     # Next, the `planned_dates_duration` should also be a number. We use
     # float instead of integer because it allows for null values.
     df["planned_dates_duration"] = df["planned_dates_duration"].astype(float)
@@ -185,6 +182,7 @@ def grants(db_con, start_date, end_date):
     ]
     merged = (
         nl.assign(
+            amount_awarded=nl.amount_awarded.astype(float),
             award_date=pd.to_datetime(nl.award_date, utc=True, format="ISO8601"),
             grant_id=nl.index,
             title=nl.title.str.strip().str.lower(),
@@ -192,6 +190,7 @@ def grants(db_con, start_date, end_date):
         )
         .merge(
             df.assign(
+                amount_awarded=df.amount_awarded.astype(float),
                 award_date=pd.to_datetime(df.award_date, utc=True, format="ISO8601"),
                 grant_id=df.index,
                 title=df.title.str.strip().str.lower(),
@@ -209,6 +208,13 @@ def grants(db_con, start_date, end_date):
     # set any grants which appear in both datasets to exclude
     nl.loc[nl.index.isin(merged["grant_id_nl"]), "exclude"] = True
 
+    click.secho(
+        "Excluding {} grants from National Lottery dataset".format(
+            len(nl[nl["exclude"]])
+        ),
+        fg="green",
+    )
+
     # Merge the National Lottery dataset into the main dataset.
     df = pd.concat(
         [
@@ -216,6 +222,9 @@ def grants(db_con, start_date, end_date):
             nl[~nl["exclude"]].drop(columns=["exclude"]),
         ]
     )
+
+    # Start with the `amount_awarded` column, which should be an integer.
+    df["amount_awarded"] = df["amount_awarded"].astype(float)
 
     # Make sure award date is a date
     for field in ["award_date", "planned_dates_startDate", "planned_dates_endDate"]:
