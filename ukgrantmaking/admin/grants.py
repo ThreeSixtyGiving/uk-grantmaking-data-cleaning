@@ -3,6 +3,7 @@ from django.db.models import Count, Q
 from django.db.models.functions import ExtractYear
 from django.utils.html import format_html
 
+from ukgrantmaking.admin.csv_upload import CSVUploadModelAdmin
 from ukgrantmaking.models import Grant
 
 
@@ -107,7 +108,7 @@ class AwardDateYearFilter(admin.SimpleListFilter):
         return counts
 
 
-class GrantAdmin(admin.ModelAdmin):
+class GrantAdmin(CSVUploadModelAdmin):
     list_display = (
         "grant_id",
         "amount_text",

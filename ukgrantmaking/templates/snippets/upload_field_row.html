@@ -1,0 +1,29 @@
+<tr>
+    <td>
+        <code>{{ field.get_attname }}</code>
+    </td>
+    <td>
+        {% if pk %}
+        <strong>required</strong>
+        {% endif %}
+    </td>
+    <td>{{ field.get_internal_type }}</td>
+    <td>
+        {% if field.choices %}
+        <details>
+            <summary style="cursor: pointer;">Choose one of</summary>
+            <ul>
+                {% for value, _ in field.choices %}
+                <li>{{ value }}</li>
+                {% endfor %}
+            </ul>
+        </details>
+        {% endif %}
+        {% if field.get_internal_type == 'BooleanField' %}
+        One of <code>TRUE</code> or <code>FALSE</code>
+        {% endif %}
+        {% if field.get_internal_type == 'DateField' %}
+        Date format <code>YYYY-MM-DD</code>
+        {% endif %}
+    </td>
+</tr>

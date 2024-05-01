@@ -17,6 +17,7 @@ from ukgrantmaking.models import (
     FunderSegment,
     FunderTag,
     FunderYear,
+    Grant,
 )
 
 
@@ -925,3 +926,34 @@ def check_cookies(request):
             }
         )
     return HttpResponseForbidden("You are not allowed to access this page")
+
+
+def export_all_data_excel(models, filename):
+    with pd.ExcelWriter(filename, engine="xlsxwriter") as writer:
+        for model in models:
+            print(model.__name__)
+            df = pd.DataFrame.from_records(model.objects.all().values()).astype(str)
+            print(f"{len(df)} records found")
+            df.to_excel(writer, sheet_name=model.__name__)
+            print(f"{len(df)} records written to excel")
+    return filename
+
+
+def export_funders_excel(request):
+    models = [Funder, FunderYear, FunderTag]
+    buffer = export_all_data_excel(models, BytesIO())
+    buffer.seek(0)
+    return HttpResponse(
+        buffer.read(),
+        content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    )
+
+
+def export_grants_excel(request):
+    models = [Grant]
+    buffer = export_all_data_excel(models, BytesIO())
+    buffer.seek(0)
+    return HttpResponse(
+        buffer.read(),
+        content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    )

@@ -1,5 +1,6 @@
 from django.contrib import admin
 
+from ukgrantmaking.admin.csv_upload import CSVUploadModelAdmin
 from ukgrantmaking.models import (
     FunderNote,
     FunderYear,
@@ -49,7 +50,7 @@ class FunderNoteInline(admin.TabularInline):
         return False
 
 
-class FunderAdmin(admin.ModelAdmin):
+class FunderAdmin(CSVUploadModelAdmin):
     list_display = (
         "org_id",
         "name",
@@ -127,7 +128,7 @@ class FunderTagAdmin(admin.ModelAdmin):
         return obj.funders.count()
 
 
-class FunderYearAdmin(admin.ModelAdmin):
+class FunderYearAdmin(CSVUploadModelAdmin):
     list_display = (
         "funder",
         "financial_year_end",

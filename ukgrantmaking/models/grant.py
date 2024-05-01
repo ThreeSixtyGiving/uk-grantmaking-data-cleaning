@@ -125,11 +125,11 @@ class Grant(models.Model):
 
     def __str__(self):
         return "Grant from {} to {} for {}{:,.0f} ({})".format(
-            self.funding_organisation_name,
-            self.recipient_organisation_name,
+            self.funding_organisation_name or "",
+            self.recipient_organisation_name or "",
             self.currency if self.currency != "GBP" else "£",
-            self.amount_awarded,
-            self.award_date.year,
+            self.amount_awarded or 0,
+            self.award_date.year if self.award_date else "unknown",
         )
 
 

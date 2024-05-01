@@ -14,12 +14,14 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 
-from django.contrib import admin
 from django.contrib.auth import views as auth_views
 from django.urls import include, path
 
+from ukgrantmaking.admin import admin_site
 from ukgrantmaking.views import all_grantmakers_export
 from ukgrantmaking.views import check_cookies as check_cookies_view
+from ukgrantmaking.views import export_funders_excel as export_funders_view
+from ukgrantmaking.views import export_grants_excel as export_grants_view
 from ukgrantmaking.views import financial_year as financial_year_view
 from ukgrantmaking.views import index as index_view
 
@@ -45,7 +47,7 @@ urlpatterns = [
         all_grantmakers_export,
         name="all_grantmakers_export",
     ),
-    path("admin/", admin.site.urls),
+    path("admin/", admin_site.urls),
     path(
         "accounts/login/",
         auth_views.LoginView.as_view(template_name="registration/login.html.j2"),
@@ -57,5 +59,7 @@ urlpatterns = [
         name="logout",
     ),
     path("__debug__/", include("debug_toolbar.urls")),
+    path("export/funders.xlsx", export_funders_view),
+    path("export/grants.xlsx", export_grants_view),
     path("user-from-cookies", check_cookies_view),
 ]
