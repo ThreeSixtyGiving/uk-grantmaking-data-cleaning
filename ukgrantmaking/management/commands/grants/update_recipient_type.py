@@ -1,4 +1,4 @@
-from itertools import islice
+from itertools import batched
 
 import djclick as click
 import pandas as pd
@@ -8,21 +8,10 @@ from django.db.models import Count, Q
 from ukgrantmaking.models import Grant
 
 
-def batched(iterable, n):
-    "Batch data into lists of length n. The last batch may be shorter."
-    # https://stackoverflow.com/a/8290490/715621
-    # batched('ABCDEFG', 3) --> ABC DEF G
-    it = iter(iterable)
-    while True:
-        batch = list(islice(it, n))
-        if not batch:
-            return
-        yield batch
-
-
 @click.command()
 @click.argument("db_con", envvar="FTC_DB_URL")
-def recipient_type(db_con):
+@click.option("--company-batch-size", default=1_000)
+def recipient_type(db_con, company_batch_size):
     with transaction.atomic():
         click.secho("Update recipient types", fg="green")
 
@@ -151,7 +140,7 @@ def recipient_type(db_con):
         click.secho(f"{len(all_company_numbers)} company numbers to check", fg="green")
 
         # process company numbers in batches
-        for company_numbers in batched(all_company_numbers, 1_000):
+        for company_numbers in batched(all_company_numbers, company_batch_size):
             click.secho(
                 f"Processing {len(company_numbers)} company numbers", fg="green"
             )
