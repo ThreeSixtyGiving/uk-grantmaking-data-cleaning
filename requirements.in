@@ -18,3 +18,5 @@ pandas
 sqlalchemy
 requests
 caradoc
+datasette
+uvicorn
