@@ -1,4 +1,4 @@
-from itertools import batched
+from itertools import islice
 
 import djclick as click
 import pandas as pd
@@ -6,6 +6,18 @@ from django.db import transaction
 from django.db.models import Count, Q
 
 from ukgrantmaking.models import Grant
+
+
+def batched(iterable, n):
+    "Batch data into lists of length n. The last batch may be shorter."
+    # https://stackoverflow.com/a/8290490/715621
+    # batched('ABCDEFG', 3) --> ABC DEF G
+    it = iter(iterable)
+    while True:
+        batch = list(islice(it, n))
+        if not batch:
+            return
+        yield batch
 
 
 @click.command()
