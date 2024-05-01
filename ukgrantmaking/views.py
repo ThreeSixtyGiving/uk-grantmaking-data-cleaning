@@ -831,6 +831,7 @@ def financial_year(request, fy, filetype="html"):
                 ],
                 tag_children=[funder_tag_obj.tag],
                 org_id__in=funder_tag_obj.funders.values_list("org_id", flat=True),
+                included=True,
                 n=1_000_000,
             ),
             slugify(funder_tag) if filetype == "xlsx" else "Funder tag lists",
