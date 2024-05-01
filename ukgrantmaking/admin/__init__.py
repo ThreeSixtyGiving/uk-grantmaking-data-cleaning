@@ -19,7 +19,6 @@ class UKGrantmakingAdminSite(admin.AdminSite):
 
     def __init__(self, *args, **kwargs):
         super(UKGrantmakingAdminSite, self).__init__(*args, **kwargs)
-        print(self.index_template)
         self._registry.update(admin.site._registry)
 
         for model, model_admin in self._registry.items():

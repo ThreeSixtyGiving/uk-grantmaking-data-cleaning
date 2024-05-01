@@ -126,10 +126,15 @@ def recipient_type(db_con):
             click.secho(f"{updated} grants updated to {recipient_type}", fg="green")
 
         click.secho("Sort out company numbers", fg="green")
-        company_numbers = Grant.objects.filter(
-            recipient_organisation_id__startswith="GB-COH-",
-            recipient_type_manual__isnull=True,
-        ).values_list("recipient_organisation_id", flat=True)
+        company_numbers = (
+            Grant.objects.filter(
+                recipient_organisation_id__startswith="GB-COH-",
+                recipient_type_manual__isnull=True,
+            )
+            .values_list("recipient_organisation_id", flat=True)
+            .distinct()
+        )
+        click.secho(f"{len(company_numbers)} company numbers to check", fg="green")
         charitable_companies = pd.read_sql(
             """
             SELECT org_id,
