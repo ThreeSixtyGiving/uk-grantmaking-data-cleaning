@@ -1,4 +1,5 @@
 from ukgrantmaking.models.funder import (
+    DEFAULT_FINANCIAL_YEAR,
     FUNDER_CATEGORIES,
     FinancialYears,
     Funder,
@@ -17,6 +18,7 @@ __all__ = [
     "FunderTag",
     "FunderNote",
     "FUNDER_CATEGORIES",
+    "DEFAULT_FINANCIAL_YEAR",
     "FunderSegment",
     "FunderCategory",
     "Grant",
