@@ -1,9 +1,23 @@
+from itertools import islice
+
 import djclick as click
 import pandas as pd
 from django.db import transaction
 from django.db.models import Count, Q
 
 from ukgrantmaking.models import Grant
+
+
+def batched(iterable, n):
+    "Batch data into lists of length n. The last batch may be shorter."
+    # https://stackoverflow.com/a/8290490/715621
+    # batched('ABCDEFG', 3) --> ABC DEF G
+    it = iter(iterable)
+    while True:
+        batch = list(islice(it, n))
+        if not batch:
+            return
+        yield batch
 
 
 @click.command()
@@ -126,7 +140,7 @@ def recipient_type(db_con):
             click.secho(f"{updated} grants updated to {recipient_type}", fg="green")
 
         click.secho("Sort out company numbers", fg="green")
-        company_numbers = (
+        all_company_numbers = (
             Grant.objects.filter(
                 recipient_organisation_id__startswith="GB-COH-",
                 recipient_type_manual__isnull=True,
@@ -134,101 +148,110 @@ def recipient_type(db_con):
             .values_list("recipient_organisation_id", flat=True)
             .distinct()
         )
-        click.secho(f"{len(company_numbers)} company numbers to check", fg="green")
-        charitable_companies = pd.read_sql(
-            """
-            SELECT org_id,
-                "organisationTypePrimary_id",
-                'GB-COH-' || "companyNumber" as company_id
-            FROM ftc_organisation
-            WHERE "companyNumber" IN %(org_ids)s
-                AND org_id NOT LIKE 'GB-COH-%%'
-            """,
-            con=db_con,
-            params={
-                "org_ids": tuple(
-                    c.replace("GB-COH-", "")
-                    for c in company_numbers
-                    if isinstance(c, str)
-                )
-            },
-        )
-        for org_type in charitable_companies["organisationTypePrimary_id"].unique():
-            recipient_type = None
-            if org_type == "registered-charity":
-                recipient_type = Grant.RecipientType.CHARITY
-            else:
-                click.secho(f"Unknown org type {org_type}", fg="red")
-                continue
+        click.secho(f"{len(all_company_numbers)} company numbers to check", fg="green")
 
-            updated = Grant.objects.filter(
-                recipient_organisation_id__in=charitable_companies.loc[
-                    charitable_companies["organisationTypePrimary_id"] == org_type,
-                    "company_id",
-                ].unique(),
-                recipient_type_manual__isnull=True,
-            ).update(
-                recipient_type_manual=recipient_type,
-            )
-            click.secho(f"{updated} grants to charitable companies found", fg="green")
-
-        all_companies = pd.read_sql(
-            """
-            SELECT "CompanyCategory",
-                'GB-COH-' || "CompanyNumber" as company_id
-            FROM companies_company
-            WHERE "CompanyNumber" IN %(org_ids)s
-            """,
-            con=db_con,
-            params={
-                "org_ids": tuple(
-                    c.replace("GB-COH-", "")
-                    for c in company_numbers
-                    if isinstance(c, str)
-                )
-            },
-        )
-        for org_type in all_companies["CompanyCategory"].unique():
-            recipient_type = None
-            if org_type == "company-limited-by-guarantee":
-                recipient_type = Grant.RecipientType.NON_PROFIT_COMPANY
-            elif org_type == "community-interest-company":
-                recipient_type = Grant.RecipientType.COMMUNITY_INTEREST_COMPANY
-            elif org_type == "scottish-charitable-incorporated-organisation":
-                recipient_type = Grant.RecipientType.CHARITY
-            elif org_type == "registered-society":
-                recipient_type = Grant.RecipientType.MUTUAL
-            elif org_type == "charitable-incorporated-organisation":
-                recipient_type = Grant.RecipientType.CHARITY
-            elif org_type == "royal-charter-company":
-                recipient_type = Grant.RecipientType.NON_PROFIT_COMPANY
-            elif org_type in (
-                "ltd",
-                "other",
-                "plc",
-                "llp",
-                "private-unlimited",
-                "limited-partnership",
-                "registered-overseas-entity",
-            ):
-                recipient_type = Grant.RecipientType.PRIVATE_COMPANY
-            else:
-                click.secho(f"Unknown org type {org_type}", fg="red")
-                continue
-
-            updated = Grant.objects.filter(
-                recipient_organisation_id__in=all_companies.loc[
-                    all_companies["CompanyCategory"] == org_type,
-                    "company_id",
-                ].unique(),
-                recipient_type_manual__isnull=True,
-            ).update(
-                recipient_type_manual=recipient_type,
-            )
+        # process company numbers in batches
+        for company_numbers in batched(all_company_numbers, 1_000):
             click.secho(
-                f"{updated} grants to nonprofit companies found as {recipient_type}",
-                fg="green",
+                f"Processing {len(company_numbers)} company numbers", fg="green"
             )
+
+            charitable_companies = pd.read_sql(
+                """
+                SELECT org_id,
+                    "organisationTypePrimary_id",
+                    'GB-COH-' || "companyNumber" as company_id
+                FROM ftc_organisation
+                WHERE "companyNumber" IN %(org_ids)s
+                    AND org_id NOT LIKE 'GB-COH-%%'
+                """,
+                con=db_con,
+                params={
+                    "org_ids": tuple(
+                        c.replace("GB-COH-", "")
+                        for c in company_numbers
+                        if isinstance(c, str)
+                    )
+                },
+            )
+            for org_type in charitable_companies["organisationTypePrimary_id"].unique():
+                recipient_type = None
+                if org_type == "registered-charity":
+                    recipient_type = Grant.RecipientType.CHARITY
+                else:
+                    click.secho(f"Unknown org type {org_type}", fg="red")
+                    continue
+
+                updated = Grant.objects.filter(
+                    recipient_organisation_id__in=charitable_companies.loc[
+                        charitable_companies["organisationTypePrimary_id"] == org_type,
+                        "company_id",
+                    ].unique(),
+                    recipient_type_manual__isnull=True,
+                ).update(
+                    recipient_type_manual=recipient_type,
+                )
+                click.secho(
+                    f"{updated} grants to charitable companies found", fg="green"
+                )
+
+            all_companies = pd.read_sql(
+                """
+                SELECT "CompanyCategory",
+                    'GB-COH-' || "CompanyNumber" as company_id
+                FROM companies_company
+                WHERE "CompanyNumber" IN %(org_ids)s
+                """,
+                con=db_con,
+                params={
+                    "org_ids": tuple(
+                        c.replace("GB-COH-", "")
+                        for c in company_numbers
+                        if isinstance(c, str)
+                    )
+                },
+            )
+            for org_type in all_companies["CompanyCategory"].unique():
+                recipient_type = None
+                if org_type == "company-limited-by-guarantee":
+                    recipient_type = Grant.RecipientType.NON_PROFIT_COMPANY
+                elif org_type == "community-interest-company":
+                    recipient_type = Grant.RecipientType.COMMUNITY_INTEREST_COMPANY
+                elif org_type == "scottish-charitable-incorporated-organisation":
+                    recipient_type = Grant.RecipientType.CHARITY
+                elif org_type == "registered-society":
+                    recipient_type = Grant.RecipientType.MUTUAL
+                elif org_type == "charitable-incorporated-organisation":
+                    recipient_type = Grant.RecipientType.CHARITY
+                elif org_type == "royal-charter-company":
+                    recipient_type = Grant.RecipientType.NON_PROFIT_COMPANY
+                elif org_type in (
+                    "ltd",
+                    "other",
+                    "plc",
+                    "llp",
+                    "private-unlimited",
+                    "limited-partnership",
+                    "registered-overseas-entity",
+                ):
+                    recipient_type = Grant.RecipientType.PRIVATE_COMPANY
+                else:
+                    click.secho(f"Unknown org type {org_type}", fg="red")
+                    continue
+
+                updated = Grant.objects.filter(
+                    recipient_organisation_id__in=all_companies.loc[
+                        all_companies["CompanyCategory"] == org_type,
+                        "company_id",
+                    ].unique(),
+                    recipient_type_manual__isnull=True,
+                ).update(
+                    recipient_type_manual=recipient_type,
+                )
+                click.secho(
+                    f"{updated} grants to nonprofit companies found as {recipient_type}",
+                    fg="green",
+                )
 
         progress = Grant.objects.values("recipient_type_manual").annotate(
             count=Count("grant_id")
