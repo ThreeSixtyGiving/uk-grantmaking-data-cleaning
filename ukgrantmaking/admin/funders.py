@@ -1,9 +1,9 @@
 from django.contrib import admin
 
-from ukgrantmaking.models import Funder, FunderNote, FunderTag, FunderYear
-
-admin.site.site_title = "UK Grantmaking"
-admin.site.site_header = "UK Grantmaking Data Cleaning"
+from ukgrantmaking.models import (
+    FunderNote,
+    FunderYear,
+)
 
 
 class FunderYearInline(admin.TabularInline):
@@ -49,7 +49,6 @@ class FunderNoteInline(admin.TabularInline):
         return False
 
 
-@admin.register(Funder)
 class FunderAdmin(admin.ModelAdmin):
     list_display = (
         "org_id",
@@ -119,7 +118,6 @@ class FunderAdmin(admin.ModelAdmin):
         return obj.latest_year.checked_by if obj.latest_year else None
 
 
-@admin.register(FunderTag)
 class FunderTagAdmin(admin.ModelAdmin):
     list_display = ("tag", "funder_count", "description", "parent")
     list_editable = ("parent",)
@@ -129,7 +127,6 @@ class FunderTagAdmin(admin.ModelAdmin):
         return obj.funders.count()
 
 
-@admin.register(FunderYear)
 class FunderYearAdmin(admin.ModelAdmin):
     list_display = (
         "funder",
