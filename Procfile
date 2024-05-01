@@ -1,2 +1,2 @@
-web: uvicorn config.asgi:application
+web: gunicorn config.wsgi:application
 release: sh ./release.sh
