@@ -17,6 +17,11 @@ datasette_application = Datasette(
         "base_url": "/datasette/",
     },
     metadata={
+        "plugins": {
+            "datasette-auth-existing-cookies": {
+                "api_url": "/user-from-cookies",
+            }
+        },
         "allow": {
             "id": "*",
         },

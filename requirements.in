@@ -20,3 +20,4 @@ requests
 caradoc
 datasette
 uvicorn
+datasette-auth-existing-cookies>=1.0a1

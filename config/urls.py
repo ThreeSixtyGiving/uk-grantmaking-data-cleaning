@@ -19,6 +19,7 @@ from django.contrib.auth import views as auth_views
 from django.urls import include, path
 
 from ukgrantmaking.views import all_grantmakers_export
+from ukgrantmaking.views import check_cookies as check_cookies_view
 from ukgrantmaking.views import financial_year as financial_year_view
 from ukgrantmaking.views import index as index_view
 
@@ -56,4 +57,5 @@ urlpatterns = [
         name="logout",
     ),
     path("__debug__/", include("debug_toolbar.urls")),
+    path("user-from-cookies", check_cookies_view),
 ]

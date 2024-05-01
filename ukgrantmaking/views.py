@@ -6,7 +6,7 @@ import pandas as pd
 from caradoc import DataOutput, FinancialYear
 from django.contrib.auth.decorators import login_required
 from django.db import models
-from django.http import HttpResponse
+from django.http import HttpResponse, HttpResponseForbidden, JsonResponse
 from django.shortcuts import render
 from django.urls import reverse
 from django.utils.text import slugify
@@ -913,3 +913,15 @@ def all_grantmakers_export(request, fy, filetype):
         return response
 
     raise ValueError(f"Unknown filetype: {filetype}")
+
+
+def check_cookies(request):
+    if request.user.is_superuser:
+        return JsonResponse(
+            {
+                "id": request.user.id,
+                "is_superuser": True,
+                "username": request.user.username,
+            }
+        )
+    return HttpResponseForbidden("You are not allowed to access this page")
