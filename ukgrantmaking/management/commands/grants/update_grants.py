@@ -21,7 +21,6 @@ def grants():
             result = Grant.objects.filter(
                 currency=currency[0],
                 award_date=currency[1],
-                amount_awarded_GBP__isnull=True,
             ).update(amount_awarded_GBP=F("amount_awarded") * rate)
             click.secho(
                 f"{result} grants updated [{currency[0]} - {currency[1]:%Y-%m-%d} - {rate}]",
