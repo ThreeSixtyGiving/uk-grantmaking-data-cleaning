@@ -4,6 +4,7 @@ from urllib.parse import unquote
 
 from django import forms
 from django.contrib import admin, messages
+from django.core.exceptions import ValidationError
 from django.http import HttpResponseRedirect, QueryDict, StreamingHttpResponse
 from django.template.response import TemplateResponse
 from django.urls import path
@@ -87,6 +88,9 @@ class CSVUploadModelAdmin(admin.ModelAdmin):
             pk_fields = [self.model._meta.get_field(f) for f in unique_fields]
         if not pk_fields:
             pk_fields = [self.model._meta.get_field(self.model._meta.pk.name)]
+        for field in pk_fields:
+            if field.name in fields:
+                fields.pop(field.name)
 
         class UploadCSVForm(forms.Form):
             file = forms.FileField()
@@ -175,8 +179,12 @@ class CSVUploadModelAdmin(admin.ModelAdmin):
                             ),
                         ),
                     )
-                except ValueError as e:
-                    messages.add_message(request, messages.ERROR, str(e))
+                except (ValueError, ValidationError) as e:
+                    if hasattr(e, "messages"):
+                        for message in e.messages:
+                            messages.add_message(request, messages.ERROR, str(message))
+                    else:
+                        messages.add_message(request, messages.ERROR, str(e))
                 return HttpResponseRedirect(request.path_info)
             else:
                 messages.add_message(request, messages.ERROR, "No file submitted")
