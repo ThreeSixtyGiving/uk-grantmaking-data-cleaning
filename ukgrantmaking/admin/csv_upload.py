@@ -112,12 +112,19 @@ class CSVUploadModelAdmin(admin.ModelAdmin):
                 raise ValueError("No data found in file")
             bulk_updates = []
             for row in reader:
-                obj = self.model.objects.get(
-                    **{
+                try:
+                    obj_pks = {
                         pk_field.get_attname(): row[pk_field.get_attname()]
                         for pk_field in pk_fields
                     }
-                )
+                    obj = self.model.objects.get(**obj_pks)
+                except self.model.DoesNotExist:
+                    messages.add_message(
+                        request,
+                        messages.ERROR,
+                        f"Row with {', '.join([f"{k}: {v}" for k, v in obj_pks.items()])} not found",
+                    )
+                    continue
                 for k, v in row.items():
                     if k in fields:
                         if skip_blanks and v == "":
