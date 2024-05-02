@@ -85,11 +85,21 @@ def financial_year(financial_year=DEFAULT_FINANCIAL_YEAR, break_month=4):
                     )
                 )
             ),
+            most_recent_grants_individuals=Sum(
+                Case(
+                    When(
+                        funderyear__financial_year=financial_year,
+                        then=F("funderyear__spending_grant_making_individuals"),
+                    )
+                )
+            ),
         )
         with click.progressbar(query) as bar:
             for funder in bar:
                 funder.latest_grantmaking = funder.most_recent_grants
                 funder.latest_year_id = funder.latest_id
+                if funder.most_recent_grants_individuals:
+                    funder.makes_grants_to_individuals = True
                 funder_updates.append(funder)
         click.secho(
             "Updating {:,.0f} funders latest grantmaking data".format(
@@ -98,5 +108,6 @@ def financial_year(financial_year=DEFAULT_FINANCIAL_YEAR, break_month=4):
             fg="green",
         )
         Funder.objects.bulk_update(
-            funder_updates, ["latest_grantmaking", "latest_year_id"]
+            funder_updates,
+            ["latest_grantmaking", "latest_year_id", "makes_grants_to_individuals"],
         )
