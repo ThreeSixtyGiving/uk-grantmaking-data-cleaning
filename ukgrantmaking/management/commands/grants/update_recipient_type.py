@@ -283,6 +283,43 @@ def recipient_type(db_con, company_batch_size):
                 Grant.InclusionStatus.PRIVATE_SECTOR_GRANT,
                 Q(recipient_type_manual=Grant.RecipientType.PRIVATE_COMPANY),
             ),
+            (
+                Grant.InclusionStatus.GOVERNMENT_TRANSFER,
+                Q(
+                    recipient_type_manual__in=[
+                        Grant.RecipientType.NHS,
+                        Grant.RecipientType.NDPB,
+                        Grant.RecipientType.GOVERNMENT_DEPARTMENT,
+                    ]
+                ),
+            ),
+            (
+                Grant.InclusionStatus.INCLUDED,
+                Q(
+                    recipient_type_manual__in=[
+                        Grant.RecipientType.CHARITY,
+                        Grant.RecipientType.COMMUNITY_INTEREST_COMPANY,
+                        Grant.RecipientType.MUTUAL,
+                        Grant.RecipientType.NON_PROFIT_COMPANY,
+                    ]
+                ),
+            ),
+            (
+                Grant.InclusionStatus.OVERSEAS_GOVERNMENT_TRANSFER,
+                Q(
+                    recipient_type_manual__in=[
+                        Grant.RecipientType.OVERSEAS_GOVERNMENT,
+                    ]
+                ),
+            ),
+            (
+                Grant.InclusionStatus.OVERSEAS_GOVERNMENT_TRANSFER,
+                Q(
+                    recipient_type_manual__in=[
+                        Grant.RecipientType.OVERSEAS_GOVERNMENT,
+                    ]
+                ),
+            ),
         ]
         for inclusion, filter in exclusions:
             updated = Grant.objects.filter(

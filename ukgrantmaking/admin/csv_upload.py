@@ -103,7 +103,7 @@ class CSVUploadModelAdmin(admin.ModelAdmin):
             )
 
         def handle_file_upload(file, skip_blanks=False):
-            reader = csv.DictReader(TextIOWrapper(file, encoding="utf-8"))
+            reader = csv.DictReader(TextIOWrapper(file, encoding="utf-8-sig"))
             for pk_field in pk_fields:
                 if pk_field.get_attname() not in reader.fieldnames:
                     raise ValueError(f"'{pk_field}' column not found in file")
