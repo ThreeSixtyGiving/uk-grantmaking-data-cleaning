@@ -113,8 +113,8 @@ class FunderYear(models.Model):
     spending_grant_making_individuals = models.GeneratedField(
         expression=Coalesce(
             "spending_grant_making_individuals_manual",
-            "spending_grant_making_individuals_360Giving",
             "spending_grant_making_individuals_registered",
+            "spending_grant_making_individuals_360Giving",
         ),
         output_field=models.BigIntegerField(),
         db_persist=True,
@@ -131,8 +131,8 @@ class FunderYear(models.Model):
     spending_grant_making_institutions = models.GeneratedField(
         expression=Coalesce(
             "spending_grant_making_institutions_manual",
-            "spending_grant_making_institutions_360Giving",
             "spending_grant_making_institutions_registered",
+            "spending_grant_making_institutions_360Giving",
         ),
         output_field=models.BigIntegerField(),
         db_persist=True,

@@ -76,10 +76,6 @@ def grants():
                 # if we've got existing data then use it
                 if funder_years:
                     for funder_year in funder_years:
-                        click.secho(
-                            f"Updating {funder_year.funder} {funder_year.financial_year_end}",
-                            fg="green",
-                        )
                         financial_year_start = funder_year.financial_year_start
                         if financial_year_start is None:
                             financial_year_start = (
@@ -111,6 +107,10 @@ def grants():
                                 ]
                                 changed = True
                             if changed:
+                                click.secho(
+                                    f"Updating {funder_year.funder} {funder_year.financial_year_end}",
+                                    fg="green",
+                                )
                                 results["Funder years updated"] += 1
                                 bulk_update.append(funder_year)
 
