@@ -123,10 +123,11 @@ class CSVUploadModelAdmin(admin.ModelAdmin):
                     }
                     obj = self.model.objects.get(**obj_pks)
                 except self.model.DoesNotExist:
+                    obj_pk = ", ".join([f"{k}: {v}" for k, v in obj_pks.items()])
                     messages.add_message(
                         request,
                         messages.ERROR,
-                        f"Row with {', '.join([f"{k}: {v}" for k, v in obj_pks.items()])} not found",
+                        f"Row with {obj_pk} not found",
                     )
                     continue
                 for k, v in row.items():
