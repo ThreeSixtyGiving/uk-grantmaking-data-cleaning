@@ -52,13 +52,21 @@ class CSVUploadModelAdmin(admin.ModelAdmin):
             filename = f"{self.model._meta.verbose_name_plural}.csv"
         cl = self.get_changelist_instance(request)
         fields = [f.get_attname() for f in self.model._meta.fields]
+        many_to_many_fields = [
+            f.name
+            for f in self.model._meta.get_fields()
+            if f.many_to_many and not f.auto_created
+        ]
         buffer = Echo()
-        writer = csv.DictWriter(buffer, fieldnames=fields)
+        writer = csv.DictWriter(buffer, fieldnames=fields + many_to_many_fields)
 
         def csv_generator():
             yield writer.writeheader()
-            for obj in cl.get_queryset(request):
-                yield writer.writerow({f: getattr(obj, f) for f in fields})
+            for obj in cl.get_queryset(request).prefetch_related(*many_to_many_fields):
+                record = {f: getattr(obj, f) for f in fields}
+                for f in many_to_many_fields:
+                    record[f] = ", ".join(str(x) for x in getattr(obj, f).all())
+                yield writer.writerow(record)
 
         return StreamingHttpResponse(
             csv_generator(),
