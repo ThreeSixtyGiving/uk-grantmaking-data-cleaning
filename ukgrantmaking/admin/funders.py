@@ -7,31 +7,54 @@ from ukgrantmaking.models import (
 )
 
 
-class FunderYearInline(admin.TabularInline):
+class FunderYearInline(admin.StackedInline):
     model = FunderYear
     extra = 0
-    fields = (
-        "financial_year_end",
-        "income",
-        "spending",
-        "spending_charitable",
-        "spending_grant_making",
-        "spending_grant_making_individuals",
-        "spending_grant_making_institutions",
-        "checked_by",
-    )
     readonly_fields = (
-        "financial_year_end",
         "income",
         "spending",
         "spending_charitable",
         "spending_grant_making",
         "spending_grant_making_individuals",
         "spending_grant_making_institutions",
-        "checked_by",
     )
     show_change_link = True
     can_delete = False
+    max_num = None
+    ordering = ("-financial_year_end",)
+    fieldsets = (
+        (
+            "Edit details",
+            {
+                "classes": (
+                    "collapse",
+                    "extrapretty",
+                ),
+                "fields": [
+                    "funder",
+                    ("financial_year_end", "financial_year_start", "financial_year"),
+                    (
+                        "income",
+                        "spending",
+                        "spending_charitable",
+                        "spending_grant_making",
+                    ),
+                    (
+                        "spending_grant_making_individuals",
+                        "spending_grant_making_individuals_manual",
+                    ),
+                    (
+                        "spending_grant_making_institutions",
+                        "spending_grant_making_institutions_manual",
+                    ),
+                    (
+                        "checked_by",
+                        "notes",
+                    ),
+                ],
+            },
+        ),
+    )
 
 
 class FunderNoteInline(admin.TabularInline):
