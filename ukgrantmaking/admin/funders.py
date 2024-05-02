@@ -147,7 +147,9 @@ class FunderYearAdmin(CSVUploadModelAdmin):
         "spending_charitable_registered",
         "spending_grant_making",
         "spending_grant_making_individuals_registered",
+        "spending_grant_making_individuals_360Giving",
         "spending_grant_making_institutions_registered",
+        "spending_grant_making_institutions_360Giving",
         "total_net_assets_registered",
         "funds_registered",
         "funds_endowment_registered",
@@ -187,10 +189,12 @@ class FunderYearAdmin(CSVUploadModelAdmin):
                     ("spending_grant_making",),
                     (
                         "spending_grant_making_individuals_registered",
+                        "spending_grant_making_individuals_360Giving",
                         "spending_grant_making_individuals_manual",
                     ),
                     (
                         "spending_grant_making_institutions_registered",
+                        "spending_grant_making_institutions_360Giving",
                         "spending_grant_making_institutions_manual",
                     ),
                 ]

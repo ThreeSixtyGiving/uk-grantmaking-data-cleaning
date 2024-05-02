@@ -168,7 +168,10 @@ def funder_table(
     )
 
     if spending_threshold is not None:
-        df = df[df["cy_spending"] >= spending_threshold]
+        df = df[
+            df["cy_spending"].fillna(df["cy_spending_grant_making"])
+            >= spending_threshold
+        ]
 
     funder_tags = pd.DataFrame.from_records(
         Funder.tags.through.objects.filter(
@@ -701,6 +704,7 @@ def financial_year(request, fy, filetype="html"):
                 n=n,
                 segment=segment,
                 included=True,
+                spending_threshold=None,
             ),
             slugify(segment_name) if filetype == "xlsx" else "Funder lists",
             title=segment_name if filetype != "xlsx" else None,
