@@ -214,18 +214,26 @@ def recipient_type(db_con, company_batch_size):
             )
             for org_type in all_companies["CompanyCategory"].unique():
                 recipient_type = None
-                if org_type == "company-limited-by-guarantee":
+                if org_type in (
+                    "royal-charter-company",
+                    "royal-charter",
+                    "private-limited-guarant-nsc",
+                    "private-limited-guarant-nsc-limited-exemption",
+                    "company-limited-by-guarantee",
+                ):
                     recipient_type = Grant.RecipientType.NON_PROFIT_COMPANY
-                elif org_type == "community-interest-company":
+                elif org_type in ("community-interest-company",):
                     recipient_type = Grant.RecipientType.COMMUNITY_INTEREST_COMPANY
-                elif org_type == "scottish-charitable-incorporated-organisation":
+                elif org_type in (
+                    "charitable-incorporated-organisation",
+                    "scottish-charitable-incorporated-organisation",
+                ):
                     recipient_type = Grant.RecipientType.CHARITY
-                elif org_type == "registered-society":
+                elif org_type in (
+                    "registered-society",
+                    "registered-society-non-jurisdictional",
+                ):
                     recipient_type = Grant.RecipientType.MUTUAL
-                elif org_type == "charitable-incorporated-organisation":
-                    recipient_type = Grant.RecipientType.CHARITY
-                elif org_type == "royal-charter-company":
-                    recipient_type = Grant.RecipientType.NON_PROFIT_COMPANY
                 elif org_type in (
                     "ltd",
                     "other",
@@ -234,6 +242,7 @@ def recipient_type(db_con, company_batch_size):
                     "private-unlimited",
                     "limited-partnership",
                     "registered-overseas-entity",
+                    "private-limited-shares-section-30-exemption",
                 ):
                     recipient_type = Grant.RecipientType.PRIVATE_COMPANY
                 else:
