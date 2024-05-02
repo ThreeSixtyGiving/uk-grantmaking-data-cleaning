@@ -1,6 +1,7 @@
 {% load i18n admin_urls %}
 
 {% block object-tools-items %}
+{% url cl.opts|admin_urlname:'test' as general_url %}
 {% if has_add_permission %}
 <li>
     {% url cl.opts|admin_urlname:'add' as add_url %}
@@ -8,17 +9,21 @@
         {% blocktrans with cl.opts.verbose_name as name %}Add {{ name }}{% endblocktrans %}
     </a>
 </li>
+{% url cl.opts|admin_urlname:'upload' as upload_url %}
+{% if upload_url != general_url %}
 <li>
-    {% url cl.opts|admin_urlname:'upload' as upload_url %}
     <a href="{{ upload_url }}" class="">
         {% blocktrans with cl.opts.verbose_name_plural as name %}Upload {{ name }}{% endblocktrans %}
     </a>
 </li>
 {% endif %}
+{% endif %}
+{% url cl.opts|admin_urlname:'export' as export_url %}
+{% if export_url != general_url %}
 <li>
-    {% url cl.opts|admin_urlname:'export' as export_url %}
     <a href="{% add_preserved_filters export_url %}" class="">
         {% blocktrans with cl.opts.verbose_name_plural as name %}Export {{ name }} list as CSV{% endblocktrans %}
     </a>
 </li>
+{% endif %}
 {% endblock %}
