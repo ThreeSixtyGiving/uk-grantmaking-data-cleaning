@@ -806,7 +806,6 @@ def financial_year(request, fy, filetype="html"):
     # table for tags
     for funder_tag in [
         "London Funders",
-        "London Local Giving Scheme",
         "360Giving Publisher",
         "Living Wage Funder",
         "ACF Current",
