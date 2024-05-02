@@ -1,4 +1,5 @@
 from django.contrib import admin
+from django.utils.html import format_html
 
 from ukgrantmaking.admin.csv_upload import CSVUploadModelAdmin
 from ukgrantmaking.models import (
@@ -17,6 +18,7 @@ class FunderYearInline(admin.StackedInline):
         "spending_grant_making",
         "spending_grant_making_individuals",
         "spending_grant_making_institutions",
+        "accounts_link",
     )
     show_change_link = True
     can_delete = False
@@ -32,7 +34,12 @@ class FunderYearInline(admin.StackedInline):
                 ),
                 "fields": [
                     "funder",
-                    ("financial_year_end", "financial_year_start", "financial_year"),
+                    (
+                        "financial_year_end",
+                        "financial_year_start",
+                        "financial_year",
+                        "accounts_link",
+                    ),
                     (
                         "income",
                         "spending",
@@ -55,6 +62,20 @@ class FunderYearInline(admin.StackedInline):
             },
         ),
     )
+
+    @admin.display(description="")
+    def accounts_link(self, obj):
+        link = None
+        if obj.funder_id.startswith("GB-CHC-"):
+            link = "https://ccew.dkane.net/charity/{}/accounts/{}".format(
+                obj.funder_id.replace("GB-CHC-", ""),
+                obj.financial_year_end,
+            )
+        if link:
+            return format_html(
+                '<a href="{}" target="_blank">Open Accounts PDF</a>', link
+            )
+        return ""
 
 
 class FunderNoteInline(admin.TabularInline):
@@ -107,6 +128,7 @@ class FunderAdmin(CSVUploadModelAdmin):
         "date_of_registration",
         "activities",
         "latest_grantmaking",
+        "ftc_link",
     )
     fieldsets = (
         (
@@ -114,7 +136,7 @@ class FunderAdmin(CSVUploadModelAdmin):
             {
                 "fields": [
                     "org_id",
-                    "charity_number",
+                    ("charity_number", "ftc_link"),
                     ("name_registered", "name_manual"),
                     "segment",
                     "tags",
@@ -140,6 +162,13 @@ class FunderAdmin(CSVUploadModelAdmin):
     @admin.display(description="Checked by")
     def checked_by(self, obj):
         return obj.latest_year.checked_by if obj.latest_year else None
+
+    @admin.display(description="")
+    def ftc_link(self, obj):
+        return format_html(
+            '<a href="https://findthatcharity.uk/orgid/{}" target="_blank">Find that Charity</a>',
+            obj.org_id,
+        )
 
 
 class FunderTagAdmin(admin.ModelAdmin):
