@@ -5,6 +5,7 @@ from urllib.parse import unquote
 from django import forms
 from django.contrib import admin, messages
 from django.core.exceptions import ValidationError
+from django.db import IntegrityError
 from django.http import HttpResponseRedirect, QueryDict, StreamingHttpResponse
 from django.template.response import TemplateResponse
 from django.urls import path
@@ -79,7 +80,6 @@ class CSVUploadModelAdmin(admin.ModelAdmin):
             f
             for f in self.model._meta.fields
             if (f.name not in self.readonly_fields)
-            and (not f.is_relation)
             and (not f.auto_created)
             and (not f.primary_key)
             and (not f.generated)
@@ -88,9 +88,9 @@ class CSVUploadModelAdmin(admin.ModelAdmin):
         fields = {}
         for f in non_readonly_fields:
             if f.choices:
-                fields[f.name] = f
+                fields[f.get_attname()] = f
             else:
-                fields[f.name] = f
+                fields[f.get_attname()] = f
         pk_fields = None
         for unique_fields in self.model._meta.unique_together:
             pk_fields = [self.model._meta.get_field(f) for f in unique_fields]
@@ -121,7 +121,7 @@ class CSVUploadModelAdmin(admin.ModelAdmin):
                     raise ValueError(f"'{pk_field}' column not found in file")
             keys_found = [k for k in reader.fieldnames if k in fields]
             if not keys_found:
-                raise ValueError("No data found in file")
+                raise ValueError("No data dsgsdfound in file")
             bulk_updates = []
             for row in reader:
                 try:
@@ -139,7 +139,7 @@ class CSVUploadModelAdmin(admin.ModelAdmin):
                     )
                     continue
                 for k, v in row.items():
-                    if k in fields:
+                    if k in keys_found:
                         if skip_blanks and v == "":
                             continue
                         if fields[k].get_internal_type() == "BooleanField":
@@ -153,7 +153,7 @@ class CSVUploadModelAdmin(admin.ModelAdmin):
                 bulk_updates.append(obj)
             if bulk_updates:
                 return self.model.objects.bulk_update(
-                    bulk_updates, fields.keys(), batch_size=1_000
+                    bulk_updates, keys_found, batch_size=1_000
                 )
 
         context = dict(
@@ -188,7 +188,11 @@ class CSVUploadModelAdmin(admin.ModelAdmin):
                             ),
                         ),
                     )
-                except (ValueError, ValidationError) as e:
+                except (
+                    ValueError,
+                    ValidationError,
+                    IntegrityError,
+                ) as e:
                     if hasattr(e, "messages"):
                         for message in e.messages:
                             messages.add_message(request, messages.ERROR, str(message))
