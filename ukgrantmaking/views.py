@@ -114,42 +114,84 @@ def funder_table(
     py_data["scale"] = py_data["spending_grant_making"].fillna(py_data["spending"])
     df = funders.join(
         cy_data.groupby("funder_id").agg(
-            cy_income=("income", "sum"),
-            cy_spending=("spending", "sum"),
-            cy_spending_grant_making=("spending_grant_making", "sum"),
+            cy_income=(
+                "income",
+                lambda x: x.sum(min_count=1),
+            ),
+            cy_spending=(
+                "spending",
+                lambda x: x.sum(min_count=1),
+            ),
+            cy_spending_grant_making=(
+                "spending_grant_making",
+                lambda x: x.sum(min_count=1),
+            ),
             cy_spending_grant_making_institutions=(
                 "spending_grant_making_institutions",
-                "sum",
+                lambda x: x.sum(min_count=1),
             ),
             cy_spending_grant_making_individuals=(
                 "spending_grant_making_individuals",
-                "sum",
+                lambda x: x.sum(min_count=1),
             ),
-            cy_total_net_assets=("total_net_assets", "max"),
-            cy_funds_endowment=("funds_endowment", "max"),
-            cy_employees=("employees", "max"),
-            cy_scale=("scale", "sum"),
+            cy_total_net_assets=(
+                "total_net_assets",
+                "first",
+            ),
+            cy_funds_endowment=(
+                "funds_endowment",
+                "first",
+            ),
+            cy_employees=(
+                "employees",
+                "first",
+            ),
+            cy_scale=(
+                "scale",
+                lambda x: x.sum(min_count=1),
+            ),
             cy_notes=("notes", "first"),
         ),
         on="org_id",
         how="left",
     ).join(
         py_data.groupby("funder_id").agg(
-            py_income=("income", "sum"),
-            py_spending=("spending", "sum"),
-            py_spending_grant_making=("spending_grant_making", "sum"),
+            py_income=(
+                "income",
+                lambda x: x.sum(min_count=1),
+            ),
+            py_spending=(
+                "spending",
+                lambda x: x.sum(min_count=1),
+            ),
+            py_spending_grant_making=(
+                "spending_grant_making",
+                lambda x: x.sum(min_count=1),
+            ),
             py_spending_grant_making_institutions=(
                 "spending_grant_making_institutions",
-                "sum",
+                lambda x: x.sum(min_count=1),
             ),
             py_spending_grant_making_individuals=(
                 "spending_grant_making_individuals",
-                "sum",
+                lambda x: x.sum(min_count=1),
             ),
-            py_total_net_assets=("total_net_assets", "max"),
-            py_funds_endowment=("funds_endowment", "max"),
-            py_employees=("employees", "max"),
-            py_scale=("scale", "sum"),
+            py_total_net_assets=(
+                "total_net_assets",
+                "first",
+            ),
+            py_funds_endowment=(
+                "funds_endowment",
+                "first",
+            ),
+            py_employees=(
+                "employees",
+                "first",
+            ),
+            py_scale=(
+                "scale",
+                lambda x: x.sum(min_count=1),
+            ),
             py_notes=("notes", "first"),
         ),
         on="org_id",
@@ -258,6 +300,7 @@ def funder_table(
                 "cy_employees": "Employees",
                 "py_employees": "Employees (Previous year)",
                 "notes": "Notes",
+                "date_of_registration": "Date of registration",
             }
         )
         .replace({np.nan: None, pd.NA: None})
@@ -842,6 +885,33 @@ def financial_year(request, fy, filetype="html"):
             slugify(funder_tag) if filetype == "xlsx" else "Funder tag lists",
             title=funder_tag if filetype != "xlsx" else None,
         )
+
+    output.add_table(
+        funder_table(
+            current_fy,
+            [
+                "cy_rank",
+                "org_id",
+                "name",
+                "segment",
+                "makes_grants_to_individuals",
+                "360giving_publisher",
+                "date_of_registration",
+                "cy_income",
+                "cy_spending",
+                "cy_spending_grant_making",
+                "cy_spending_grant_making_individuals",
+                "cy_total_net_assets",
+                "notes",
+            ],
+            date_of_registration__gte=current_fy.start_date - pd.DateOffset(years=1),
+            included=True,
+            spending_threshold=None,
+            n=1_000_000,
+        ),
+        "New funders",
+        title="New funders" if filetype != "xlsx" else None,
+    )
 
     if filetype == "xlsx":
         buffer = BytesIO()
