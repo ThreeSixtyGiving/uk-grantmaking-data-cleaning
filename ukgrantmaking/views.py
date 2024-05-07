@@ -863,8 +863,12 @@ def financial_year(request, fy, filetype="html"):
         "Funders Forum for NI",
         "OSCR",
         "CCNI",
+        "Sainsburys Family Charitable Trusts",
     ]:
-        funder_tag_obj = FunderTag.objects.get(tag=funder_tag)
+        try:
+            funder_tag_obj = FunderTag.objects.get(tag=funder_tag)
+        except FunderTag.DoesNotExist:
+            continue
         output.add_table(
             funder_table(
                 current_fy,
