@@ -211,6 +211,30 @@ class FunderYear(models.Model):
     date_added = models.DateTimeField(auto_now_add=True)
     date_updated = models.DateTimeField(auto_now=True)
 
+    checked = models.GeneratedField(
+        expression=IsNull(
+            Coalesce(
+                "checked_by",
+                "notes",
+                "income_manual",
+                "spending_manual",
+                "spending_charitable_manual",
+                "spending_grant_making_individuals_manual",
+                "spending_grant_making_institutions_manual",
+                "total_net_assets_manual",
+                "funds_manual",
+                "funds_endowment_manual",
+                "funds_restricted_manual",
+                "funds_unrestricted_manual",
+                "employees_manual",
+                output_field=models.BooleanField(),
+            ),
+            False,
+        ),
+        output_field=models.BooleanField(),
+        db_persist=True,
+    )
+
     class Meta:
         unique_together = [["funder", "financial_year_end"]]
         ordering = ["funder", "-financial_year_end"]

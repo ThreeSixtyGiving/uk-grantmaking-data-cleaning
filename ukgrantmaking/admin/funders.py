@@ -189,6 +189,7 @@ class FunderYearAdmin(CSVUploadModelAdmin):
         "income",
         "spending",
         "spending_charitable",
+        "checked",
     )
     show_facets = admin.ShowFacets.ALWAYS
     list_display_links = ("financial_year_end",)
@@ -197,6 +198,7 @@ class FunderYearAdmin(CSVUploadModelAdmin):
         "funder__included",
         "financial_year",
         "funder__segment",
+        "checked",
         ("checked_by", admin.EmptyFieldListFilter),
     )
     readonly_fields = (
@@ -216,6 +218,7 @@ class FunderYearAdmin(CSVUploadModelAdmin):
         "funds_unrestricted_registered",
         "employees_registered",
         "checked_on",
+        "checked",
         "date_added",
         "date_updated",
         "financial_year",
@@ -286,6 +289,7 @@ class FunderYearAdmin(CSVUploadModelAdmin):
             "Checked",
             {
                 "fields": [
+                    "checked",
                     "checked_on",
                     "checked_by",
                     "notes",
