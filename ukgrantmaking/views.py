@@ -600,6 +600,82 @@ def financial_year(request, fy, filetype="html"):
     )
     output.add_table(summary_by_size, "Summary", title="Grantmakers by grant spending")
 
+    # summary table
+    summary_individuals = (
+        pd.DataFrame.from_records(
+            Funder.objects.filter(
+                included=True,
+                makes_grants_to_individuals=True,
+            )
+            .values("segment")
+            .annotate(
+                individuals=models.Sum(
+                    models.Case(
+                        models.When(
+                            funderyear__financial_year=current_fy,
+                            makes_grants_to_individuals=True,
+                            then=models.Value(1),
+                        ),
+                        default=0,
+                        output_field=models.IntegerField(),
+                    )
+                ),
+                individuals_with_data=models.Sum(
+                    models.Case(
+                        models.When(
+                            funderyear__financial_year=current_fy,
+                            funderyear__spending_grant_making_individuals__isnull=False,
+                            makes_grants_to_individuals=True,
+                            then=models.Value(1),
+                        ),
+                        default=0,
+                        output_field=models.IntegerField(),
+                    )
+                ),
+                grantmaking_to_individuals=models.Sum(
+                    models.Case(
+                        models.When(
+                            funderyear__financial_year=current_fy,
+                            then=models.F(
+                                "funderyear__spending_grant_making_individuals"
+                            ),
+                        ),
+                        default=0,
+                        output_field=models.IntegerField(),
+                    )
+                ),
+            )
+        )
+        .assign(
+            segment=lambda x: x["segment"].fillna("Unknown"),
+            category=lambda x: x["segment"].map(FUNDER_CATEGORIES).fillna("Unknown"),
+            grantmaking_to_individuals=lambda x: x["grantmaking_to_individuals"]
+            .divide(1_000_000)
+            .round(1),
+        )
+        .rename(
+            columns={
+                "category": "Category",
+                "segment": "Segment",
+                "count": "Number of grantmakers",
+                "income": "Total income",
+                "spending": "Total spending",
+                "grantmaking": "Spending on grants",
+                "grantmaking_to_individuals": "Grants to individuals (£m)",
+                "individuals_with_data": "Largest orgs with data",
+                "individuals": "No. of Grantmakers that make grants to individuals",
+            }
+        )
+        .set_index(["Category", "Segment"])
+        .sort_index()
+        .replace({False: pd.NA, np.nan: pd.NA, True: 1})
+        .replace({pd.NA: None})
+    )
+    summary_individuals.loc[("Total", "Total"), :] = summary_individuals.sum(axis=0)
+    output.add_table(
+        summary_individuals, "Summary", title="Summary grants to individuals"
+    )
+
     # trends over time
     fields = [
         ("spending", "Spending", models.Sum),
@@ -864,6 +940,7 @@ def financial_year(request, fy, filetype="html"):
         "OSCR",
         "CCNI",
         "Sainsburys Family Charitable Trusts",
+        "Postcode Lottery",
     ]:
         try:
             funder_tag_obj = FunderTag.objects.get(tag=funder_tag)
