@@ -104,6 +104,7 @@ class FunderAdmin(CSVUploadModelAdmin):
         "size",
         "tag_list",
         "checked_by",
+        "checked",
     )
     search_fields = ("name", "org_id")
     list_filter = (
@@ -113,6 +114,7 @@ class FunderAdmin(CSVUploadModelAdmin):
         "tags",
         "makes_grants_to_individuals",
         "org_id_schema",
+        "latest_year__checked",
         ("latest_year", admin.EmptyFieldListFilter),
     )
     show_facets = admin.ShowFacets.NEVER
@@ -162,6 +164,10 @@ class FunderAdmin(CSVUploadModelAdmin):
     @admin.display(description="Checked by")
     def checked_by(self, obj):
         return obj.latest_year.checked_by if obj.latest_year else None
+
+    @admin.display(description="Checked", boolean=True)
+    def checked(self, obj):
+        return obj.latest_year.checked if obj.latest_year else None
 
     @admin.display(description="")
     def ftc_link(self, obj):
