@@ -14,6 +14,7 @@ from django.utils.text import slugify
 from ukgrantmaking.models import (
     FUNDER_CATEGORIES,
     Funder,
+    FunderCategory,
     FunderSegment,
     FunderTag,
     FunderYear,
@@ -842,6 +843,11 @@ def financial_year(request, fy, filetype="html"):
             ],
             n=300,
             included=True,
+            segment__in=[
+                segment
+                for segment, category in FUNDER_CATEGORIES.items()
+                if segment in [FunderCategory.GRANTMAKER, FunderCategory.OTHER]
+            ],
         ),
         "Top 300",
     )
