@@ -767,7 +767,7 @@ def financial_year(request, fy, filetype="html"):
         )
         output.add_table(
             segment_trends_over_time,
-            f"trends-{slugify(segment)}"
+            f"trends-{slugify(segment)}"[0:30]
             if filetype == "xlsx"
             else "Trends (by segment)",
             title=f"Trend over time ({segment})" if filetype != "xlsx" else None,
@@ -826,7 +826,7 @@ def financial_year(request, fy, filetype="html"):
                 included=True,
                 spending_threshold=None,
             ),
-            slugify(segment_name) if filetype == "xlsx" else "Funder lists",
+            slugify(segment_name)[0:30] if filetype == "xlsx" else "Funder lists",
             title=segment_name if filetype != "xlsx" else None,
         )
 
@@ -969,7 +969,7 @@ def financial_year(request, fy, filetype="html"):
                 spending_threshold=None,
                 n=1_000_000,
             ),
-            slugify(funder_tag) if filetype == "xlsx" else "Funder tag lists",
+            slugify(funder_tag)[0:30] if filetype == "xlsx" else "Funder tag lists",
             title=funder_tag if filetype != "xlsx" else None,
         )
 
