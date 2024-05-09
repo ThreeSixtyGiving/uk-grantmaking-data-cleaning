@@ -492,11 +492,11 @@ def financial_year(request, fy, filetype="html"):
                     models.Case(
                         models.When(
                             models.Q(
-                                funderyear__spending=0,
+                                funderyear__spending_grant_making=0,
                                 funderyear__financial_year=current_fy,
                             )
                             | models.Q(
-                                funderyear__spending__isnull=True,
+                                funderyear__spending_grant_making__isnull=True,
                                 funderyear__financial_year=current_fy,
                             ),
                             then=1,
@@ -509,8 +509,8 @@ def financial_year(request, fy, filetype="html"):
                     models.Case(
                         models.When(
                             funderyear__financial_year=current_fy,
-                            funderyear__spending__lt=100_000,
-                            funderyear__spending__gt=0,
+                            funderyear__spending_grant_making__lt=100_000,
+                            funderyear__spending_grant_making__gt=0,
                             then=1,
                         ),
                         default=0,
@@ -521,8 +521,8 @@ def financial_year(request, fy, filetype="html"):
                     models.Case(
                         models.When(
                             funderyear__financial_year=current_fy,
-                            funderyear__spending__lt=1_000_000,
-                            funderyear__spending__gte=100_000,
+                            funderyear__spending_grant_making__lt=1_000_000,
+                            funderyear__spending_grant_making__gte=100_000,
                             then=1,
                         ),
                         default=0,
@@ -533,8 +533,8 @@ def financial_year(request, fy, filetype="html"):
                     models.Case(
                         models.When(
                             funderyear__financial_year=current_fy,
-                            funderyear__spending__lt=10_000_000,
-                            funderyear__spending__gte=1_000_000,
+                            funderyear__spending_grant_making__lt=10_000_000,
+                            funderyear__spending_grant_making__gte=1_000_000,
                             then=1,
                         ),
                         default=0,
@@ -545,8 +545,8 @@ def financial_year(request, fy, filetype="html"):
                     models.Case(
                         models.When(
                             funderyear__financial_year=current_fy,
-                            funderyear__spending__lt=100_000_000,
-                            funderyear__spending__gte=10_000_000,
+                            funderyear__spending_grant_making__lt=100_000_000,
+                            funderyear__spending_grant_making__gte=10_000_000,
                             then=1,
                         ),
                         default=0,
@@ -557,7 +557,7 @@ def financial_year(request, fy, filetype="html"):
                     models.Case(
                         models.When(
                             funderyear__financial_year=current_fy,
-                            funderyear__spending__gte=100_000_000,
+                            funderyear__spending_grant_making__gte=100_000_000,
                             then=1,
                         ),
                         default=0,
@@ -632,6 +632,19 @@ def financial_year(request, fy, filetype="html"):
                         output_field=models.IntegerField(),
                     )
                 ),
+                individuals_and_institutions_with_data=models.Sum(
+                    models.Case(
+                        models.When(
+                            funderyear__financial_year=current_fy,
+                            funderyear__spending_grant_making_individuals__isnull=False,
+                            funderyear__spending_grant_making_institutions__isnull=False,
+                            makes_grants_to_individuals=True,
+                            then=models.Value(1),
+                        ),
+                        default=0,
+                        output_field=models.IntegerField(),
+                    )
+                ),
                 grantmaking_to_individuals=models.Sum(
                     models.Case(
                         models.When(
@@ -663,6 +676,7 @@ def financial_year(request, fy, filetype="html"):
                 "grantmaking": "Spending on grants",
                 "grantmaking_to_individuals": "Grants to individuals (£m)",
                 "individuals_with_data": "Largest orgs with data",
+                "individuals_and_institutions_with_data": "Orgs that also make grants to institutions",
                 "individuals": "No. of Grantmakers that make grants to individuals",
             }
         )
@@ -961,6 +975,13 @@ def financial_year(request, fy, filetype="html"):
                     "cy_spending_grant_making",
                     "cy_spending_grant_making_individuals",
                     "cy_total_net_assets",
+                    "cy_employees",
+                    "py_income",
+                    "py_spending",
+                    "py_spending_grant_making",
+                    "py_spending_grant_making_individuals",
+                    "py_total_net_assets",
+                    "py_employees",
                     "notes",
                 ],
                 tag_children=[funder_tag_obj.tag],
