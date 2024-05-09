@@ -19,6 +19,12 @@ class FunderYearInline(admin.StackedInline):
         "spending_grant_making_individuals",
         "spending_grant_making_institutions",
         "accounts_link",
+        "total_net_assets_registered",
+        "funds_registered",
+        "funds_endowment_registered",
+        "funds_restricted_registered",
+        "funds_unrestricted_registered",
+        "employees_registered",
     )
     show_change_link = True
     can_delete = False
@@ -58,6 +64,23 @@ class FunderYearInline(admin.StackedInline):
                         "checked_by",
                         "notes",
                     ),
+                ],
+            },
+        ),
+        (
+            "Assets and Employees",
+            {
+                "classes": (
+                    "collapse",
+                    "extrapretty",
+                ),
+                "fields": [
+                    ("total_net_assets_registered", "total_net_assets_manual"),
+                    ("funds_registered", "funds_manual"),
+                    ("funds_endowment_registered", "funds_endowment_manual"),
+                    ("funds_restricted_registered", "funds_restricted_manual"),
+                    ("funds_unrestricted_registered", "funds_unrestricted_manual"),
+                    ("employees_registered", "employees_manual"),
                 ],
             },
         ),
