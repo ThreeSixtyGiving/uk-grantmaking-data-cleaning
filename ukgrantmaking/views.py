@@ -624,7 +624,7 @@ def financial_year(request, fy, filetype="html"):
                     models.Case(
                         models.When(
                             funderyear__financial_year=current_fy,
-                            funderyear__spending_grant_making_individuals__isnull=False,
+                            funderyear__spending_grant_making_individuals__gt=0,
                             makes_grants_to_individuals=True,
                             then=models.Value(1),
                         ),
@@ -636,8 +636,8 @@ def financial_year(request, fy, filetype="html"):
                     models.Case(
                         models.When(
                             funderyear__financial_year=current_fy,
-                            funderyear__spending_grant_making_individuals__isnull=False,
-                            funderyear__spending_grant_making_institutions__isnull=False,
+                            funderyear__spending_grant_making_individuals__gt=0,
+                            funderyear__spending_grant_making_institutions__gt=0,
                             makes_grants_to_individuals=True,
                             then=models.Value(1),
                         ),
