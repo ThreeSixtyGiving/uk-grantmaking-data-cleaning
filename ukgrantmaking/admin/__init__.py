@@ -3,13 +3,20 @@ from django.urls import reverse
 from django.urls.exceptions import NoReverseMatch
 
 from ukgrantmaking.admin.funders import FunderAdmin, FunderTagAdmin, FunderYearAdmin
-from ukgrantmaking.admin.grants import CurrencyConverterAdmin, GrantAdmin
+from ukgrantmaking.admin.grants import (
+    CurrencyConverterAdmin,
+    GrantAdmin,
+    GrantRecipientAdmin,
+    GrantRecipientYearAdmin,
+)
 from ukgrantmaking.models import (
     CurrencyConverter,
     Funder,
     FunderTag,
     FunderYear,
     Grant,
+    GrantRecipient,
+    GrantRecipientYear,
 )
 
 
@@ -54,3 +61,5 @@ admin_site.register(FunderYear, FunderYearAdmin)
 
 admin_site.register(Grant, GrantAdmin)
 admin_site.register(CurrencyConverter, CurrencyConverterAdmin)
+admin_site.register(GrantRecipient, GrantRecipientAdmin)
+admin_site.register(GrantRecipientYear, GrantRecipientYearAdmin)

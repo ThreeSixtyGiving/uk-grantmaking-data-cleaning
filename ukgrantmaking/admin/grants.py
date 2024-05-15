@@ -219,7 +219,7 @@ class GrantAdmin(CSVUploadModelAdmin):
             "Grant details",
             {
                 "fields": [
-                    "regrant_type",
+                    ("regrant_type", "regrant_type_manual"),
                     "location_scope",
                     "grant_programme_title",
                 ]
@@ -264,3 +264,18 @@ class GrantAdmin(CSVUploadModelAdmin):
         return "{} {:,.0f}".format(obj.currency, obj.amount_awarded)
 
     amount_text.admin_order_field = "amount_awarded"
+
+
+class GrantRecipientAdmin(CSVUploadModelAdmin):
+    list_display = (
+        "recipient_id",
+        "name",
+        "type",
+    )
+    search_fields = ("name", "recipient_id")
+    list_filter = ("type", "org_id_schema")
+    list_editable = ("type",)
+
+
+class GrantRecipientYearAdmin(CSVUploadModelAdmin):
+    pass

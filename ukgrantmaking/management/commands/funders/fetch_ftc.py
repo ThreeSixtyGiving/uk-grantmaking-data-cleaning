@@ -18,7 +18,9 @@ def ftc(db_con):
         """
         SELECT org_id,
             name,
-            "dateRegistered"
+            "dateRegistered",
+            "dateRemoved",
+            "active"
         FROM ftc_organisation
         WHERE org_id IN %(org_id)s
         """,
@@ -37,6 +39,8 @@ def ftc(db_con):
                 org_cache[funder.org_id] = funder
                 funder.name_registered = to_titlecase(org_record.name)
                 funder.date_of_registration = org_record.dateRegistered
+                funder.date_of_removal = org_record.dateRemoved
+                funder.active = org_record.active
                 funder.save()
 
     finance_records = pd.read_sql(

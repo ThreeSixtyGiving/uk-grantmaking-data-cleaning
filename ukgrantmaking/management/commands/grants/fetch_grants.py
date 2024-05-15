@@ -291,7 +291,7 @@ def grants(db_con, start_date, end_date):
                         funding_organisation_id=grant.funding_organization_id,
                         funding_organisation_name=grant.funding_organization_name,
                         funding_organisation_type=grant.funding_organization_type,
-                        regrant_type=grant.regrant_type,
+                        regrant_type_registered=grant.regrant_type,
                         location_scope=grant.location_scope,
                         grant_programme_title=grant.grant_programme_title,
                         publisher_prefix=grant.publisher_prefix,

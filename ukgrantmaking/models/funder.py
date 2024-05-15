@@ -1,7 +1,7 @@
 from django.db import models
 from django.db.models.functions import Coalesce, Left, Length, Right, StrIndex
 
-from ukgrantmaking.models.funder_year import DEFAULT_FINANCIAL_YEAR
+from ukgrantmaking.models.financial_years import DEFAULT_FINANCIAL_YEAR
 
 
 class FunderSegment(models.TextChoices):
@@ -107,6 +107,8 @@ class Funder(models.Model):
         db_index=True,
     )
     date_of_registration = models.DateField(null=True, blank=True)
+    date_of_removal = models.DateField(null=True, blank=True)
+    active = models.BooleanField(null=True, blank=True)
     activities = models.TextField(null=True, blank=True)
     website = models.URLField(null=True, blank=True)
     latest_grantmaking = models.DecimalField(

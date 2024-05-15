@@ -1,3 +1,7 @@
+from ukgrantmaking.models.financial_years import (
+    DEFAULT_FINANCIAL_YEAR,
+    FinancialYears,
+)
 from ukgrantmaking.models.funder import (
     FUNDER_CATEGORIES,
     Funder,
@@ -6,12 +10,13 @@ from ukgrantmaking.models.funder import (
     FunderSegment,
     FunderTag,
 )
-from ukgrantmaking.models.funder_year import (
-    DEFAULT_FINANCIAL_YEAR,
-    FinancialYears,
-    FunderYear,
+from ukgrantmaking.models.funder_year import FunderYear
+from ukgrantmaking.models.grant import (
+    CurrencyConverter,
+    Grant,
+    GrantRecipient,
+    GrantRecipientYear,
 )
-from ukgrantmaking.models.grant import CurrencyConverter, Grant
 
 __all__ = [
     "FinancialYears",
@@ -24,5 +29,7 @@ __all__ = [
     "FunderSegment",
     "FunderCategory",
     "Grant",
+    "GrantRecipient",
+    "GrantRecipientYear",
     "CurrencyConverter",
 ]
