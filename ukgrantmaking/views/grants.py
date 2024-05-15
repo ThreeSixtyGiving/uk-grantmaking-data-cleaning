@@ -1,9 +1,7 @@
 from io import BytesIO
 
-import pandas as pd
 from caradoc import DataOutput, FinancialYear
 from django.contrib.auth.decorators import login_required
-from django.db import models
 from django.http import HttpResponse
 from django.shortcuts import render
 from django.urls import reverse
