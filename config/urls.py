@@ -24,12 +24,18 @@ from ukgrantmaking.views import export_funders_excel as export_funders_view
 from ukgrantmaking.views import export_grants_excel as export_grants_view
 from ukgrantmaking.views import financial_year as financial_year_view
 from ukgrantmaking.views import index as index_view
+from ukgrantmaking.views import table_creator as table_creator_view
 
 urlpatterns = [
     path(
         "",
         index_view,
         name="index",
+    ),
+    path(
+        "table-creator/",
+        table_creator_view,
+        name="table_creator",
     ),
     path(
         "financial-year/<str:fy>.xlsx",

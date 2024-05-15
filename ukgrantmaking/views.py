@@ -1138,3 +1138,7 @@ def export_grants_excel(request):
         buffer.read(),
         content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
     )
+
+
+def table_creator(request):
+    return render(request, "table_creator.html.j2")

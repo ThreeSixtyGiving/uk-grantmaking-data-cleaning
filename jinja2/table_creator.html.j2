@@ -1,0 +1,369 @@
+{% extends 'base.html.j2' %}
+
+{% set title = 'Table creator' %}
+
+{% block headscripts %}
+<script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+<script src=" https://cdn.jsdelivr.net/npm/simple-datatables@9.0.3/dist/umd/simple-datatables.min.js "></script>
+{% endblock %}
+
+{% block content %}
+<div id="app">
+    <h2>Table data</h2>
+    <textarea v-model="table_data" class="w-100 h5"></textarea>
+    <h2>Table options</h2>
+    <ul class="list pl0">
+        <li class="">
+            <label>
+                <input type="checkbox" v-model="show_total_row"> Total row
+            </label>
+        </li>
+        <li class="">
+            <label>
+                <input type="checkbox" v-model="search"> Search
+            </label>
+        </li>
+        <li class="">
+            <label>
+                <input type="checkbox" v-model="pagination"> Pagination
+            </label>
+        </li>
+    </ul>
+    <h2>Columns</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Column name</th>
+                <th>Column type</th>
+                <th>Column align</th>
+                <th>Column align</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr v-for="column in columns">
+                <td>{( column )}</td>
+                <td>
+                    <select v-model="column_types[column]">
+                        <option value="">---</option>
+                        <option value="text">Text</option>
+                        <option value="number">Number</option>
+                        <option value="amount">Amount</option>
+                        <option value="amount-m">Amount (millions)</option>
+                        <option value="org-name">Organisation name</option>
+                        <option value="org-id">Organisation ID</option>
+                        <option value="tsg">Is 360Giving publisher</option>
+                    </select>
+                </td>
+                <td>
+                    <select v-model="column_aligns[column]">
+                        <option value="">---</option>
+                        <option value="l">Left</option>
+                        <option value="c">Center</option>
+                        <option value="r">Right</option>
+                    </select>
+                </td>
+                <td>
+                    <input v-model="column_dps[column]" type="number" min="0" max="2">
+                </td>
+            </tr>
+        </tbody>
+    </table>
+    <h2>Preview</h2>
+    <table v-if="rows.length" ref="tableoutput" class="f6 collapse" :class="tableClasses" id="table-preview">
+        <thead>
+            <tr>
+                <th v-for="column in visibleColumns" class="pa2 pa2 ba bw1 b--black-50" :class="columnClasses(column)">
+                    {( column )}
+                    {# {( columnOptions[column] )} #}
+                </th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr v-for="(row, index) in rows" :key="index">
+                <td v-for="column in visibleColumns" :key="column" class="pa2 pa2 ba bw1 b--black-50"
+                    :class="columnClasses(column)">
+                    <data v-if="row[column] == ''"></data>
+                    <data v-else-if="columnOptions[column].type == 'org-name'" :value="row[column]">
+                        <span class="f5">{( row[column] )}</span><br>
+                        <span v-if="rowTSG(row)">
+                            <img decoding="async" class="v-mid"
+                                src="https://cdn.threesixtygiving.org/components/preview/assets/images/360-logos/icon/360giving-icon.svg"
+                                style="width: 18px;">
+                            360Giving Publisher |
+                        </span>
+                        <span v-if="rowOrgId(row)">{( rowOrgId(row) )}</span>
+                    </data>
+                    <data v-else-if="columnOptions[column].type == 'amount-m'" :data-order="row[column]"
+                        :value="row[column]">
+                        {( formatAmount(row[column], columnOptions[column].dp) )}m
+                    </data>
+                    <data v-else-if="columnOptions[column].type == 'amount'" :data-order="row[column]"
+                        :value="row[column]">
+                        {( formatAmount(row[column], columnOptions[column].dp) )}
+                    </data>
+                    <data v-else-if="columnOptions[column].type == 'number'" :data-order="row[column]"
+                        :value="row[column]">
+                        {( formatNumber(row[column], columnOptions[column].dp) )}
+                    </data>
+                    <data v-else :value="row[column]">
+                        {( row[column] )}
+                    </data>
+                    {# [{( row[column] )}] #}
+                </td>
+            </tr>
+        </tbody>
+        <tfoot v-if="footerRow">
+            <tr>
+                <th v-for="column in visibleColumns" class="pa2 pa2 ba bw1 b--black-50" :class="columnClasses(column)">
+                    <data v-if="footerRow[column] == ''"></data>
+                    <data v-else-if="columnOptions[column].type == 'org-name'" :value="footerRow[column]">
+                        <span>{( footerRow[column] )}</span>
+                    </data>
+                    <data v-else-if="columnOptions[column].type == 'amount-m'" :value="footerRow[column]">
+                        {( formatAmount(footerRow[column], columnOptions[column].dp) )}m
+                    </data>
+                    <data v-else-if="columnOptions[column].type == 'amount'" :value="footerRow[column]">
+                        {( formatAmount(footerRow[column], columnOptions[column].dp) )}
+                    </data>
+                    <data v-else-if="columnOptions[column].type == 'number'" :value="footerRow[column]">
+                        {( formatNumber(footerRow[column], columnOptions[column].dp) )}
+                    </data>
+                    <data v-else :value="footerRow[column]">
+                        {( footerRow[column] )}
+                    </data>
+                </th>
+            </tr>
+        </tfoot>
+    </table>
+    <textarea class="w-100 h5">{( tablehtml() )}</textarea>
+</div>
+{% endblock %}
+
+{% block bodyscripts %}
+{{ super() }}
+<script>
+    const DATA = `Org ID	Name	Grants to Individuals	Living Wage Funder	360Giving Publisher	Income (£m)	Spending (£m)	Grant Making Spending (£m)	Grant Making Spending (Individuals) (£m)
+GB-SC-SC022910	Foundation Scotland	✓		✓	24.966	25.499	23.401	0
+GB-NIC-105105	Community Foundation for Northern Ireland			✓	4.432592	14.674797	12.468969	0
+GB-CHC-1091263	London Community Foundation	✓	✓	✓	12.974	13.55	11.889	
+GB-CHC-700510	Community Foundation Serving Tyne & Wear and Northumberland	✓		✓	7.906571	9.304115	7.857381	0.143497
+GB-CHC-1004630	UK Community Foundations			✓	8.195	8.949	6.959	0
+GB-CHC-1080418	Quartet Community Foundation			✓	5.633025	8.114631	6.516733	
+GB-CHC-1075120	Cumbria Community Foundation	✓		✓	6.313838	6.565631	5.834621	0.213343
+GB-CHC-1110817	Norfolk Community Foundation	✓		✓	6.792	6.641	5.640937	0.074206
+GB-CHC-1047625	County Durham Community Foundation	✓		✓	4.285791	6.018678	5.326666	0
+GB-CHC-1156082	Hertfordshire Community Foundation	✓		✓	6.14227	6.126932	5.24791	0.119161
+GB-CHC-1094446	Somerset Community Foundation	✓		✓	5.781122	5.772993	5.134047	0.143637
+GB-CHC-1086516	Bedfordshire and Luton Community Foundation	✓		✓	4.383069	4.854164	4.682841	0.014648
+GB-CHC-1084361	Kent Community Foundation	✓			5.004959	6.225491	4.613315	0.091189
+GB-CHC-1109453	Suffolk Community Foundation			✓	7.497876	5.726605	4.473931	0
+GB-CHC-1052061	Essex Community Foundation	✓		✓	5.375133	5.357802	4.427366	0
+`
+    const { createApp } = Vue
+
+    createApp({
+        delimiters: ['{(', ')}'],
+        data() {
+            return {
+                table_data: DATA, // ''
+                column_types: {},
+                column_aligns: {},
+                column_dps: {},
+                show_total_row: false,
+                pagination: false,
+                search: false,
+                table_obj: null,
+            }
+        },
+        computed: {
+            columns() {
+                return this.table_data.split('\n')[0].split('\t')
+            },
+            visibleColumns() {
+                return Object.entries(this.columnOptions).filter(
+                    (column, index) => (column[1].type != 'org-id' && column[1].type != 'tsg')
+                ).map((column) => column[0])
+            },
+            columnOptions() {
+                // create an object for each column with the column name as the key
+                // and the column type and alignment as the value
+                if (!this.columns.length) {
+                    return {}
+                }
+                return Object.fromEntries(this.columns.map(column => {
+                    var default_type = 'text'
+                    var default_align = 'l'
+                    var default_dp = 0
+                    if (column == 'Name') {
+                        default_type = 'org-name'
+                    }
+                    if (column == 'Org ID') {
+                        default_type = 'org-id'
+                    }
+                    if (column == '360Giving Publisher') {
+                        default_type = 'tsg'
+                    }
+                    // column name contains £m
+                    if (column.match(/£m/)) {
+                        default_type = 'amount-m'
+                        default_align = 'r'
+                        default_dp = 1
+                    } else if (column.match(/£/)) {
+                        default_type = 'amount'
+                        default_align = 'r'
+                    }
+                    return [column, {
+                        type: this.column_types[column] || default_type,
+                        align: this.column_aligns[column] || default_align,
+                        dp: this.column_dps[column] || default_dp,
+                    }]
+                }))
+            },
+            allrows() {
+                return this.table_data.split('\n').slice(1).filter(
+                    row => row.length
+                ).map(row => Object.fromEntries(row.split('\t').map(
+                    (cell, i) => {
+                        var column = this.columns[i]
+                        var type = this.columnOptions[column].type
+                        if (type == 'number') {
+                            return [column, parseFloat(cell)]
+                        }
+                        return [column, cell]
+                    }
+                )))
+            },
+            rows() {
+                if (!this.show_total_row) {
+                    return this.allrows
+                }
+                // remove the final row
+                return this.allrows.slice(0, -1)
+            },
+            footerRow() {
+                if (!this.show_total_row) {
+                    return null
+                }
+                return this.allrows.slice(-1)[0]
+            },
+            tableClasses() {
+                return {
+                    'w-100': true,
+                    'collapse': true,
+                    'f6': true,
+                    'ba': true,
+                    'bw1': true,
+                    'b--black-50': true,
+                    'searchable': this.search,
+                    'paginated': this.pagination,
+                    'datatable': this.search || this.pagination,
+                }
+            },
+        },
+        watch: {
+            search: function (val) {
+                this.loadDatatables()
+            },
+            pagination: function (val) {
+                this.loadDatatables()
+            },
+        },
+        methods: {
+            copyTable() {
+                navigator.clipboard.writeText(this.tablehtml)
+            },
+            rowOrgId(row) {
+                var org_id_column = Object.entries(this.columnOptions).filter(
+                    (column, index) => (column[1].type == 'org-id')
+                )[0][0]
+                return row[org_id_column]
+            },
+            rowTSG(row) {
+                var tsg_column = Object.entries(this.columnOptions).filter(
+                    (column, index) => (column[1].type == 'tsg')
+                )[0][0]
+                return row[tsg_column] != ''
+            },
+            columnClasses(column) {
+                return {
+                    'tl': this.columnOptions[column].align == 'l',
+                    'tc': this.columnOptions[column].align == 'c',
+                    'tr': this.columnOptions[column].align == 'r',
+                }
+            },
+            indexToLetter(index) {
+                return String.fromCharCode(65 + index)
+            },
+            formatAmount(value, dp) {
+                if (dp === undefined) {
+                    dp = 0
+                }
+
+                // check if value is between 0.0 and 0.1
+                if (value > 0 && value < 0.1) {
+                    return new Intl.NumberFormat(undefined, {
+                        style: 'currency',
+                        currency: 'GBP',
+                        minimumFractionDigits: dp,
+                        maximumFractionDigits: dp,
+                    }).format(0.1).replace('£', '<£')
+                }
+
+                return new Intl.NumberFormat(undefined, {
+                    style: 'currency',
+                    currency: 'GBP',
+                    minimumFractionDigits: dp,
+                    maximumFractionDigits: dp,
+                }).format(value)
+            },
+            formatNumber(value, dp) {
+                if (dp === undefined) {
+                    dp = 0
+                }
+
+                // check if value is between 0.0 and 0.1
+                if (value > 0 && value < 0.1) {
+                    return '<' + new Intl.NumberFormat(undefined, {
+                        style: 'decimal',
+                        minimumFractionDigits: dp,
+                        maximumFractionDigits: dp,
+                    }).format(0.1)
+                }
+
+                return new Intl.NumberFormat(undefined, {
+                    style: 'decimal',
+                    minimumFractionDigits: dp,
+                    maximumFractionDigits: dp,
+                }).format(value)
+            },
+            loadDatatables() {
+                // const tables = document.querySelectorAll('.datatable')
+                // tables.forEach(table => {
+                //     var t = new simpleDatatables.DataTable(table, {
+                //         searchable: this.search,
+                //     })
+                // })
+                const table = this.$refs.tableoutput
+                if (this.table_obj) {
+                    this.table_obj.destroy()
+                    this.table_obj = null
+                }
+                if (this.search || this.pagination) {
+                    this.table_obj = new simpleDatatables.DataTable(table, {
+                        searchable: this.search,
+                        paging: this.pagination,
+                    })
+                }
+            },
+            tablehtml() {
+                if (!this.$refs.tableoutput) return ''
+                return this.$refs.tableoutput.outerHTML
+            },
+        },
+        mounted() {
+            this.loadDatatables()
+            this.tablehtml()
+        }
+    }).mount('#app')
+</script>
+{% endblock %}
