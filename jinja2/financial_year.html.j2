@@ -14,7 +14,7 @@
     <ul>
         {% for  table in tables %}
         {% if table.title %}
-        <li><a href="#{{ table.title|slugify }}">{{ table.title }}</a></li>
+        <li><a href="#{{ sheet_name|slugify }}-{{ table.title|slugify }}">{{ table.title }}</a></li>
         {% elif tables|length > 1 %}
         <li><a href="#{{ sheet_name|slugify }}-{{ loop.index }}">{{ sheet_name }} table {{ loop.index }}</a></li>
         {% endif %}
@@ -33,7 +33,7 @@
 <ul>
     {% for  table in tables %}
     {% if table.title %}
-    <li><a href="#{{ table.title|slugify }}">{{ table.title }}</a></li>
+    <li><a href="#{{ sheet_name|slugify }}-{{ table.title|slugify }}">{{ table.title }}</a></li>
     {% elif tables|length > 1 %}
     <li><a href="#{{ sheet_name|slugify }}-{{ loop.index }}">{{ sheet_name }} table {{ loop.index }}</a></li>
     {% endif %}
@@ -44,7 +44,7 @@
 {% for table in tables %}
 
 {% if table.title %}
-<h3 id="{{ table.title|slugify }}">{{ table.title }}</h3>
+<h3 id="{{ sheet_name|slugify }}-{{ table.title|slugify }}">{{ table.title }}</h3>
 {% elif tables|length > 1 %}
 <span id="{{ sheet_name|slugify }}-{{ loop.index }}">{{ sheet_name }} table {{ loop.index }}</span>
 {% endif %}

@@ -101,6 +101,126 @@ class Grant(models.Model):
         GLS060 = "GLS060", "Local area"  # Location scope covers a small area.
         GLS099 = "GLS099", "Undefined"  # The location scope is undefined.
 
+    class GrantToIndividualsPurpose(models.TextChoices):
+        GTIP010 = (
+            "GTIP010",
+            "Unrestricted",
+        )  # Unspecified, unrestricted or general support
+        GTIP020 = (
+            "GTIP020",
+            "Furniture and appliances",
+        )  # Furniture, garden and outdoor play equipment, white goods, home appliances
+        GTIP030 = (
+            "GTIP030",
+            "Equipment and home adaptations",
+        )  # Safety equipment, specialist equipment, baby equipment, toys, home adaptations, mobility aids
+        GTIP040 = (
+            "GTIP040",
+            "Devices and digital access",
+        )  # Computers, phones, mobile devices, technology / digital access
+        GTIP050 = (
+            "GTIP050",
+            "Utilities",
+        )  # Energy, water, telephone, TV/entertainment licences, broadband costs - including set-up and meter installation
+        GTIP060 = (
+            "GTIP060",
+            "Other housing related costs",
+        )  # Deposits, rent, mortgage contributions, council tax, arrears, decoration, removal costs, deep cleans
+        GTIP070 = (
+            "GTIP070",
+            "Food and essential items",
+        )  # Food, toiletries, nappies, cleaning products, all essential living costs
+        GTIP080 = (
+            "GTIP080",
+            "Clothing",
+        )  # School uniforms, children’s clothing, workwear, essential clothing
+        GTIP090 = (
+            "GTIP090",
+            "Debt",
+        )  # Credit card debits, non housing-related debts, bankruptcy
+        GTIP100 = (
+            "GTIP100",
+            "Travel and transport",
+        )  # Travel or transport costs including public transport, petrol and repairs
+        GTIP110 = (
+            "GTIP110",
+            "Holiday and activity costs",
+        )  # Family activities, school trips, holidays, sport activities, social activities, breaks for carers
+        GTIP120 = (
+            "GTIP120",
+            "Health, care and wellbeing services",
+        )  # Medical, childcare costs, therapy, dental work, physiotherapy, addiction recovery support, domiciliary/residential care costs, temporary accommodation for patients and carers
+        GTIP130 = (
+            "GTIP130",
+            "Education and training",
+        )  # Tuition, boarding school fees, university fees, books/resources and essential course costs, scholarships, fellowships, PhDs, support for exceptional talent, personal/professional development, sports coaching/development, capacity building
+        GTIP140 = (
+            "GTIP140",
+            "Employment and work",
+        )  # Employment support, business start-up costs, apprenticeships, social enterprise, work ready support
+        GTIP150 = (
+            "GTIP150",
+            "Creative activities",
+        )  # Freelance art and cultural projects and activities, musical instruments
+        GTIP160 = (
+            "GTIP160",
+            "Community projects",
+        )  # Social action, community projects, campaigns and activism
+        GTIP170 = (
+            "GTIP170",
+            "Exceptional costs",
+        )  # Funeral costs, crisis funding, legal fees, benefits applications and time pending benefits receipt
+
+    class GrantToIndividualsReason(models.TextChoices):
+        GTIR010 = (
+            "GTIR010",
+            "Financial Hardship",
+        )  # Low income, debt, poverty
+        GTIR020 = (
+            "GTIR020",
+            "Disability",
+        )  # Physical, mental or learning disability, difficulty or difference
+        GTIR030 = (
+            "GTIR030",
+            "Health/Condition",
+        )  # Limiting health condition(s) or illness(es), substance misuse, of individual or family members
+        GTIR040 = (
+            "GTIR040",
+            "Mental Health",
+        )  # Mental health condition(s) or illness(es), wellbeing, of individual or family members
+        GTIR050 = (
+            "GTIR050",
+            "Family breakup",
+        )  # Breakdown of family cohesion/stability, estrangement, single parent
+        GTIR060 = (
+            "GTIR060",
+            "Violence or abuse",
+        )  # Domestic violence or abuse, fleeing other violence, neglect
+        GTIR070 = (
+            "GTIR070",
+            "Livelihood",
+        )  # Loss of job or source of income, underemployment, zero hours contracts, reduced hours or income, time out of work for caregiving, sustaining business/livelihood
+        GTIR080 = (
+            "GTIR080",
+            "Homelessness",
+        )  # Homeless or poorly or vulnerably housed
+        GTIR090 = (
+            "GTIR090",
+            "Marginalised",
+        )  # No recourse to public funds, care leavers, people in or leaving the criminal justice system, other marginalised or vulnerable people or people with barriers to access
+        GTIR100 = (
+            "GTIR100",
+            "Emergency/crisis event",
+        )  # Need driven by an incident such as death of a family member or disaster such as housing flood, fire etc, victim of crime
+        GTIR110 = (
+            "GTIR110",
+            "Development opportunity",
+        )  # Skills development, scholarships, artist development, exceptional talent, sporting talent
+        GTIR120 = (
+            "GTIR120",
+            "Social action",
+        )  # Supporting a community or cause not solely driven by the needs of the individual receiving the grant, campaigns, community development
+
     grant_id = models.CharField(max_length=255, primary_key=True)
     title = models.CharField(max_length=255)
     description = models.TextField(null=True, blank=True)
@@ -204,7 +324,10 @@ class Grant(models.Model):
                     models.functions.Cast(
                         models.F("amount_awarded_GBP"), models.FloatField()
                     )
-                    / models.F("planned_dates_duration")
+                    / models.Max(
+                        models.F("planned_dates_duration"),
+                        models.Value(12, models.FloatField()),
+                    )
                 )
                 * models.Value(12),
             ),
@@ -351,6 +474,90 @@ class GrantRecipient(models.Model):
             models.When(
                 models.Q(("recipient_id__startswith", "XI-PB-")),
                 then=models.Value("XI-PB"),
+            ),
+            models.When(
+                models.Q(("recipient_id__startswith", "GB-WALEDU-")),
+                then=models.Value("GB-WALEDU"),
+            ),
+            models.When(
+                models.Q(("recipient_id__startswith", "GB-NIEDU-")),
+                then=models.Value("GB-NIEDU"),
+            ),
+            models.When(
+                models.Q(("recipient_id__startswith", "GB-SCOTEDU-")),
+                then=models.Value("GB-SCOTEDU"),
+            ),
+            models.When(
+                models.Q(("recipient_id__startswith", "GB-UKPRN-")),
+                then=models.Value("GB-UKPRN"),
+            ),
+            models.When(
+                models.Q(("recipient_id__startswith", "GB-REV-")),
+                then=models.Value("GB-REV"),
+            ),
+            models.When(
+                models.Q(("recipient_id__startswith", "GB-MPR-")),
+                then=models.Value("GB-MPR"),
+            ),
+            models.When(
+                models.Q(("recipient_id__startswith", "GB-EDU-")),
+                then=models.Value("GB-EDU"),
+            ),
+            models.When(
+                models.Q(("recipient_id__startswith", "GB-HESA-")),
+                then=models.Value("GB-HESA"),
+            ),
+            models.When(
+                models.Q(("recipient_id__startswith", "AT-ZVR-")),
+                then=models.Value("AT-ZVR"),
+            ),
+            models.When(
+                models.Q(("recipient_id__startswith", "BE-BCE_KBO-")),
+                then=models.Value("BE-BCE_KBO"),
+            ),
+            models.When(
+                models.Q(("recipient_id__startswith", "CH-FDJP-")),
+                then=models.Value("CH-FDJP"),
+            ),
+            models.When(
+                models.Q(("recipient_id__startswith", "CHC-")),
+                then=models.Value("GB-CHC"),
+            ),
+            models.When(
+                models.Q(("recipient_id__startswith", "DE-CR-")),
+                then=models.Value("DE-CR"),
+            ),
+            models.When(
+                models.Q(("recipient_id__startswith", "GG-RCE-")),
+                then=models.Value("GG-RCE"),
+            ),
+            models.When(
+                models.Q(("recipient_id__startswith", "IE-CRO-")),
+                then=models.Value("IE-CRO"),
+            ),
+            models.When(
+                models.Q(("recipient_id__startswith", "IL-RA-")),
+                then=models.Value("IL-RA"),
+            ),
+            models.When(
+                models.Q(("recipient_id__startswith", "IM-CR-")),
+                then=models.Value("IM-CR"),
+            ),
+            models.When(
+                models.Q(("recipient_id__startswith", "IM-GR-")),
+                then=models.Value("IM-GR"),
+            ),
+            models.When(
+                models.Q(("recipient_id__startswith", "JE-JCR-")),
+                then=models.Value("JE-JCR"),
+            ),
+            models.When(
+                models.Q(("recipient_id__startswith", "ZA-NPO-")),
+                then=models.Value("ZA-NPO"),
+            ),
+            models.When(
+                models.Q(("recipient_id__startswith", "tnlcomfund-org-")),
+                then=models.Value("tnlcomfund-org"),
             ),
             default=Left(
                 models.F("recipient_id"),
