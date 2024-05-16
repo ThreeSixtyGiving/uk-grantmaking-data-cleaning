@@ -29,17 +29,6 @@ def financial_year_grants_view(request, fy, filetype="html"):
 
     all_grants = get_all_grants(current_fy)
 
-    output.add_table(
-        all_grants.sample(10),
-        "All grants",
-        title="All grants",
-    )
-    output.add_table(
-        all_grants["recipient_type"].value_counts().to_frame(),
-        "All grants",
-        title="All grants",
-    )
-
     summaries = {
         "Grants to organisations": {
             "criteria": (all_grants["recipient_type"] != "Individual")
