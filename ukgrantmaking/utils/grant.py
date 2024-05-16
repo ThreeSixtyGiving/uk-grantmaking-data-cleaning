@@ -52,6 +52,8 @@ summary_columns = {
     "mean_amount": "Mean Grant Amount (£)",
     "recipients": "Recipients",
     "funders": "Funders",
+    "grants_with_orgid": "Grants with OrgID",
+    "grants_missing_orgid": "Grants missing OrgID",
 }
 
 
@@ -71,8 +73,27 @@ def grant_summary(
                 count=models.Count("grant_id"),
                 amount=models.Sum("amount_awarded_GBP"),
                 mean_amount=models.Avg("amount_awarded_GBP"),
-                recipients=models.Count("recipient_id", distinct=True),
-                funders=models.Count("funder_id", distinct=True),
+                recipients=models.Count(
+                    models.functions.Coalesce(
+                        "recipient_id",
+                        "recipient_organisation_id",
+                        "recipient_individual_id",
+                    ),
+                    distinct=True,
+                ),
+                funders=models.Count(
+                    models.functions.Coalesce(
+                        "funder_id",
+                        "funding_organisation_id",
+                    ),
+                    distinct=True,
+                ),
+                grants_with_orgid=models.Count(
+                    "grant_id", filter=~models.Q(recipient__org_id_schema="UKG")
+                ),
+                grants_missing_orgid=models.Count(
+                    "grant_id", filter=models.Q(recipient__org_id_schema="UKG")
+                ),
             )
         )
         .assign(
