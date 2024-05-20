@@ -139,7 +139,6 @@ def get_all_grants(current_fy: FinancialYear):
         "award_date",
         "regrant_type",
         "inclusion",
-        "recipient_type",
         "funder__segment",
         "recipient__org_id_schema",
         "recipient__scale",
@@ -159,6 +158,10 @@ def get_all_grants(current_fy: FinancialYear):
             )
             .values(*columns)
             .annotate(
+                recipient_type=models.functions.Coalesce(
+                    "recipient_type_manual",
+                    "recipient_type",
+                ),
                 recipient_id=models.functions.Coalesce(
                     "recipient_id",
                     "recipient_organisation_id",
