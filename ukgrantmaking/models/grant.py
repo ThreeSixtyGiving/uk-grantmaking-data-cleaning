@@ -297,6 +297,7 @@ class Grant(models.Model):
         related_name="grants",
         null=True,
         blank=True,
+        db_constraint=False,
     )
     recipient_type_manual = models.CharField(
         max_length=50,
