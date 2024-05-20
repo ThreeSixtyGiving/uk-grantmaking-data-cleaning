@@ -5,6 +5,7 @@ from django.contrib.auth.decorators import login_required
 from django.http import HttpResponse
 from django.shortcuts import render
 from django.urls import reverse
+from django.utils.text import slugify
 
 from ukgrantmaking.models.funder import (
     FUNDER_CATEGORIES,
@@ -19,6 +20,10 @@ from ukgrantmaking.utils.grant import (
     grant_by_size,
     grant_summary,
     grant_table,
+    number_of_grants_by_recipient,
+    recipient_types,
+    recipients_by_size,
+    who_funds_with_who,
 )
 
 
@@ -44,57 +49,129 @@ def financial_year_grants_view(request, fy, filetype="html"):
         "Grants to individuals": {
             "criteria": (all_grants["recipient_type"] == "Individual"),
         },
+        "Community Foundations": {
+            "criteria": (all_grants["segment"].isin(["Community Foundation"])),
+        },
     }
 
     for summary_title, summary_filters in summaries.items():
+        if filetype == "xlsx":
+            summary_title = slugify(summary_title)[0:31]
         output.add_table(
             grant_summary(all_grants[summary_filters["criteria"]]),
-            "Summary",
-            title=summary_title,
+            summary_title,
+            title="Summary",
         )
         output.add_table(
             grant_by_size(all_grants[summary_filters["criteria"]]),
-            "Summary by size",
-            title=summary_title,
+            summary_title,
+            title="Summary by size",
+        )
+        output.add_table(
+            grant_by_size(
+                all_grants[summary_filters["criteria"]],
+                values_field="amount_awarded_GBP",
+            ),
+            summary_title,
+            title="Summary by size (by amount awarded)",
         )
         output.add_table(
             grant_by_duration(all_grants[summary_filters["criteria"]]),
-            "Summary by duration",
-            title=summary_title,
+            summary_title,
+            title="Summary by duration",
+        )
+        output.add_table(
+            grant_by_duration(
+                all_grants[summary_filters["criteria"]],
+                values_field="amount_awarded_GBP",
+            ),
+            summary_title,
+            title="Summary by duration (by amount awarded)",
         )
 
-    output.add_table(
-        grant_summary(
-            all_grants[summaries["Grants to individuals"]["criteria"]],
-            groupby=["funder_id", "funder_name", "segment"],
-        ),
-        "Individual grants",
-        title="By funder",
-    )
-    for field in [
-        "recipient_individual_primary_grant_reason",
-        "recipient_individual_secondary_grant_reason",
-        "recipient_individual_grant_purpose",
-    ]:
+        # recipients by number of grants
         output.add_table(
-            grant_summary(
-                all_grants[summaries["Grants to individuals"]["criteria"]].explode(
-                    [field, f"{field}_name"]
-                ),
-                groupby=[field, f"{field}_name"],
-            )
-            .reset_index()
-            .rename(
-                columns={
-                    field: "Code",
-                    f"{field}_name": "Name",
-                }
-            ),
-            "Individual grants",
-            title=(
-                field.replace("recipient_individual_", "").replace("_", " ").title()
-            ),
+            number_of_grants_by_recipient(all_grants[summary_filters["criteria"]]),
+            summary_title,
+            title="Recipients by number of grants",
         )
+
+        # who funds with who
+        output.add_table(
+            who_funds_with_who(all_grants[summary_filters["criteria"]]),
+            summary_title,
+            title="Who funds with who",
+        )
+
+        if summary_title in ("Grants to individuals", "Community Foundations"):
+            output.add_table(
+                grant_summary(
+                    all_grants[summary_filters["criteria"]],
+                    groupby=["funder_id", "funder_name", "segment"],
+                ),
+                summary_title,
+                title="By funder",
+            )
+
+        if summary_title == "Grants to individuals":
+            for field in [
+                "recipient_individual_primary_grant_reason",
+                "recipient_individual_secondary_grant_reason",
+                "recipient_individual_grant_purpose",
+            ]:
+                output.add_table(
+                    grant_summary(
+                        all_grants[summary_filters["criteria"]].explode(
+                            [field, f"{field}_name"]
+                        ),
+                        groupby=[field, f"{field}_name"],
+                    )
+                    .reset_index()
+                    .rename(
+                        columns={
+                            field: "Code",
+                            f"{field}_name": "Name",
+                        }
+                    ),
+                    summary_title,
+                    title=(
+                        field.replace("recipient_individual_", "")
+                        .replace("_", " ")
+                        .title()
+                    ),
+                )
+        else:
+            output.add_table(
+                recipient_types(all_grants[summary_filters["criteria"]]),
+                summary_title,
+                title="Recipient type",
+            )
+            output.add_table(
+                recipient_types(
+                    all_grants[summary_filters["criteria"]],
+                    values_field="amount_awarded_GBP",
+                ),
+                summary_title,
+                title="Recipient type (by amount awarded)",
+            )
+            output.add_table(
+                recipients_by_size(all_grants[summary_filters["criteria"]]),
+                summary_title,
+                title="Recipients by size",
+            )
+            output.add_table(
+                recipients_by_size(
+                    all_grants[summary_filters["criteria"]],
+                    values_field="amount_awarded_GBP",
+                ),
+                summary_title,
+                title="Recipients by size (by amount awarded)",
+            )
+            # output.add_table(
+            #     recipients_by_scale(all_grants[summary_filters["criteria"]]),
+            #     "Recipients by scale",
+            #     title=summary_title,
+            # )
 
     funders = (
         Funder.objects.filter(included=True)
@@ -146,31 +223,6 @@ def financial_year_grants_view(request, fy, filetype="html"):
         ),
         "Missing Org ID" if filetype == "html" else "Missing Org ID (Government)",
         title="Government" if filetype == "html" else None,
-    )
-
-    output.add_table(
-        grant_summary(
-            all_grants[all_grants["segment"].isin(["Community Foundation"])],
-            groupby=["funder_id", "funder_name"],
-        ),
-        "Community Foundations",
-        title="Summary",
-    )
-    output.add_table(
-        grant_by_size(
-            all_grants[all_grants["segment"].isin(["Community Foundation"])],
-            groupby=["funder_id", "funder_name"],
-        ),
-        "Community Foundations",
-        title="Summary by size",
-    )
-    output.add_table(
-        grant_by_duration(
-            all_grants[all_grants["segment"].isin(["Community Foundation"])],
-            groupby=["funder_id", "funder_name"],
-        ),
-        "Community Foundations",
-        title="Summary by duration",
     )
 
     if filetype == "xlsx":

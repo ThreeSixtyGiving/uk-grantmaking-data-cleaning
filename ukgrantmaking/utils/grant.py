@@ -5,7 +5,7 @@ from caradoc import FinancialYear
 from django.db import models
 
 from ukgrantmaking.models.funder import FUNDER_CATEGORIES
-from ukgrantmaking.models.grant import Grant
+from ukgrantmaking.models.grant import Grant, GrantRecipientYear
 
 DEFAULT_COLUMNS = [
     "grant_id",
@@ -30,17 +30,20 @@ SEGMENT_ORDER = [
     ("Grantmaker", "Member/Trade Funded"),
     # ("Grantmaker", "Small grantmaker"),
     ("Grantmaker", "Wellcome Trust"),
+    ("Grantmaker", "Total"),
     ("Lottery", "Lottery Distributor"),
     ("Charity", "Charity"),
     ("Charity", "NHS/Hospital Foundation"),
+    ("Charity", "Total"),
     ("Government", "Local"),
     ("Government", "Central"),
     ("Government", "Devolved"),
     ("Government", "Arms Length Body"),
+    ("Government", "Total"),
     ("Other", "Donor Advised Fund"),
     ("Unknown", "Unknown"),
+    ("Total", "Total"),
 ]
-SEGMENT_ORDER_WITH_TOTAL = SEGMENT_ORDER + [("Total", "Total")]
 
 AMOUNT_AWARDED_BINS = [
     float("-inf"),
@@ -58,6 +61,23 @@ AMOUNT_AWARDED_BINS_LABELS = [
     "£10k to £100k",
     "£100k to £1m",
     "Over £1m",
+]
+INCOME_BINS = [
+    float("-inf"),
+    0,
+    10_000,
+    100_000,
+    1_000_000,
+    10_000_000,
+    float("inf"),
+]
+INCOME_BINS_LABELS = [
+    "Negative / zero",
+    "Under £01k",
+    "£10k to £100k",
+    "£100k to £1m",
+    "£1m to £10m",
+    "Over £10m",
 ]
 DURATION_BINS = [
     0,
@@ -122,11 +142,12 @@ def get_all_grants(current_fy: FinancialYear):
         "recipient_type",
         "funder__segment",
         "recipient__org_id_schema",
+        "recipient__scale",
         "recipient_individual_primary_grant_reason",
         "recipient_individual_secondary_grant_reason",
         "recipient_individual_grant_purpose",
     ]
-    return (
+    result = (
         pd.DataFrame(
             Grant.objects.filter(
                 award_date__gte=current_fy.start_date,
@@ -217,6 +238,40 @@ def get_all_grants(current_fy: FinancialYear):
         )
     )
 
+    recipient_finances = (
+        pd.DataFrame(
+            GrantRecipientYear.objects.filter(
+                financial_year_end__gte=current_fy.start_date,
+                financial_year_end__lte=current_fy.end_date,
+            ).values(
+                "recipient_id",
+                "financial_year_end",
+                "financial_year_start",
+                "income",
+                "spending",
+                "employees",
+            )
+        )
+        .groupby("recipient_id")
+        .agg(
+            **{
+                "recipient_income": ("income", "sum"),
+                "recipient_spending": ("spending", "sum"),
+                "recipient_employees": ("employees", "sum"),
+            }
+        )
+        .assign(
+            recipient_income_band=lambda x: pd.cut(
+                x["recipient_income"],
+                bins=INCOME_BINS,
+                labels=INCOME_BINS_LABELS,
+            ).cat.add_categories("Unknown"),
+        )
+    )
+    result = result.join(recipient_finances, on="recipient_id")
+
+    return result
+
 
 def grant_table(
     df: pd.DataFrame,
@@ -261,6 +316,30 @@ def grant_summary(
         .multiply(100)
         .round(1)
     )
+
+    # do category totals
+    if groupby == ["category", "segment"]:
+        total_rows = (
+            df.assign(segment="Total")
+            .groupby(groupby)
+            .agg(**AGG_COLUMNS)
+            .assign(
+                **{
+                    "Grant amount": lambda x: (
+                        x["Grant amount"].divide(1_000_000).astype(float)
+                    ),
+                    "Grant amount (Adjusted)": lambda x: (
+                        x["Grant amount (Adjusted)"].divide(1_000_000).astype(float)
+                    ),
+                }
+            )
+        )
+        for total_key, total_row in total_rows.iterrows():
+            # skip certain keys
+            if total_key not in SEGMENT_ORDER:
+                continue
+            summary.loc[total_key, :] = total_row
+
     total_row = (
         df.assign(**{k: "Total" for k in groupby})
         .groupby(groupby)
@@ -290,7 +369,7 @@ def grant_summary(
     if groupby == ["category", "segment"]:
         segment_order = []
         segments = summary.index.to_list()
-        for segment_category in SEGMENT_ORDER_WITH_TOTAL:
+        for segment_category in SEGMENT_ORDER:
             if segment_category in segments:
                 segment_order.append(segment_category)
         segment_order.extend([x for x in segments if x not in segment_order])
@@ -298,21 +377,48 @@ def grant_summary(
     return summary
 
 
-def grant_by_size(
+def grant_crosstab(
     df: pd.DataFrame,
     groupby: list[str] = ["category", "segment"],
-    amount_field="amount_awarded_GBP",
+    column_field="amount_awarded_GBP_band",
+    values_field="grant_id",
 ):
-    summary = pd.crosstab(
-        [df[f] for f in groupby],
-        df[f"{amount_field}_band"].fillna("Unknown"),
-    ).assign(
-        Total=lambda x: x.sum(axis=1),
+    aggfunc = "count" if values_field == "grant_id" else "sum"
+    summary = (
+        pd.crosstab(
+            [df[f] for f in groupby],
+            df[column_field].fillna("Unknown"),
+            values=df[values_field],
+            aggfunc=aggfunc,
+        )
+        .assign(
+            Total=lambda x: x.sum(axis=1),
+        )
+        .mask(lambda x: x["Total"] == 0)
+        .dropna(how="all")
     )
+
+    # do category totals
+    if groupby == ["category", "segment"]:
+        total_rows = pd.crosstab(
+            [df.assign(segment="Total")[f] for f in groupby],
+            df[column_field].fillna("Unknown"),
+            values=df[values_field],
+            aggfunc=aggfunc,
+        ).assign(
+            Total=lambda x: x.sum(axis=1),
+        )
+        for total_key, total_row in total_rows.iterrows():
+            # skip certain keys
+            if total_key not in SEGMENT_ORDER:
+                continue
+            summary.loc[total_key, :] = total_row
 
     total_row = pd.crosstab(
         [df.assign(**{k: "Total" for k in groupby})[f] for f in groupby],
-        df[f"{amount_field}_band"].fillna("Unknown"),
+        df[column_field].fillna("Unknown"),
+        values=df[values_field],
+        aggfunc=aggfunc,
     ).assign(
         Total=lambda x: x.sum(axis=1),
     )
@@ -320,6 +426,9 @@ def grant_by_size(
     if len(total_key) == 1:
         total_key = total_key[0]
     summary.loc[total_key, :] = total_row.loc[total_key]
+
+    if values_field in ("amount_awarded_GBP", "annual_amount"):
+        summary = summary.divide(1_000_000).astype(float).round(1)
 
     segment_order = []
     segments = summary.index.to_list()
@@ -330,8 +439,110 @@ def grant_by_size(
     return summary.loc[segment_order, :]
 
 
+def grant_by_size(
+    df: pd.DataFrame,
+    groupby: list[str] = ["category", "segment"],
+    **kwargs,
+):
+    return grant_crosstab(df, groupby, column_field="amount_awarded_GBP_band", **kwargs)
+
+
 def grant_by_duration(
     df: pd.DataFrame,
     groupby: list[str] = ["category", "segment"],
+    **kwargs,
 ):
-    return grant_by_size(df, groupby, amount_field="planned_dates_duration")
+    return grant_crosstab(
+        df, groupby, column_field="planned_dates_duration_band", **kwargs
+    )
+
+
+def recipient_types(
+    df: pd.DataFrame,
+    groupby: list[str] = ["category", "segment"],
+    **kwargs,
+):
+    return grant_crosstab(df, groupby, column_field="recipient_type", **kwargs)
+
+
+def recipients_by_size(
+    df: pd.DataFrame,
+    groupby: list[str] = ["category", "segment"],
+    **kwargs,
+):
+    return grant_crosstab(df, groupby, column_field="recipient_income_band", **kwargs)
+
+
+def recipients_by_scale(
+    df: pd.DataFrame,
+    groupby: list[str] = ["category", "segment"],
+    **kwargs,
+):
+    return grant_crosstab(df, groupby, column_field="recipient__scale", **kwargs)
+
+
+def number_of_grants_by_recipient(df: pd.DataFrame):
+    summary = (
+        df.groupby("recipient_id")
+        .agg(
+            {
+                "recipient_id": "count",
+                "amount_awarded_GBP": "sum",
+            }
+        )
+        .rename(
+            columns={
+                "recipient_id": "number_of_grants",
+                "amount_awarded_GBP": "total_amount_awarded_GBP",
+            }
+        )
+        .assign(
+            **{
+                "Number of grants received": lambda x: pd.cut(
+                    x["number_of_grants"],
+                    bins=[0, 1, 2, 3, 4, 5, 10, 20, 50, 100, float("inf")],
+                    labels=[
+                        "1",
+                        "2",
+                        "3",
+                        "4",
+                        "5",
+                        "6-10",
+                        "11-20",
+                        "21-50",
+                        "51-100",
+                        "101+",
+                    ],
+                )
+            }
+        )["Number of grants received"]
+        .value_counts()
+        .rename("Number of recipients")
+        .sort_index()
+        .to_frame()
+    )
+    return summary
+
+
+def who_funds_with_who(df: pd.DataFrame, groupby: str = "segment"):
+    wfww = pd.crosstab(
+        df["recipient_id"],
+        df[groupby],
+    )
+    summary = []
+    for value_1 in df[groupby].unique():
+        for value_2 in df[groupby].unique():
+            if value_1 == value_2:
+                continue
+            count = wfww[wfww[value_1].gt(0) & wfww[value_2].gt(0)].size
+            if count > 0:
+                summary.append(
+                    (
+                        value_1,
+                        value_2,
+                        count,
+                    )
+                )
+    return pd.DataFrame(
+        summary, columns=[f"{groupby} from", f"{groupby} to", "Number of recipients"]
+    )
