@@ -133,6 +133,7 @@ def get_all_grants(current_fy: FinancialYear):
         "recipient_organisation_id",
         "recipient_organisation_name",
         "title",
+        "description",
         "amount_awarded_GBP",
         "annual_amount",
         "planned_dates_duration",
