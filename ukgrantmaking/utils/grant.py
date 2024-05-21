@@ -124,6 +124,31 @@ AGG_COLUMNS = {
     "Max amount (Adjusted)": ("annual_amount", "max"),
 }
 
+GEO_LOOKUPS = {
+    "E12000001": "North East",
+    "E12000002": "North West",
+    "E12000003": "Yorkshire and The Humber",
+    "E12000004": "East Midlands",
+    "E12000005": "West Midlands",
+    "E12000006": "East of England",
+    "E12000007": "London",
+    "E12000008": "South East",
+    "E12000009": "South West",
+    "E92000001": "England",
+    "K02000001": "United Kingdom",
+    "K03000001": "Great Britain",
+    "K04000001": "England and Wales",
+    "L93000001": "Channel Islands",
+    "M83000003": "Isle of Man",
+    "N92000002": "Northern Ireland",
+    "S92000003": "Scotland",
+    "W92000004": "Wales",
+    "E99999999": "England",
+    "N99999999": "Northern Ireland",
+    "S99999999": "Scotland",
+    "W99999999": "Wales",
+}
+
 
 def get_all_grants(current_fy: FinancialYear):
     columns = [
@@ -142,10 +167,23 @@ def get_all_grants(current_fy: FinancialYear):
         "inclusion",
         "funder__segment",
         "recipient__org_id_schema",
+        "recipient__how",
+        "recipient__what",
+        "recipient__who",
         "recipient__scale",
         "recipient_individual_primary_grant_reason",
         "recipient_individual_secondary_grant_reason",
         "recipient_individual_grant_purpose",
+        "recipient_location_rgn",
+        "recipient_location_ctry",
+        "beneficiary_location_rgn",
+        "beneficiary_location_ctry",
+        "recipient__rgn_hq",
+        "recipient__rgn_aoo",
+        "recipient__ctry_hq",
+        "recipient__ctry_aoo",
+        "recipient__london_hq",
+        "recipient__london_aoo",
     ]
     result = (
         pd.DataFrame(
@@ -205,6 +243,19 @@ def get_all_grants(current_fy: FinancialYear):
                         Grant.GrantToIndividualsPurpose(y).value for y in json.loads(x)
                     )
                 )
+            ),
+            country=lambda x: (
+                x["beneficiary_location_ctry"]
+                .fillna(x["recipient_location_ctry"])
+                .fillna(x["recipient__ctry_hq"])
+                .map(GEO_LOOKUPS)
+            ),
+            region=lambda x: (
+                x["beneficiary_location_rgn"]
+                .fillna(x["recipient_location_rgn"])
+                .fillna(x["recipient__rgn_hq"])
+                .fillna(x["country"])
+                .map(GEO_LOOKUPS)
             ),
         )
         .assign(
@@ -442,7 +493,7 @@ def grant_crosstab(
         if segment_category in segments:
             segment_order.append(segment_category)
     segment_order.extend([x for x in segments if x not in segment_order])
-    return summary.loc[segment_order, :]
+    return summary.loc[segment_order, :].fillna(0)
 
 
 def grant_by_size(
@@ -485,6 +536,22 @@ def recipients_by_scale(
     **kwargs,
 ):
     return grant_crosstab(df, groupby, column_field="recipient__scale", **kwargs)
+
+
+def grants_by_region(
+    df: pd.DataFrame,
+    groupby: list[str] = ["category", "segment"],
+    **kwargs,
+):
+    return grant_crosstab(df, groupby, column_field="region", **kwargs)
+
+
+def grants_by_country(
+    df: pd.DataFrame,
+    groupby: list[str] = ["category", "segment"],
+    **kwargs,
+):
+    return grant_crosstab(df, groupby, column_field="country", **kwargs)
 
 
 def number_of_grants_by_recipient(df: pd.DataFrame):

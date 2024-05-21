@@ -20,6 +20,8 @@ from ukgrantmaking.utils.grant import (
     grant_by_size,
     grant_summary,
     grant_table,
+    grants_by_country,
+    grants_by_region,
     number_of_grants_by_recipient,
     recipient_types,
     recipients_by_size,
@@ -51,6 +53,12 @@ def financial_year_grants_view(request, fy, filetype="html"):
         },
         "Community Foundations": {
             "criteria": (all_grants["segment"].isin(["Community Foundation"])),
+        },
+        "London": {
+            "criteria": (
+                all_grants["recipient__london_aoo"].eq(True)
+                | all_grants["beneficiary_location_rgn"].eq("E12000007")
+            ),
         },
     }
 
@@ -89,6 +97,54 @@ def financial_year_grants_view(request, fy, filetype="html"):
             title="Summary by duration (by amount awarded)",
         )
 
+        # recipients by country/region
+        output.add_table(
+            grants_by_region(all_grants[summary_filters["criteria"]]),
+            summary_title,
+            title="By Region (by number of grants)",
+        )
+        output.add_table(
+            grants_by_region(
+                all_grants[summary_filters["criteria"]],
+                values_field="amount_awarded_GBP",
+            ),
+            summary_title,
+            title="By Region (by amount awarded)",
+        )
+        output.add_table(
+            grants_by_country(all_grants[summary_filters["criteria"]]),
+            summary_title,
+            title="By Country (by number of grants)",
+        )
+        output.add_table(
+            grants_by_country(
+                all_grants[summary_filters["criteria"]],
+                values_field="amount_awarded_GBP",
+            ),
+            summary_title,
+            title="By Country (by amount awarded)",
+        )
+
+        for field in [
+            "recipient__who",
+            "recipient__what",
+            "recipient__how",
+        ]:
+            output.add_table(
+                grant_summary(
+                    all_grants[summary_filters["criteria"]].explode(field),
+                    groupby=[field],
+                )
+                .reset_index()
+                .rename(
+                    columns={
+                        field: "Category",
+                    }
+                ),
+                summary_title,
+                title="CC Classification: " + field.replace("recipient__", "").title(),
+            )
+
         # recipients by number of grants
         output.add_table(
             number_of_grants_by_recipient(all_grants[summary_filters["criteria"]]),
@@ -103,12 +159,16 @@ def financial_year_grants_view(request, fy, filetype="html"):
             title="Who funds with who",
         )
 
-        if summary_title in ("Grants to individuals", "Community Foundations"):
+        if summary_title in (
+            "Grants to individuals",
+            "Community Foundations",
+            "London",
+        ):
             output.add_table(
                 grant_summary(
                     all_grants[summary_filters["criteria"]],
                     groupby=["funder_id", "funder_name", "segment"],
-                ),
+                ).sort_values("Grant amount (£m)", ascending=False),
                 summary_title,
                 title="By funder",
             )
