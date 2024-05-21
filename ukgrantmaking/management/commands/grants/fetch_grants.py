@@ -14,7 +14,21 @@ from ukgrantmaking.models import CurrencyConverter, Grant
 @click.option("--end-date", default="2023-03-31")
 def grants(db_con, start_date, end_date):
     datastore_query = """
-        with g as materialized (select * from view_latest_grant)
+        with g as materialized (select * from view_latest_grant),
+        location_source AS (
+            SELECT g.grant_id,
+                jsonb_array_elements(g.additional_data->'locationLookup') AS location
+            FROM g
+        ),
+        location AS (
+            SELECT grant_id,
+                array_agg(DISTINCT "location"->>'rgncd') FILTER (WHERE "location"->>'source' like 'recipient%%' AND "location"->>'rgncd' IS NOT NULL) AS recipient_location_rgn,
+                array_agg(DISTINCT "location"->>'ctrycd') FILTER (WHERE "location"->>'source' like 'recipient%%' AND "location"->>'ctrycd' IS NOT NULL) AS recipient_location_ctry,
+                array_agg(DISTINCT "location"->>'rgncd') FILTER (WHERE "location"->>'source' like 'beneficiary%%' AND "location"->>'rgncd' IS NOT NULL) AS beneficiary_location_rgn,
+                array_agg(DISTINCT "location"->>'ctrycd') FILTER (WHERE "location"->>'source' like 'beneficiary%%' AND "location"->>'ctrycd' IS NOT NULL) AS beneficiary_location_ctry
+            FROM location_source
+            GROUP BY grant_id
+        )
         select g.data->>'id' as "grant_id",
             g.data->>'title' as "title",
             g.data->>'description' as "description",
@@ -40,8 +54,14 @@ def grants(db_con, start_date, end_date):
             g.data->'grantProgramme'->0->>'title' as "grant_programme_title",
             g.source_data->'publisher'->>'prefix' as "publisher_prefix",
             g.source_data->'publisher'->>'name' as "publisher_name",
-            g.source_data->>'license' as "license"
+            g.source_data->>'license' as "license",
+            recipient_location_rgn[1] as "recipient_location_rgn",
+            recipient_location_ctry[1] as "recipient_location_ctry",
+            beneficiary_location_rgn[1] as "beneficiary_location_rgn",
+            beneficiary_location_ctry[1] as "beneficiary_location_ctry"
         from g
+            LEFT OUTER JOIN location
+                ON g.grant_id = location.grant_id
         where to_date(g.data->>'awardDate', 'YYYY-MM-DD') >= %(start_date)s
         and to_date(g.data->>'awardDate', 'YYYY-MM-DD') <= %(end_date)s
     """

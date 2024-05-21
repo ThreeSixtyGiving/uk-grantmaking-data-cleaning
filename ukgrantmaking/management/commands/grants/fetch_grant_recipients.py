@@ -98,13 +98,59 @@ def grant_recipients(db_con):
     # get updated names and date of registration from FTC
     org_records = pd.read_sql(
         """
-        SELECT org_id,
+        WITH c AS (
+            SELECT 'GB-CHC-' || registered_charity_number AS org_id,
+                array_agg(classification_description) FILTER (WHERE classification_type = 'How') AS how,
+                array_agg(classification_description) FILTER (WHERE classification_type = 'What') AS what,
+                array_agg(classification_description) FILTER (WHERE classification_type = 'Who') AS who 
+            FROM charity_ccewcharityclassification 
+            WHERE linked_charity_number = 0
+            GROUP BY 1
+        ),
+        l AS (
+            SELECT org_id,
+                array_agg(DISTINCT geo_rgn) FILTER (WHERE "locationType" = 'HQ' AND geo_rgn IS NOT NULL) AS rgn_hq,
+                array_agg(DISTINCT geo_rgn) FILTER (WHERE "locationType" = 'AOO' AND geo_rgn IS NOT NULL) AS rgn_aoo,
+                array_agg(DISTINCT geo_ctry) FILTER (WHERE "locationType" = 'HQ' AND geo_ctry IS NOT NULL) AS ctry_hq,
+                array_agg(DISTINCT geo_ctry) FILTER (WHERE "locationType" = 'AOO' AND geo_ctry IS NOT NULL) AS ctry_aoo,
+                SUM(CASE WHEN geo_rgn = 'E12000007' AND "locationType" = 'HQ' THEN 1 ELSE 0 END) > 0 AS london_hq,
+                SUM(CASE WHEN geo_rgn = 'E12000007' AND "locationType" = 'AOO' THEN 1 ELSE 0 END) > 0 AS london_aoo
+            FROM ftc_organisationlocation l
+            GROUP BY 1
+        ),
+        s AS (
+            SELECT c.org_id,
+                ve.title AS scale
+            FROM ftc_vocabulary v
+                INNER JOIN ftc_vocabularyentries ve
+                    ON v.id = ve.vocabulary_id 
+                INNER JOIN ftc_organisationclassification c
+                    ON ve.id = c.vocabulary_id 
+            WHERE v.slug = 'scale'
+        )
+        SELECT o.org_id,
             name,
             "dateRegistered",
             "dateRemoved",
-            "active"
-        FROM ftc_organisation
-        WHERE org_id IN %(org_id)s
+            "active",
+            c.how,
+            c.what,
+            c.who,
+            rgn_hq[1] as rgn_hq,
+            rgn_aoo,
+            ctry_hq[1] as ctry_hq,
+            ctry_aoo,
+            london_hq,
+            london_aoo,
+            s.scale as scale_registered
+        FROM ftc_organisation o
+            LEFT OUTER JOIN c
+                ON o.org_id = c.org_id
+            LEFT OUTER JOIN l
+                ON o.org_id = l.org_id
+            LEFT OUTER JOIN s
+                ON o.org_id = s.org_id
+        WHERE o.org_id IN %(org_id)s
         """,
         params={"org_id": org_ids},
         con=db_con,
@@ -124,9 +170,36 @@ def grant_recipients(db_con):
                 ].date_of_registration = org_record.dateRegistered
                 org_cache[org_record.org_id].date_of_removal = org_record.dateRemoved
                 org_cache[org_record.org_id].active = org_record.active
+                org_cache[org_record.org_id].how = org_record.how
+                org_cache[org_record.org_id].what = org_record.what
+                org_cache[org_record.org_id].who = org_record.who
+                org_cache[org_record.org_id].rgn_hq = org_record.rgn_hq
+                org_cache[org_record.org_id].rgn_aoo = org_record.rgn_aoo
+                org_cache[org_record.org_id].ctry_hq = org_record.ctry_hq
+                org_cache[org_record.org_id].ctry_aoo = org_record.ctry_aoo
+                org_cache[org_record.org_id].london_hq = org_record.london_hq
+                org_cache[org_record.org_id].london_aoo = org_record.london_aoo
+                org_cache[
+                    org_record.org_id
+                ].scale_registered = org_record.scale_registered
         GrantRecipient.objects.bulk_update(
             org_cache.values(),
-            ["name_registered", "date_of_registration", "date_of_removal", "active"],
+            [
+                "name_registered",
+                "date_of_registration",
+                "date_of_removal",
+                "active",
+                "how",
+                "what",
+                "who",
+                "rgn_hq",
+                "rgn_aoo",
+                "ctry_hq",
+                "ctry_aoo",
+                "london_hq",
+                "london_aoo",
+                "scale_registered",
+            ],
         )
 
     finance_records = pd.read_sql(

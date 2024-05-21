@@ -288,6 +288,11 @@ class Grant(models.Model):
     publisher_name = models.CharField(max_length=255, null=True, blank=True)
     license = models.CharField(max_length=255, null=True, blank=True)
 
+    recipient_location_rgn = models.CharField(max_length=255, null=True, blank=True)
+    recipient_location_ctry = models.CharField(max_length=255, null=True, blank=True)
+    beneficiary_location_rgn = models.CharField(max_length=255, null=True, blank=True)
+    beneficiary_location_ctry = models.CharField(max_length=255, null=True, blank=True)
+
     funder = models.ForeignKey(
         "Funder", on_delete=models.CASCADE, related_name="grants", null=True, blank=True
     )
@@ -395,6 +400,15 @@ class GrantRecipient(models.Model):
     date_of_registration = models.DateField(null=True, blank=True)
     date_of_removal = models.DateField(null=True, blank=True)
     active = models.BooleanField(null=True, blank=True)
+    how = models.JSONField(null=True, blank=True)
+    what = models.JSONField(null=True, blank=True)
+    who = models.JSONField(null=True, blank=True)
+    rgn_hq = models.CharField(max_length=254, null=True, blank=True)
+    rgn_aoo = models.JSONField(null=True, blank=True)
+    ctry_hq = models.CharField(max_length=254, null=True, blank=True)
+    ctry_aoo = models.JSONField(null=True, blank=True)
+    london_hq = models.BooleanField(null=True, blank=True)
+    london_aoo = models.BooleanField(null=True, blank=True)
 
     scale_registered = models.CharField(
         max_length=50, null=True, blank=True, choices=RecipientScale.choices
