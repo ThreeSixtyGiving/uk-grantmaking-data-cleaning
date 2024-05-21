@@ -8,7 +8,7 @@ from ukgrantmaking.models.funder import FUNDER_CATEGORIES
 from ukgrantmaking.models.grant import Grant, GrantRecipientYear
 
 DEFAULT_COLUMNS = [
-    "grant_id",
+    # "grant_id",
     "funding_organisation_id",
     "funding_organisation_name",
     "recipient_organisation_id",
@@ -286,7 +286,9 @@ def grant_table(
     if sortby.startswith("-"):
         sortby = sortby[1:]
         sort_ascending = False
-    result = df.sort_values(sortby, ascending=sort_ascending)[DEFAULT_COLUMNS]
+    result = df.set_index("grant_id").sort_values(sortby, ascending=sort_ascending)[
+        columns
+    ]
     if n:
         result = result[0:n]
     return result

@@ -173,10 +173,22 @@ def financial_year_grants_view(request, fy, filetype="html"):
             #     title=summary_title,
             # )
 
-    funders = (
+    funders = list(
         Funder.objects.filter(included=True)
         .exclude(segment=FunderSegment.CHARITY)
         .values_list("org_id", flat=True)
+    )
+    funders.extend(
+        [
+            "GB-CHC-1203784",
+            "GB-CHC-1122052",
+            "GB-COH-00357963",
+            "GB-CHC-1122052",
+            "GB-CHC-1203576",
+            "GB-CHC-1187441",
+            "GB-CHC-1194447",
+            "GB-CHC-205629",
+        ]
     )
     output.add_table(
         grant_table(
