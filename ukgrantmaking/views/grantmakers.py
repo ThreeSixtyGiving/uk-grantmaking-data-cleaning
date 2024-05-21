@@ -45,6 +45,26 @@ def financial_year(request, fy, filetype="html"):
         summary_individuals, "Summary", title="Summary grants to individuals"
     )
 
+    # summary table
+    summary = funder_summary(current_fy - 1)
+    output.add_table(summary, "Summary", title="Summary (previous year)")
+
+    # summary by size
+    summary_by_size = funder_summary_by_size(current_fy - 1)
+    output.add_table(
+        summary_by_size,
+        "Summary",
+        title="Grantmakers by grant spending (previous year)",
+    )
+
+    # summary table grants to individuals
+    summary_individuals = funder_individuals_summary(current_fy - 1)
+    output.add_table(
+        summary_individuals,
+        "Summary",
+        title="Summary grants to individuals (previous year)",
+    )
+
     # trends over time
     fields = [
         ("spending", "Spending", models.Sum),
