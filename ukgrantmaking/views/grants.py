@@ -194,7 +194,7 @@ def financial_year_grants_view(request, fy, filetype="html"):
         grant_table(
             all_grants[all_grants["recipient_id"].isin(funders)],
             columns=DEFAULT_COLUMNS
-            + ["segment"]
+            + ["segment", "recipient_id"]
             + (["description"] if filetype == "xlsx" else []),
             n=None if filetype == "xlsx" else 100,
         ),
