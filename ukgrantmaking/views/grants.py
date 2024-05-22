@@ -254,7 +254,9 @@ def financial_year_grants_simple(request, fy, filetype="html"):
             buffer.read(),
             content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         )
-        response["Content-Disposition"] = f"attachment; filename=grants-{fy}.xlsx"
+        response["Content-Disposition"] = (
+            f"attachment; filename=grants-simple-{fy}.xlsx"
+        )
         return response
 
     return render(
@@ -626,9 +628,7 @@ def financial_year_grants_view(request, fy, filetype="html"):
             buffer.read(),
             content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         )
-        response["Content-Disposition"] = (
-            f"attachment; filename=grants-simple-{fy}.xlsx"
-        )
+        response["Content-Disposition"] = f"attachment; filename=grants-{fy}.xlsx"
         return response
 
     return render(
