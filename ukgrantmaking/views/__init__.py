@@ -12,7 +12,11 @@ from ukgrantmaking.models import (
     Grant,
 )
 from ukgrantmaking.views.grantmakers import all_grantmakers_csv, financial_year
-from ukgrantmaking.views.grants import all_grants_csv, financial_year_grants_view
+from ukgrantmaking.views.grants import (
+    all_grants_csv,
+    financial_year_grants_simple,
+    financial_year_grants_view,
+)
 
 __all__ = [
     "check_cookies",
@@ -25,6 +29,7 @@ __all__ = [
     "financial_year_grants_view",
     "all_grants_csv",
     "all_grantmakers_csv",
+    "financial_year_grants_simple",
 ]
 
 

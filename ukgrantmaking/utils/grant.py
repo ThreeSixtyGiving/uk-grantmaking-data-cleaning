@@ -47,7 +47,6 @@ SEGMENT_ORDER = [
 
 AMOUNT_AWARDED_BINS = [
     float("-inf"),
-    1,
     1_000,
     10_000,
     100_000,
@@ -55,7 +54,6 @@ AMOUNT_AWARDED_BINS = [
     float("inf"),
 ]
 AMOUNT_AWARDED_BINS_LABELS = [
-    "Negative / zero",
     "Under £1k",
     "£1k to £10k",
     "£10k to £100k",
@@ -64,7 +62,6 @@ AMOUNT_AWARDED_BINS_LABELS = [
 ]
 INCOME_BINS = [
     float("-inf"),
-    0,
     10_000,
     100_000,
     1_000_000,
@@ -72,8 +69,7 @@ INCOME_BINS = [
     float("inf"),
 ]
 INCOME_BINS_LABELS = [
-    "Negative / zero",
-    "Under £01k",
+    "Under £10k",
     "£10k to £100k",
     "£100k to £1m",
     "£1m to £10m",
@@ -594,6 +590,57 @@ def grants_by_country(
     **kwargs,
 ):
     return grant_crosstab(df, groupby, column_field="country", **kwargs)
+
+
+def grants_by_who(
+    df: pd.DataFrame,
+    groupby: list[str] = ["category", "segment"],
+    **kwargs,
+):
+    field = "recipient__who"
+    return grant_crosstab(
+        df[df[field].notnull()].explode(field).reset_index(),
+        groupby,
+        column_field=field,
+        **kwargs,
+    )
+
+
+def grants_by_how(
+    df: pd.DataFrame,
+    groupby: list[str] = ["category", "segment"],
+    **kwargs,
+):
+    field = "recipient__how"
+    return grant_crosstab(
+        df[df[field].notnull()].explode(field).reset_index(),
+        groupby,
+        column_field=field,
+        **kwargs,
+    )
+
+
+def grants_by_what(
+    df: pd.DataFrame,
+    groupby: list[str] = ["category", "segment"],
+    **kwargs,
+):
+    field = "recipient__what"
+    return grant_crosstab(
+        df[df[field].notnull()].explode(field).reset_index(),
+        groupby,
+        column_field=field,
+        **kwargs,
+    )
+
+
+def recipient_size_by_amount_awarded(df: pd.DataFrame, **kwargs):
+    return grant_crosstab(
+        df,
+        ["amount_awarded_GBP_band"],
+        column_field="recipient_income_band",
+        **kwargs,
+    )
 
 
 def number_of_grants_by_recipient(df: pd.DataFrame):

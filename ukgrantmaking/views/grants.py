@@ -1,5 +1,6 @@
 from io import BytesIO
 
+import pandas as pd
 from caradoc import DataOutput, FinancialYear
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponse
@@ -23,7 +24,10 @@ from ukgrantmaking.utils.grant import (
     grant_table,
     grants_by_country,
     grants_by_region,
+    grants_by_what,
+    grants_by_who,
     number_of_grants_by_recipient,
+    recipient_size_by_amount_awarded,
     recipient_types,
     recipients_by_size,
     who_funds_with_who,
@@ -43,6 +47,235 @@ def all_grants_csv(request, fy):
     )
     all_grants.to_csv(path_or_buf=response, index=False)
     return response
+
+
+def for_flourish(grants):
+    categories = {
+        "Charity": ("Charity", "Total"),
+        "Grantmaker": ("Grantmaker", "Total"),
+        "Lottery Distributor": ("Lottery", "Lottery Distributor"),
+        "Government": ("Government", "Total"),
+        "Other": ("Other", "Donor Advised Fund"),
+    }
+    simple_segments = {
+        "Community Foundation": ("Grantmaker", "Community Foundation"),
+        "Corporate Foundation": ("Grantmaker", "Corporate Foundation"),
+        "Family Foundation": ("Grantmaker", "Family Foundation"),
+        "Fundraising Grantmaker": ("Grantmaker", "Fundraising Grantmaker"),
+        "General grantmaker": ("Grantmaker", "General grantmaker"),
+        "Government/Lottery Endowed": ("Grantmaker", "Government/Lottery Endowed"),
+        "Member/Trade Funded": ("Grantmaker", "Member/Trade Funded"),
+        "Charity": ("Charity", "Total"),
+        "Government": ("Government", "Total"),
+        "All grantmakers": ("Total", "Total"),
+    }
+
+    charts = [
+        # name, function, categories, flip, drop unknown
+        ("Recipient type", recipient_types, categories, False, None, True),
+        (
+            "Size of grant recipients",
+            recipients_by_size,
+            simple_segments,
+            True,
+            "Unknown",
+            True,
+        ),
+        (
+            "Grant recipient",
+            grants_by_country,
+            simple_segments,
+            False,
+            "Unknown",
+            False,
+        ),
+        (
+            "Communities served",
+            grants_by_who,
+            simple_segments,
+            False,
+            None,
+            False,
+        ),
+        (
+            "Themes",
+            grants_by_what,
+            simple_segments,
+            False,
+            None,
+            False,
+        ),
+        (
+            "Grant duration",
+            grant_by_duration,
+            simple_segments,
+            False,
+            None,
+            False,
+        ),
+        (
+            "Grant size",
+            grant_by_size,
+            simple_segments,
+            False,
+            "Unknown",
+            False,
+        ),
+        (
+            "Recipient size by grant awarded",
+            recipient_size_by_amount_awarded,
+            None,
+            False,
+            "Unknown",
+            False,
+        ),
+    ]
+    for (
+        chart_name,
+        chart_function,
+        chart_categories,
+        chart_flip,
+        drop_label,
+        use_total,
+    ) in charts:
+        chart_dfs = {
+            "Number of grants": chart_function(grants),
+            "Grant amount": chart_function(
+                grants,
+                values_field="amount_awarded_GBP",
+            ),
+        }
+        output_dfs = {}
+        output_dfs_pc = {}
+        for label, df in chart_dfs.items():
+            if chart_categories:
+                output_dfs[label] = pd.DataFrame(
+                    {k: df.loc[v, :] for k, v in chart_categories.items()}
+                )
+            else:
+                output_dfs[label] = df
+            if drop_label:
+                output_dfs[label] = output_dfs[label].drop(
+                    drop_label, axis=0, errors="ignore"
+                )
+            if use_total:
+                output_dfs_pc[label] = output_dfs[label].divide(
+                    output_dfs[label].loc["Total", :], axis=1
+                )
+            else:
+                output_dfs_pc[label] = output_dfs[label].divide(
+                    output_dfs[label].drop("Total", axis=0).sum(axis=0), axis=1
+                )
+            output_dfs_pc[label] = (
+                output_dfs_pc[label].multiply(100).round(2).drop("Total", axis=0)
+            )
+            if chart_flip:
+                output_dfs[label] = output_dfs[label].T
+                output_dfs_pc[label] = output_dfs_pc[label].T
+
+        yield (
+            f"{chart_name} (percentage)",
+            pd.concat(output_dfs_pc).rename_axis(
+                ["Metric", "Segment" if chart_flip else chart_name]
+            ),
+        )
+        # yield (
+        #     chart_name,
+        #     pd.concat(output_dfs).rename_axis(["Metric", "Segment"]),
+        # )
+
+    yield ("Recipients by number of grants", number_of_grants_by_recipient(grants))
+
+    summary = (
+        grant_summary(grants)
+        .drop(
+            [("Total", "Total"), ("Unknown", "Unknown"), ("Flurgle", "Flurgle")],
+            errors="ignore",
+            axis=0,
+        )
+        .reset_index()
+    )
+    yield (
+        "Median grant size",
+        pd.crosstab(
+            summary["segment"],
+            summary["category"],
+            values=summary["Median amount"],
+            aggfunc="sum",
+        )
+        .fillna(pd.NA)
+        .drop("Total", axis=0),
+    )
+
+    by_size = grant_by_size(grants)
+    by_size = by_size.divide(by_size["Total"], axis=0).multiply(100).round(2)
+    by_size = (
+        by_size[["£100k to £1m", "Over £1m"]]
+        .sum(axis=1)
+        .drop(
+            [("Total", "Total"), ("Unknown", "Unknown"), ("Flurgle", "Flurgle")],
+            errors="ignore",
+            axis=0,
+        )
+        .rename("Over £100k")
+        .reset_index()
+    )
+    yield (
+        "Proportion of grants over £100k",
+        pd.crosstab(
+            by_size["segment"],
+            by_size["category"],
+            values=by_size["Over £100k"],
+            aggfunc="sum",
+        )
+        .fillna(pd.NA)
+        .drop("Total", axis=0),
+    )
+
+
+@login_required
+def financial_year_grants_simple(request, fy, filetype="html"):
+    current_fy = FinancialYear(fy)
+    output = DataOutput()
+
+    all_grants = get_all_grants(current_fy)
+
+    criteria = all_grants["recipient_type"] != "Individual"
+
+    for chart_name, chart_output in for_flourish(all_grants[criteria]):
+        output.add_table(chart_output, chart_name)
+
+    if filetype == "xlsx":
+        buffer = BytesIO()
+        output.write(buffer)
+        buffer.seek(0)
+        response = HttpResponse(
+            buffer.read(),
+            content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        )
+        response["Content-Disposition"] = f"attachment; filename=grants-{fy}.xlsx"
+        return response
+
+    return render(
+        request,
+        "financial_year.html.j2",
+        {
+            "fy": fy,
+            "output": output,
+            "skip_sheets": ["All general grantmakers"],
+            "links": {
+                "Download as XLSX": reverse(
+                    "financial_year_grants_simple_xlsx", kwargs={"fy": fy}
+                ),
+                "Download all grants as CSV": reverse(
+                    "all_grants_csv", kwargs={"fy": fy}
+                ),
+                "Back to full tables": reverse(
+                    "financial_year_grants", kwargs={"fy": fy}
+                ),
+            },
+        },
+    )
 
 
 @login_required
@@ -74,6 +307,10 @@ def financial_year_grants_view(request, fy, filetype="html"):
             "criteria": (all_grants["london_category"].notnull()),
         },
     }
+
+    criteria = summaries["Grants to organisations"]["criteria"]
+    for chart_name, chart_output in for_flourish(all_grants[criteria]):
+        output.add_table(chart_output, "For flourish", title=chart_name)
 
     for summary_name, summary_filters in summaries.items():
         summary_title = summary_name
@@ -388,7 +625,9 @@ def financial_year_grants_view(request, fy, filetype="html"):
             buffer.read(),
             content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         )
-        response["Content-Disposition"] = f"attachment; filename=grants-{fy}.xlsx"
+        response["Content-Disposition"] = (
+            f"attachment; filename=grants-simple-{fy}.xlsx"
+        )
         return response
 
     return render(
@@ -398,7 +637,14 @@ def financial_year_grants_view(request, fy, filetype="html"):
             "fy": fy,
             "output": output,
             "skip_sheets": ["All general grantmakers"],
-            "xlsx_link": reverse("financial_year_grants_xlsx", kwargs={"fy": fy}),
-            "csv_link": reverse("all_grants_csv", kwargs={"fy": fy}),
+            "links": {
+                "Download as XLSX": reverse(
+                    "financial_year_grants_xlsx", kwargs={"fy": fy}
+                ),
+                "Download all grants as CSV": reverse(
+                    "all_grants_csv", kwargs={"fy": fy}
+                ),
+                "Simple tables": reverse("financial_year_grants", kwargs={"fy": fy}),
+            },
         },
     )

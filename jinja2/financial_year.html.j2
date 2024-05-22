@@ -3,8 +3,11 @@
 {% block content %}
 <h1>Financial year {{ fy }}</h1>
 
-<a href="{{ xlsx_link }}">Download as Excel</a>
-<a href="{{ csv_link }}">Download all as CSV</a>
+<ul>
+    {% for link_title, link_url in links.items() %}
+    <li><a href="{{ link_url }}">{{ link_title }}</a></li>
+    {% endfor %}
+</ul>
 
 <h2 id="contents">Contents</h2>
 <ul>

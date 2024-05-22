@@ -374,8 +374,12 @@ def financial_year(request, fy, filetype="html"):
             "fy": fy,
             "output": output,
             "skip_sheets": ["All general grantmakers"],
-            "xlsx_link": reverse("financial_year_xlsx", kwargs={"fy": fy}),
-            "csv_link": reverse("all_grantmakers_csv", kwargs={"fy": fy}),
+            "links": {
+                "Download as XLSX": reverse("financial_year_xlsx", kwargs={"fy": fy}),
+                "Download all funders as CSV": reverse(
+                    "all_grantmakers_csv", kwargs={"fy": fy}
+                ),
+            },
         },
     )
 

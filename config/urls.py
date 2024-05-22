@@ -21,6 +21,7 @@ from ukgrantmaking.admin import admin_site
 from ukgrantmaking.views import (
     all_grantmakers_csv,
     all_grants_csv,
+    financial_year_grants_simple,
     financial_year_grants_view,
 )
 from ukgrantmaking.views import check_cookies as check_cookies_view
@@ -58,20 +59,31 @@ urlpatterns = [
         name="all_grantmakers_csv",
     ),
     path(
+        "financial-year/<str:fy>/grants-simple.xlsx",
+        financial_year_grants_simple,
+        {"filetype": "xlsx"},
+        name="financial_year_grants_simple_xlsx",
+    ),
+    path(
+        "financial-year/<str:fy>/grants-simple",
+        financial_year_grants_simple,
+        name="financial_year_grants_simple",
+    ),
+    path(
         "financial-year/<str:fy>/grants.xlsx",
         financial_year_grants_view,
         {"filetype": "xlsx"},
         name="financial_year_grants_xlsx",
     ),
     path(
-        "financial-year/<str:fy>/all_grants.csv",
-        all_grants_csv,
-        name="all_grants_csv",
-    ),
-    path(
         "financial-year/<str:fy>/grants",
         financial_year_grants_view,
         name="financial_year_grants",
+    ),
+    path(
+        "financial-year/<str:fy>/all_grants.csv",
+        all_grants_csv,
+        name="all_grants_csv",
     ),
     path("admin/", admin_site.urls),
     path(
