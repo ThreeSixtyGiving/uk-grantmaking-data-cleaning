@@ -71,6 +71,7 @@ def financial_year(request, fy, filetype="html"):
         ("income", "Income", models.Sum),
         ("spending_grant_making", "Spending on grantmaking", models.Sum),
         ("total_net_assets", "Net Assets", models.Max),
+        ("funds_endowment", "Endowments", models.Max),
     ]
     years = [str(fy) for fy in current_fy.previous_n_years(4)][::-1]
     for field, field_name, aggregation in fields:
@@ -79,6 +80,21 @@ def financial_year(request, fy, filetype="html"):
             trends_over_time,
             "Trends",
             title=f"Trend over time ({field_name})",
+        )
+
+        funder_trend = funder_over_time(
+            current_fy,
+            [
+                (field, field_name, aggregation),
+            ],
+            n=1_500 if filetype == "xlsx" else 150,
+            included=True,
+            sortby=f"-cy_{field}",
+        )
+        output.add_table(
+            funder_trend,
+            f"trends-funders-{field}" if filetype == "xlsx" else "Trends",
+            title=f"Trend over time (top funders by {field_name})",
         )
 
     # trends by segment

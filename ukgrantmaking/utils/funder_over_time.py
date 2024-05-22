@@ -46,7 +46,7 @@ def funder_over_time(
         Funder.objects.filter(
             org_id__in=orgs,
         )
-        .values("org_id", "name")
+        .values("org_id", "name", "segment")
         .annotate(**year_annotations)
     )
     trends_over_time = (
@@ -55,6 +55,7 @@ def funder_over_time(
             columns={
                 "org_id": "Org ID",
                 "name": "Funder name",
+                "segment": "Segment",
                 **column_renames,
             }
         )
