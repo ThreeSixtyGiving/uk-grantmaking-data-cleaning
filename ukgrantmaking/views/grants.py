@@ -62,9 +62,10 @@ def financial_year_grants_view(request, fy, filetype="html"):
         },
     }
 
-    for summary_title, summary_filters in summaries.items():
+    for summary_name, summary_filters in summaries.items():
+        summary_title = summary_name
         if filetype == "xlsx":
-            summary_title = slugify(summary_title)[0:31]
+            summary_title = slugify(summary_name)[0:31]
         output.add_table(
             grant_summary(all_grants[summary_filters["criteria"]]),
             summary_title,
@@ -159,7 +160,7 @@ def financial_year_grants_view(request, fy, filetype="html"):
             title="Who funds with who",
         )
 
-        if summary_title in (
+        if summary_name in (
             "Grants to individuals",
             "Community Foundations",
             "London",
@@ -173,7 +174,7 @@ def financial_year_grants_view(request, fy, filetype="html"):
                 title="By funder",
             )
 
-        if summary_title == "Grants to individuals":
+        if summary_name == "Grants to individuals":
             for field in [
                 "recipient_individual_primary_grant_reason",
                 "recipient_individual_secondary_grant_reason",
