@@ -11,8 +11,8 @@ from ukgrantmaking.models import (
     FunderYear,
     Grant,
 )
-from ukgrantmaking.views.grantmakers import financial_year
-from ukgrantmaking.views.grants import financial_year_grants_view
+from ukgrantmaking.views.grantmakers import all_grantmakers_csv, financial_year
+from ukgrantmaking.views.grants import all_grants_csv, financial_year_grants_view
 
 __all__ = [
     "check_cookies",
@@ -23,6 +23,8 @@ __all__ = [
     "table_creator",
     "financial_year",
     "financial_year_grants_view",
+    "all_grants_csv",
+    "all_grantmakers_csv",
 ]
 
 

@@ -18,11 +18,15 @@ from django.contrib.auth import views as auth_views
 from django.urls import include, path
 
 from ukgrantmaking.admin import admin_site
+from ukgrantmaking.views import (
+    all_grantmakers_csv,
+    all_grants_csv,
+    financial_year_grants_view,
+)
 from ukgrantmaking.views import check_cookies as check_cookies_view
 from ukgrantmaking.views import export_funders_excel as export_funders_view
 from ukgrantmaking.views import export_grants_excel as export_grants_view
 from ukgrantmaking.views import financial_year as financial_year_view
-from ukgrantmaking.views import financial_year_grants_view
 from ukgrantmaking.views import index as index_view
 from ukgrantmaking.views import table_creator as table_creator_view
 
@@ -49,10 +53,20 @@ urlpatterns = [
         name="financial_year",
     ),
     path(
+        "financial-year/<str:fy>/all_grantmakers.csv",
+        all_grantmakers_csv,
+        name="all_grantmakers_csv",
+    ),
+    path(
         "financial-year/<str:fy>/grants.xlsx",
         financial_year_grants_view,
         {"filetype": "xlsx"},
         name="financial_year_grants_xlsx",
+    ),
+    path(
+        "financial-year/<str:fy>/all_grants.csv",
+        all_grants_csv,
+        name="all_grants_csv",
     ),
     path(
         "financial-year/<str:fy>/grants",

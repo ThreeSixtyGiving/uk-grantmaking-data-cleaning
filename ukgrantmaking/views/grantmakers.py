@@ -375,58 +375,53 @@ def financial_year(request, fy, filetype="html"):
             "output": output,
             "skip_sheets": ["All general grantmakers"],
             "xlsx_link": reverse("financial_year_xlsx", kwargs={"fy": fy}),
+            "csv_link": reverse("all_grantmakers_csv", kwargs={"fy": fy}),
         },
     )
 
 
 @login_required
-def all_grantmakers_export(request, fy, filetype):
+def all_grantmakers_csv(request, fy):
     current_fy = FinancialYear(fy)
-    output = DataOutput()
-    output.add_table(
-        funder_table(
-            current_fy,
-            [
-                "cy_rank",
-                "org_id",
-                "name",
-                "segment",
-                "living_wage_funder",
-                "360giving_publisher",
-                "aco",
-                "makes_grants_to_individuals",
-                "cy_income",
-                "cy_spending",
-                "cy_spending_grant_making",
-                "cy_spending_grant_making_institutions",
-                "cy_spending_grant_making_individuals",
-                "cy_total_net_assets",
-                "cy_employees",
-                "cy_notes",
-                "py_income",
-                "py_spending",
-                "py_spending_grant_making",
-                "py_spending_grant_making_institutions",
-                "py_spending_grant_making_individuals",
-                "py_total_net_assets",
-                "py_employees",
-                "py_notes",
-            ],
-            n=100_000,
-        ),
-        "All funders",
+    all_funders = funder_table(
+        current_fy,
+        [
+            "cy_rank",
+            "org_id",
+            "name",
+            "segment",
+            "living_wage_funder",
+            "360giving_publisher",
+            "aco",
+            "makes_grants_to_individuals",
+            "cy_income",
+            "cy_spending",
+            "cy_spending_grant_making",
+            "cy_spending_grant_making_institutions",
+            "cy_spending_grant_making_individuals",
+            "cy_total_net_assets",
+            "cy_funds_endowment",
+            "cy_employees",
+            "cy_notes",
+            "py_income",
+            "py_spending",
+            "py_spending_grant_making",
+            "py_spending_grant_making_institutions",
+            "py_spending_grant_making_individuals",
+            "py_total_net_assets",
+            "py_funds_endowment",
+            "py_employees",
+            "py_notes",
+        ],
+        n=None,
+        included=True,
     )
-    if filetype == "xlsx":
-        buffer = BytesIO()
-        output.write(buffer)
-        buffer.seek(0)
-        response = HttpResponse(
-            buffer.read(),
-            content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-        )
-        response["Content-Disposition"] = (
-            f"attachment; filename=grantmakers-all.{filetype}"
-        )
-        return response
 
-    raise ValueError(f"Unknown filetype: {filetype}")
+    response = HttpResponse(
+        content_type="text/csv",
+        headers={
+            "Content-Disposition": f'attachment; filename="all-grantmakers-{current_fy}.csv"'
+        },
+    )
+    all_funders.to_csv(path_or_buf=response, index=False)
+    return response

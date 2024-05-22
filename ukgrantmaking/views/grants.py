@@ -31,6 +31,21 @@ from ukgrantmaking.utils.grant import (
 
 
 @login_required
+def all_grants_csv(request, fy):
+    current_fy = FinancialYear(fy)
+    all_grants = get_all_grants(current_fy)
+
+    response = HttpResponse(
+        content_type="text/csv",
+        headers={
+            "Content-Disposition": f'attachment; filename="all-grants-{current_fy}.csv"'
+        },
+    )
+    all_grants.to_csv(path_or_buf=response, index=False)
+    return response
+
+
+@login_required
 def financial_year_grants_view(request, fy, filetype="html"):
     current_fy = FinancialYear(fy)
     output = DataOutput()
@@ -384,5 +399,6 @@ def financial_year_grants_view(request, fy, filetype="html"):
             "output": output,
             "skip_sheets": ["All general grantmakers"],
             "xlsx_link": reverse("financial_year_grants_xlsx", kwargs={"fy": fy}),
+            "csv_link": reverse("all_grants_csv", kwargs={"fy": fy}),
         },
     )
