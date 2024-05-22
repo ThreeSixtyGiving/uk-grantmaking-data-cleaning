@@ -58,6 +58,7 @@ def for_flourish(grants):
         "Other": ("Other", "Donor Advised Fund"),
     }
     simple_segments = {
+        "Government": ("Government", "Total"),
         "Community Foundation": ("Grantmaker", "Community Foundation"),
         "Corporate Foundation": ("Grantmaker", "Corporate Foundation"),
         "Family Foundation": ("Grantmaker", "Family Foundation"),
@@ -65,8 +66,8 @@ def for_flourish(grants):
         "General grantmaker": ("Grantmaker", "General grantmaker"),
         "Government/Lottery Endowed": ("Grantmaker", "Government/Lottery Endowed"),
         "Member/Trade Funded": ("Grantmaker", "Member/Trade Funded"),
+        "Lottery Distributors": ("Lottery", "Lottery Distributor"),
         "Charity": ("Charity", "Total"),
-        "Government": ("Government", "Total"),
         "All grantmakers": ("Total", "Total"),
     }
 
@@ -82,7 +83,7 @@ def for_flourish(grants):
             True,
         ),
         (
-            "Grant recipient",
+            "Recipients by country",
             grants_by_country,
             simple_segments,
             False,
