@@ -126,38 +126,11 @@ def financial_year_grants_view(request, fy, filetype="html"):
             title="By Country (by amount awarded)",
         )
 
-        for field in [
-            "recipient__who",
-            "recipient__what",
-            "recipient__how",
-        ]:
-            output.add_table(
-                grant_summary(
-                    all_grants[summary_filters["criteria"]].explode(field),
-                    groupby=[field],
-                )
-                .reset_index()
-                .rename(
-                    columns={
-                        field: "Category",
-                    }
-                ),
-                summary_title,
-                title="CC Classification: " + field.replace("recipient__", "").title(),
-            )
-
         # recipients by number of grants
         output.add_table(
             number_of_grants_by_recipient(all_grants[summary_filters["criteria"]]),
             summary_title,
             title="Recipients by number of grants",
-        )
-
-        # who funds with who
-        output.add_table(
-            who_funds_with_who(all_grants[summary_filters["criteria"]]),
-            summary_title,
-            title="Who funds with who",
         )
 
         if summary_name in (
@@ -228,11 +201,50 @@ def financial_year_grants_view(request, fy, filetype="html"):
                 summary_title,
                 title="Recipients by size (by amount awarded)",
             )
+
+            output.add_table(
+                grant_summary(
+                    all_grants[summary_filters["criteria"]],
+                    groupby=["recipient_type"],
+                ),
+                summary_title,
+                title="Recipients summary",
+            )
+
+            for field in [
+                "recipient__who",
+                "recipient__what",
+                "recipient__how",
+            ]:
+                output.add_table(
+                    grant_summary(
+                        all_grants[
+                            summary_filters["criteria"] & all_grants[field].notnull()
+                        ].explode(field),
+                        groupby=[field],
+                    )
+                    .reset_index()
+                    .rename(
+                        columns={
+                            field: "Category",
+                        }
+                    ),
+                    summary_title,
+                    title="CC Classification: "
+                    + field.replace("recipient__", "").title(),
+                )
             # output.add_table(
             #     recipients_by_scale(all_grants[summary_filters["criteria"]]),
             #     "Recipients by scale",
             #     title=summary_title,
             # )
+
+        # who funds with who
+        output.add_table(
+            who_funds_with_who(all_grants[summary_filters["criteria"]]),
+            summary_title if filetype == "html" else f"wfww-{summary_title}"[0:31],
+            title="Who funds with who",
+        )
 
     funders = list(
         Funder.objects.filter(included=True)
