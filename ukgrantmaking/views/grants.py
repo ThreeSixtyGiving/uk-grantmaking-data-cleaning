@@ -126,7 +126,7 @@ def for_flourish(grants):
             "Recipient size by grant awarded",
             recipient_size_by_amount_awarded,
             None,
-            False,
+            True,
             "Unknown",
             False,
         ),
