@@ -18,6 +18,7 @@ from ukgrantmaking.utils.grant import (
     get_all_grants,
     grant_by_duration,
     grant_by_size,
+    grant_crosstab,
     grant_summary,
     grant_table,
     grants_by_country,
@@ -55,10 +56,7 @@ def financial_year_grants_view(request, fy, filetype="html"):
             "criteria": (all_grants["segment"].isin(["Community Foundation"])),
         },
         "London": {
-            "criteria": (
-                all_grants["recipient__london_aoo"].eq(True)
-                | all_grants["beneficiary_location_rgn"].eq("E12000007")
-            ),
+            "criteria": (all_grants["london_category"].notnull()),
         },
     }
 
@@ -66,6 +64,58 @@ def financial_year_grants_view(request, fy, filetype="html"):
         summary_title = summary_name
         if filetype == "xlsx":
             summary_title = slugify(summary_name)[0:31]
+
+        if summary_name == "London":
+            output.add_table(
+                grant_summary(
+                    all_grants[summary_filters["criteria"]],
+                    groupby=["london_category"],
+                ),
+                summary_title,
+                title="London scale",
+            )
+            output.add_table(
+                grant_crosstab(
+                    all_grants[summary_filters["criteria"]],
+                    column_field="london_category",
+                ),
+                summary_title,
+                title="London scale by segment",
+            )
+            output.add_table(
+                grant_by_size(
+                    all_grants[summary_filters["criteria"]], groupby=["london_category"]
+                ),
+                summary_title,
+                title="Summary by grant size",
+            )
+            output.add_table(
+                grant_by_size(
+                    all_grants[summary_filters["criteria"]],
+                    groupby=["london_category"],
+                    values_field="amount_awarded_GBP",
+                ),
+                summary_title,
+                title="Summary by grant size (by amount awarded)",
+            )
+            output.add_table(
+                grant_by_duration(
+                    all_grants[summary_filters["criteria"]], groupby=["london_category"]
+                ),
+                summary_title,
+                title="Summary by duration",
+            )
+            output.add_table(
+                grant_by_duration(
+                    all_grants[summary_filters["criteria"]],
+                    groupby=["london_category"],
+                    values_field="amount_awarded_GBP",
+                ),
+                summary_title,
+                title="Summary by duration (by amount awarded)",
+            )
+            continue
+
         output.add_table(
             grant_summary(all_grants[summary_filters["criteria"]]),
             summary_title,
@@ -74,7 +124,7 @@ def financial_year_grants_view(request, fy, filetype="html"):
         output.add_table(
             grant_by_size(all_grants[summary_filters["criteria"]]),
             summary_title,
-            title="Summary by size",
+            title="Summary by grant size",
         )
         output.add_table(
             grant_by_size(
@@ -82,7 +132,7 @@ def financial_year_grants_view(request, fy, filetype="html"):
                 values_field="amount_awarded_GBP",
             ),
             summary_title,
-            title="Summary by size (by amount awarded)",
+            title="Summary by grant size (by amount awarded)",
         )
         output.add_table(
             grant_by_duration(all_grants[summary_filters["criteria"]]),
@@ -240,11 +290,13 @@ def financial_year_grants_view(request, fy, filetype="html"):
             # )
 
         # who funds with who
-        output.add_table(
-            who_funds_with_who(all_grants[summary_filters["criteria"]]),
-            summary_title if filetype == "html" else f"wfww-{summary_title}"[0:31],
-            title="Who funds with who",
-        )
+        wfww = who_funds_with_who(all_grants[summary_filters["criteria"]])
+        if len(wfww) > 0:
+            output.add_table(
+                who_funds_with_who(all_grants[summary_filters["criteria"]]),
+                summary_title if filetype == "html" else f"wfww-{summary_title}"[0:31],
+                title="Who funds with who",
+            )
 
     funders = list(
         Funder.objects.filter(included=True)

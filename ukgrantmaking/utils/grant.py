@@ -190,6 +190,7 @@ def get_all_grants(current_fy: FinancialYear):
             Grant.objects.filter(
                 award_date__gte=current_fy.start_date,
                 award_date__lte=current_fy.end_date,
+                amount_awarded_GBP__gte=0,
                 inclusion__in=[
                     Grant.InclusionStatus.INCLUDED,
                     Grant.InclusionStatus.UNSURE,
@@ -284,6 +285,28 @@ def get_all_grants(current_fy: FinancialYear):
                 bins=DURATION_BINS,
                 labels=DURATION_BINS_LABELS,
             ).cat.add_categories("Unknown"),
+            recipient_type=lambda x: (
+                x["recipient_type"]
+                .fillna("Unknown")
+                .map(
+                    {
+                        "Charity": "Charity",
+                        "Community Interest Company": "Other non-profit",
+                        "Education": "University/Education",
+                        "Local Authority": "Government",
+                        "Mutual": "Other non-profit",
+                        "NHS": "Government",
+                        "Non-profit Company": "Other non-profit",
+                        "Organisation": "Unknown",
+                        "Individual": "Individual",
+                        "Unknown": "Unknown",
+                        "Overseas Charity": "Charity",
+                        "Private Company": "Private Company",
+                        "Sports Club": "Other non-profit",
+                        "University": "University/Education",
+                    }
+                )
+            ),
         )
         .rename(
             columns={
@@ -292,6 +315,25 @@ def get_all_grants(current_fy: FinancialYear):
             }
         )
     )
+
+    # Add london category
+    result["london_category"] = (
+        result["recipient__scale"]
+        .replace(
+            {
+                "Local": "London",
+                "Regional": "London",
+            }
+        )
+        .fillna(pd.NA)
+    )
+    result.loc[result["recipient__london_aoo"].fillna(False), "london_category"] = (
+        "London"
+    )
+    result.loc[~result["recipient__london_hq"].fillna(False), "london_category"] = pd.NA
+
+    # fix for minimum durations
+    result.loc[result["planned_dates_duration"].lt(0), "planned_dates_duration"] = None
 
     recipient_finances = (
         pd.DataFrame(

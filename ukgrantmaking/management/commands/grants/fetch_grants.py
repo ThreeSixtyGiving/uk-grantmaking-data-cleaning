@@ -104,7 +104,7 @@ def grants(db_con, start_date, end_date):
     # convert into months
     duration = duration.divide(np.timedelta64(30, "D"))
     # use ceiling to get the whole number of months
-    duration = np.ceil(duration)
+    duration = np.abs(np.ceil(duration))
 
     df["planned_dates_duration"] = df["planned_dates_duration"].fillna(duration)
 
