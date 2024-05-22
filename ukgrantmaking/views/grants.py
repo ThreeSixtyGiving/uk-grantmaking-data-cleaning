@@ -301,15 +301,6 @@ def financial_year_grants_view(request, fy, filetype="html"):
     )
 
     if filetype == "xlsx":
-        output.add_table(
-            grant_table(
-                all_grants,
-                columns=[c for c in all_grants.columns if c not in ["grant_id"]],
-                n=None,
-            ),
-            "All grants",
-        )
-
         buffer = BytesIO()
         output.write(buffer)
         buffer.seek(0)
