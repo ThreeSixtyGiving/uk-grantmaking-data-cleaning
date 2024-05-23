@@ -235,53 +235,6 @@ def for_flourish(grants):
 
 
 @login_required
-def financial_year_grants_simple(request, fy, filetype="html"):
-    current_fy = FinancialYear(fy)
-    output = DataOutput()
-
-    all_grants = get_all_grants(current_fy)
-
-    criteria = all_grants["recipient_type"] != "Individual"
-
-    for chart_name, chart_output in for_flourish(all_grants[criteria]):
-        output.add_table(chart_output, chart_name)
-
-    if filetype == "xlsx":
-        buffer = BytesIO()
-        output.write(buffer)
-        buffer.seek(0)
-        response = HttpResponse(
-            buffer.read(),
-            content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-        )
-        response["Content-Disposition"] = (
-            f"attachment; filename=grants-simple-{fy}.xlsx"
-        )
-        return response
-
-    return render(
-        request,
-        "financial_year.html.j2",
-        {
-            "fy": fy,
-            "output": output,
-            "skip_sheets": ["All general grantmakers"],
-            "links": {
-                "Download as XLSX": reverse(
-                    "financial_year_grants_simple_xlsx", kwargs={"fy": fy}
-                ),
-                "Download all grants as CSV": reverse(
-                    "all_grants_csv", kwargs={"fy": fy}
-                ),
-                "Back to full tables": reverse(
-                    "financial_year_grants", kwargs={"fy": fy}
-                ),
-            },
-        },
-    )
-
-
-@login_required
 def financial_year_grants_view(request, fy, filetype="html"):
     current_fy = FinancialYear(fy)
     output = DataOutput()
@@ -311,7 +264,7 @@ def financial_year_grants_view(request, fy, filetype="html"):
         },
     }
 
-    criteria = summaries["Grants to organisations"]["criteria"]
+    criteria = summaries["Grants to organisations (excluding regrants)"]["criteria"]
     for chart_name, chart_output in for_flourish(all_grants[criteria]):
         output.add_table(chart_output, "For flourish", title=chart_name)
 
@@ -645,7 +598,6 @@ def financial_year_grants_view(request, fy, filetype="html"):
                 "Download all grants as CSV": reverse(
                     "all_grants_csv", kwargs={"fy": fy}
                 ),
-                "Simple tables": reverse("financial_year_grants", kwargs={"fy": fy}),
             },
         },
     )

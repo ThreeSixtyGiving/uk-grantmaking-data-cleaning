@@ -26,6 +26,77 @@ from ukgrantmaking.utils.funder import (
 
 
 @login_required
+def grantmakers_trends(request, fy, filetype="html"):
+    current_fy = FinancialYear(fy)
+
+    output = DataOutput()
+
+    # trends over time
+    fields = [
+        ("spending", "Spending", models.Sum),
+        ("income", "Income", models.Sum),
+        ("spending_grant_making", "Spending on grantmaking", models.Sum),
+        ("total_net_assets", "Net Assets", models.Max),
+        ("funds_endowment", "Endowments", models.Max),
+    ]
+    years = [str(fy) for fy in current_fy.previous_n_years(4)][::-1]
+    for field, field_name, aggregation in fields:
+        trends_over_time = funder_trend_over_time(years, field, aggregation)
+        output.add_table(
+            trends_over_time,
+            "Trends",
+            title=f"Trend over time ({field_name})",
+        )
+
+        funder_trend = funder_over_time(
+            current_fy,
+            [
+                (field, field_name, aggregation),
+            ],
+            n=1_500 if filetype == "xlsx" else 150,
+            included=True,
+            sortby=f"-cy_{field}",
+        )
+        output.add_table(
+            funder_trend,
+            f"trends-funders-{field}"[0:31] if filetype == "xlsx" else "Trends",
+            title=f"Trend over time (top funders by {field_name})",
+        )
+
+    if filetype == "xlsx":
+        buffer = BytesIO()
+        output.write(buffer)
+        buffer.seek(0)
+        response = HttpResponse(
+            buffer.read(),
+            content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        )
+        response["Content-Disposition"] = (
+            f"attachment; filename=grantmakers-trends-{fy}.xlsx"
+        )
+        return response
+
+    return render(
+        request,
+        "financial_year.html.j2",
+        {
+            "fy": fy,
+            "output": output,
+            "skip_sheets": ["All general grantmakers"],
+            "links": {
+                "Download as XLSX": reverse(
+                    "grantmakers_trends_xlsx", kwargs={"fy": fy}
+                ),
+                "Download all funders as CSV": reverse(
+                    "all_grantmakers_csv", kwargs={"fy": fy}
+                ),
+                "Grantmakers data": reverse("financial_year", kwargs={"fy": fy}),
+            },
+        },
+    )
+
+
+@login_required
 def financial_year(request, fy, filetype="html"):
     current_fy = FinancialYear(fy)
 
@@ -65,37 +136,37 @@ def financial_year(request, fy, filetype="html"):
         title="Summary grants to individuals (previous year)",
     )
 
-    # trends over time
-    fields = [
-        ("spending", "Spending", models.Sum),
-        ("income", "Income", models.Sum),
-        ("spending_grant_making", "Spending on grantmaking", models.Sum),
-        ("total_net_assets", "Net Assets", models.Max),
-        ("funds_endowment", "Endowments", models.Max),
-    ]
-    years = [str(fy) for fy in current_fy.previous_n_years(4)][::-1]
-    for field, field_name, aggregation in fields:
-        trends_over_time = funder_trend_over_time(years, field, aggregation)
-        output.add_table(
-            trends_over_time,
-            "Trends",
-            title=f"Trend over time ({field_name})",
-        )
+    # # trends over time
+    # fields = [
+    #     ("spending", "Spending", models.Sum),
+    #     ("income", "Income", models.Sum),
+    #     ("spending_grant_making", "Spending on grantmaking", models.Sum),
+    #     ("total_net_assets", "Net Assets", models.Max),
+    #     ("funds_endowment", "Endowments", models.Max),
+    # ]
+    # years = [str(fy) for fy in current_fy.previous_n_years(4)][::-1]
+    # for field, field_name, aggregation in fields:
+    #     trends_over_time = funder_trend_over_time(years, field, aggregation)
+    #     output.add_table(
+    #         trends_over_time,
+    #         "Trends",
+    #         title=f"Trend over time ({field_name})",
+    #     )
 
-        funder_trend = funder_over_time(
-            current_fy,
-            [
-                (field, field_name, aggregation),
-            ],
-            n=1_500 if filetype == "xlsx" else 150,
-            included=True,
-            sortby=f"-cy_{field}",
-        )
-        output.add_table(
-            funder_trend,
-            f"trends-funders-{field}" if filetype == "xlsx" else "Trends",
-            title=f"Trend over time (top funders by {field_name})",
-        )
+    #     funder_trend = funder_over_time(
+    #         current_fy,
+    #         [
+    #             (field, field_name, aggregation),
+    #         ],
+    #         n=1_500 if filetype == "xlsx" else 150,
+    #         included=True,
+    #         sortby=f"-cy_{field}",
+    #     )
+    #     output.add_table(
+    #         funder_trend,
+    #         f"trends-funders-{field}" if filetype == "xlsx" else "Trends",
+    #         title=f"Trend over time (top funders by {field_name})",
+    #     )
 
     # trends by segment
     trend_segments = [
@@ -378,6 +449,9 @@ def financial_year(request, fy, filetype="html"):
                 "Download as XLSX": reverse("financial_year_xlsx", kwargs={"fy": fy}),
                 "Download all funders as CSV": reverse(
                     "all_grantmakers_csv", kwargs={"fy": fy}
+                ),
+                "Grantmakers trends data": reverse(
+                    "grantmakers_trends", kwargs={"fy": fy}
                 ),
             },
         },

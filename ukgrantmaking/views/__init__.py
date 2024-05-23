@@ -11,10 +11,13 @@ from ukgrantmaking.models import (
     FunderYear,
     Grant,
 )
-from ukgrantmaking.views.grantmakers import all_grantmakers_csv, financial_year
+from ukgrantmaking.views.grantmakers import (
+    all_grantmakers_csv,
+    financial_year,
+    grantmakers_trends,
+)
 from ukgrantmaking.views.grants import (
     all_grants_csv,
-    financial_year_grants_simple,
     financial_year_grants_view,
 )
 
@@ -29,7 +32,7 @@ __all__ = [
     "financial_year_grants_view",
     "all_grants_csv",
     "all_grantmakers_csv",
-    "financial_year_grants_simple",
+    "grantmakers_trends",
 ]
 
 
