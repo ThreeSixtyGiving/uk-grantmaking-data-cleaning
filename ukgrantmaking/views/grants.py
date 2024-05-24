@@ -13,6 +13,7 @@ from ukgrantmaking.models.funder import (
     Funder,
     FunderCategory,
     FunderSegment,
+    FunderTag,
 )
 from ukgrantmaking.utils.grant import (
     DEFAULT_COLUMNS,
@@ -274,32 +275,55 @@ def financial_year_grants_view(request, fy, filetype="html"):
             summary_title = slugify(summary_name)[0:31]
 
         if summary_name == "London":
+            londer_funders_members = FunderTag.objects.get(
+                tag="London Funders"
+            ).funders.values_list("org_id", flat=True)
+
+            london_grants = all_grants[summary_filters["criteria"]]
+            london_grants["london_funder_member"] = (
+                london_grants["funder_id"]
+                .isin(londer_funders_members)
+                .replace(
+                    {
+                        True: "London funder member",
+                        False: "Not member of London funder group",
+                    }
+                )
+            )
+
             output.add_table(
                 grant_summary(
-                    all_grants[summary_filters["criteria"]],
+                    london_grants,
                     groupby=["london_category"],
                 ),
                 summary_title,
                 title="London scale",
             )
+
+            output.add_table(
+                grant_summary(
+                    london_grants,
+                    groupby=["london_funder_member", "london_category"],
+                ),
+                summary_title,
+                title="London scale (London funder member)",
+            )
             output.add_table(
                 grant_crosstab(
-                    all_grants[summary_filters["criteria"]],
+                    london_grants,
                     column_field="london_category",
                 ),
                 summary_title,
                 title="London scale by segment",
             )
             output.add_table(
-                grant_by_size(
-                    all_grants[summary_filters["criteria"]], groupby=["london_category"]
-                ),
+                grant_by_size(london_grants, groupby=["london_category"]),
                 summary_title,
                 title="Summary by grant size",
             )
             output.add_table(
                 grant_by_size(
-                    all_grants[summary_filters["criteria"]],
+                    london_grants,
                     groupby=["london_category"],
                     values_field="amount_awarded_GBP",
                 ),
@@ -307,20 +331,31 @@ def financial_year_grants_view(request, fy, filetype="html"):
                 title="Summary by grant size (by amount awarded)",
             )
             output.add_table(
-                grant_by_duration(
-                    all_grants[summary_filters["criteria"]], groupby=["london_category"]
-                ),
+                grant_by_duration(london_grants, groupby=["london_category"]),
                 summary_title,
                 title="Summary by duration",
             )
             output.add_table(
                 grant_by_duration(
-                    all_grants[summary_filters["criteria"]],
+                    london_grants,
                     groupby=["london_category"],
                     values_field="amount_awarded_GBP",
                 ),
                 summary_title,
                 title="Summary by duration (by amount awarded)",
+            )
+            output.add_table(
+                who_funds_with_who(
+                    london_grants[
+                        london_grants["london_category"].notnull()
+                        & london_grants["london_funder_member"].eq(
+                            "London funder member"
+                        )
+                    ],
+                    groupby="funder_name",
+                ),
+                summary_title,
+                title="Who funds with who (London funder member)",
             )
             continue
 
