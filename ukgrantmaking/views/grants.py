@@ -30,6 +30,7 @@ from ukgrantmaking.utils.grant import (
     number_of_grants_by_recipient,
     recipient_size_by_amount_awarded,
     recipient_types,
+    recipients_by_scale,
     recipients_by_size,
     who_funds_with_who,
 )
@@ -86,6 +87,14 @@ def for_flourish(grants):
         (
             "Recipients by country",
             grants_by_country,
+            simple_segments,
+            False,
+            "Unknown",
+            False,
+        ),
+        (
+            "Recipients by scale",
+            recipients_by_scale,
             simple_segments,
             False,
             "Unknown",
@@ -526,11 +535,11 @@ def financial_year_grants_view(request, fy, filetype="html"):
                     title="CC Classification: "
                     + field.replace("recipient__", "").title(),
                 )
-            # output.add_table(
-            #     recipients_by_scale(all_grants[summary_filters["criteria"]]),
-            #     "Recipients by scale",
-            #     title=summary_title,
-            # )
+            output.add_table(
+                recipients_by_scale(all_grants[summary_filters["criteria"]]),
+                summary_title,
+                title="Recipients by scale",
+            )
 
         # who funds with who
         wfww = who_funds_with_who(all_grants[summary_filters["criteria"]])
