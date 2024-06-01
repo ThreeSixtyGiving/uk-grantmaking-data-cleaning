@@ -1,3 +1,5 @@
+from datetime import datetime
+
 import numpy as np
 import pandas as pd
 from caradoc import FinancialYear
@@ -9,7 +11,7 @@ from ukgrantmaking.models import (
 )
 
 
-def funder_summary_by_size(current_fy: FinancialYear):
+def funder_summary_by_size(current_fy: FinancialYear, effective_date: datetime):
     result = (
         pd.DataFrame.from_records(
             Funder.objects.filter(
@@ -23,10 +25,12 @@ def funder_summary_by_size(current_fy: FinancialYear):
                             models.Q(
                                 funderyear__spending_grant_making=0,
                                 funderyear__financial_year=current_fy,
+                                funderyear__date_added__lte=effective_date,
                             )
                             | models.Q(
                                 funderyear__spending_grant_making__isnull=True,
                                 funderyear__financial_year=current_fy,
+                                funderyear__date_added__lte=effective_date,
                             ),
                             then=1,
                         ),
@@ -40,6 +44,7 @@ def funder_summary_by_size(current_fy: FinancialYear):
                             funderyear__financial_year=current_fy,
                             funderyear__spending_grant_making__lt=100_000,
                             funderyear__spending_grant_making__gt=0,
+                            funderyear__date_added__lte=effective_date,
                             then=1,
                         ),
                         default=0,
@@ -52,6 +57,7 @@ def funder_summary_by_size(current_fy: FinancialYear):
                             funderyear__financial_year=current_fy,
                             funderyear__spending_grant_making__lt=1_000_000,
                             funderyear__spending_grant_making__gte=100_000,
+                            funderyear__date_added__lte=effective_date,
                             then=1,
                         ),
                         default=0,
@@ -64,6 +70,7 @@ def funder_summary_by_size(current_fy: FinancialYear):
                             funderyear__financial_year=current_fy,
                             funderyear__spending_grant_making__lt=10_000_000,
                             funderyear__spending_grant_making__gte=1_000_000,
+                            funderyear__date_added__lte=effective_date,
                             then=1,
                         ),
                         default=0,
@@ -76,6 +83,7 @@ def funder_summary_by_size(current_fy: FinancialYear):
                             funderyear__financial_year=current_fy,
                             funderyear__spending_grant_making__lt=100_000_000,
                             funderyear__spending_grant_making__gte=10_000_000,
+                            funderyear__date_added__lte=effective_date,
                             then=1,
                         ),
                         default=0,
@@ -87,6 +95,7 @@ def funder_summary_by_size(current_fy: FinancialYear):
                         models.When(
                             funderyear__financial_year=current_fy,
                             funderyear__spending_grant_making__gte=100_000_000,
+                            funderyear__date_added__lte=effective_date,
                             then=1,
                         ),
                         default=0,

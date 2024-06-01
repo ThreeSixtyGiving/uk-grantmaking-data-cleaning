@@ -1,3 +1,4 @@
+from datetime import date, datetime, timezone
 from io import BytesIO
 
 import pandas as pd
@@ -28,6 +29,10 @@ from ukgrantmaking.utils.funder import (
 @login_required
 def grantmakers_trends(request, fy, filetype="html"):
     current_fy = FinancialYear(fy)
+    effective_date = request.GET.get("effective_date", date.today().isoformat())
+    effective_date = datetime.combine(
+        date.fromisoformat(effective_date), datetime.max.time(), tzinfo=timezone.utc
+    )
 
     output = DataOutput()
 
@@ -41,7 +46,9 @@ def grantmakers_trends(request, fy, filetype="html"):
     ]
     years = [str(fy) for fy in current_fy.previous_n_years(4)][::-1]
     for field, field_name, aggregation in fields:
-        trends_over_time = funder_trend_over_time(years, field, aggregation)
+        trends_over_time = funder_trend_over_time(
+            years, field, aggregation, effective_date=effective_date
+        )
         output.add_table(
             trends_over_time,
             "Trends",
@@ -53,6 +60,7 @@ def grantmakers_trends(request, fy, filetype="html"):
             [
                 (field, field_name, aggregation),
             ],
+            effective_date=effective_date,
             n=1_500 if filetype == "xlsx" else 150,
             included=True,
             sortby=f"-cy_{field}",
@@ -99,29 +107,37 @@ def grantmakers_trends(request, fy, filetype="html"):
 @login_required
 def financial_year(request, fy, filetype="html"):
     current_fy = FinancialYear(fy)
+    effective_date = request.GET.get("effective_date", date.today().isoformat())
+    effective_date = datetime.combine(
+        date.fromisoformat(effective_date), datetime.max.time(), tzinfo=timezone.utc
+    )
 
     output = DataOutput()
 
     # summary table
-    summary = funder_summary(current_fy)
+    summary = funder_summary(current_fy, effective_date=effective_date)
     output.add_table(summary, "Summary", title="Summary")
 
     # summary by size
-    summary_by_size = funder_summary_by_size(current_fy)
+    summary_by_size = funder_summary_by_size(current_fy, effective_date=effective_date)
     output.add_table(summary_by_size, "Summary", title="Grantmakers by grant spending")
 
     # summary table grants to individuals
-    summary_individuals = funder_individuals_summary(current_fy)
+    summary_individuals = funder_individuals_summary(
+        current_fy, effective_date=effective_date
+    )
     output.add_table(
         summary_individuals, "Summary", title="Summary grants to individuals"
     )
 
     # summary table
-    summary = funder_summary(current_fy - 1)
+    summary = funder_summary(current_fy - 1, effective_date=effective_date)
     output.add_table(summary, "Summary", title="Summary (previous year)")
 
     # summary by size
-    summary_by_size = funder_summary_by_size(current_fy - 1)
+    summary_by_size = funder_summary_by_size(
+        current_fy - 1, effective_date=effective_date
+    )
     output.add_table(
         summary_by_size,
         "Summary",
@@ -129,7 +145,9 @@ def financial_year(request, fy, filetype="html"):
     )
 
     # summary table grants to individuals
-    summary_individuals = funder_individuals_summary(current_fy - 1)
+    summary_individuals = funder_individuals_summary(
+        current_fy - 1, effective_date=effective_date
+    )
     output.add_table(
         summary_individuals,
         "Summary",
@@ -181,6 +199,7 @@ def financial_year(request, fy, filetype="html"):
                 ("spending_grant_making", "Spending on grantmaking", models.Sum),
                 ("total_net_assets", "Net Assets", models.Max),
             ],
+            effective_date=effective_date,
             n=segment_n,
             included=True,
             segment=segment,
@@ -198,6 +217,7 @@ def financial_year(request, fy, filetype="html"):
         [
             ("funds_endowment", "Endowment Funds", models.Max),
         ],
+        effective_date=effective_date,
         n=100,
         sortby="-cy_funds_endowment",
         included=True,
@@ -241,6 +261,7 @@ def financial_year(request, fy, filetype="html"):
                     "py_employees",
                     "notes",
                 ],
+                effective_date=effective_date,
                 n=n,
                 segment=segment,
                 included=True,
@@ -276,6 +297,7 @@ def financial_year(request, fy, filetype="html"):
                 "py_employees",
                 "notes",
             ],
+            effective_date=effective_date,
             segment=FunderSegment.GENERAL_GRANTMAKER,
             included=True,
             n=1_000_000,
@@ -307,6 +329,7 @@ def financial_year(request, fy, filetype="html"):
                 "py_total_net_assets",
                 "notes",
             ],
+            effective_date=effective_date,
             sortby="-cy_spending_grant_making_individuals",
             makes_grants_to_individuals=True,
             included=True,
@@ -337,6 +360,7 @@ def financial_year(request, fy, filetype="html"):
                 "py_total_net_assets",
                 "notes",
             ],
+            effective_date=effective_date,
             n=300,
             included=True,
             segment__in=[
@@ -390,6 +414,7 @@ def financial_year(request, fy, filetype="html"):
                     "py_employees",
                     "notes",
                 ],
+                effective_date=effective_date,
                 tag_children=[funder_tag_obj.tag],
                 org_id__in=funder_tag_obj.funders.values_list("org_id", flat=True),
                 included=True,
@@ -418,6 +443,7 @@ def financial_year(request, fy, filetype="html"):
                 "cy_total_net_assets",
                 "notes",
             ],
+            effective_date=effective_date,
             date_of_registration__gte=current_fy.start_date - pd.DateOffset(years=1),
             included=True,
             spending_threshold=None,

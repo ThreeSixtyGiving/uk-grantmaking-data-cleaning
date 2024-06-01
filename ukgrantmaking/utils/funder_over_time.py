@@ -1,3 +1,5 @@
+from datetime import datetime
+
 import numpy as np
 import pandas as pd
 from caradoc import FinancialYear
@@ -12,6 +14,7 @@ from ukgrantmaking.utils.funder_table import funder_table
 def funder_over_time(
     current_fy: FinancialYear,
     columns: list[tuple[str, str, models.Aggregate]],
+    effective_date: datetime,
     n: int = 100,
     n_years: int = 5,
     sortby: str = "-cy_scale",
@@ -22,6 +25,7 @@ def funder_over_time(
         [
             "org_id",
         ],
+        effective_date=effective_date,
         sortby=sortby,
         **filters,
         n=n,
@@ -35,6 +39,7 @@ def funder_over_time(
                 models.Case(
                     models.When(
                         funderyear__financial_year=year,
+                        funderyear__date_added__lte=effective_date,
                         then=models.F(f"funderyear__{field}"),
                     ),
                     default=None,

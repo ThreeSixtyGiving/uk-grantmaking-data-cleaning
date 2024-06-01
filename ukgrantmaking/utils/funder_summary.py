@@ -1,3 +1,5 @@
+from datetime import datetime
+
 import numpy as np
 import pandas as pd
 from caradoc import FinancialYear
@@ -9,7 +11,7 @@ from ukgrantmaking.models import (
 )
 
 
-def funder_summary(current_fy: FinancialYear):
+def funder_summary(current_fy: FinancialYear, effective_date: datetime):
     result = (
         pd.DataFrame.from_records(
             Funder.objects.filter(
@@ -21,6 +23,7 @@ def funder_summary(current_fy: FinancialYear):
                     models.Case(
                         models.When(
                             funderyear__financial_year=current_fy,
+                            funderyear__date_added__lte=effective_date,
                             then=1,
                         ),
                         default=0,
@@ -31,6 +34,7 @@ def funder_summary(current_fy: FinancialYear):
                     models.Case(
                         models.When(
                             funderyear__financial_year=current_fy,
+                            funderyear__date_added__lte=effective_date,
                             then=models.F("funderyear__income"),
                         ),
                         default=0,
@@ -41,6 +45,7 @@ def funder_summary(current_fy: FinancialYear):
                     models.Case(
                         models.When(
                             funderyear__financial_year=current_fy,
+                            funderyear__date_added__lte=effective_date,
                             then=models.F("funderyear__spending"),
                         ),
                         default=0,
@@ -51,6 +56,7 @@ def funder_summary(current_fy: FinancialYear):
                     models.Case(
                         models.When(
                             funderyear__financial_year=current_fy,
+                            funderyear__date_added__lte=effective_date,
                             then=models.F("funderyear__spending_grant_making"),
                         ),
                         default=0,
@@ -61,6 +67,7 @@ def funder_summary(current_fy: FinancialYear):
                     models.Case(
                         models.When(
                             funderyear__financial_year=current_fy,
+                            funderyear__date_added__lte=effective_date,
                             then=models.F(
                                 "funderyear__spending_grant_making_individuals"
                             ),
@@ -73,6 +80,7 @@ def funder_summary(current_fy: FinancialYear):
                     models.Case(
                         models.When(
                             funderyear__financial_year=current_fy,
+                            funderyear__date_added__lte=effective_date,
                             makes_grants_to_individuals=True,
                             then=models.Value(1),
                         ),

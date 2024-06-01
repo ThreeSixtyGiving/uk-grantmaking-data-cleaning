@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import Optional
 
 import numpy as np
@@ -14,6 +15,7 @@ from ukgrantmaking.models import (
 def funder_table(
     current_fy: FinancialYear,
     columns: list[str],
+    effective_date: datetime,
     n: int = 100,
     sortby: str = "-cy_scale",
     tag_children: Optional[list[str]] = None,
@@ -55,6 +57,7 @@ def funder_table(
     cy_data = pd.DataFrame.from_records(
         FunderYear.objects.filter(
             financial_year=current_fy,
+            date_added__lte=effective_date,
             funder__in=Funder.objects.filter(**filters).values_list(
                 "org_id", flat=True
             ),
@@ -76,6 +79,7 @@ def funder_table(
     py_data = pd.DataFrame.from_records(
         FunderYear.objects.filter(
             financial_year=current_fy - 1,
+            date_added__lte=effective_date,
             funder__in=Funder.objects.filter(**filters).values_list(
                 "org_id", flat=True
             ),

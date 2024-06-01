@@ -1,3 +1,5 @@
+from datetime import datetime
+
 import numpy as np
 import pandas as pd
 from django.db import models
@@ -12,6 +14,7 @@ def funder_trend_over_time(
     years: list[str],
     field: str,
     aggregation: models.Aggregate,
+    effective_date: datetime,
 ):
     year_annotations = {}
     for year in years:
@@ -19,6 +22,7 @@ def funder_trend_over_time(
             models.Case(
                 models.When(
                     funderyear__financial_year=year,
+                    funderyear__date_added__lte=effective_date,
                     then=models.F(f"funderyear__{field}"),
                 ),
                 default=0,
@@ -30,6 +34,7 @@ def funder_trend_over_time(
                 models.When(
                     **{
                         "funderyear__financial_year": year,
+                        "funderyear__date_added__lte": effective_date,
                         f"funderyear__{field}__gt": 0,
                         "then": 1,
                     }
