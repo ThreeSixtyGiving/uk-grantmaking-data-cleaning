@@ -366,7 +366,7 @@ def financial_year(request, fy, filetype="html"):
             segment__in=[
                 segment
                 for segment, category in FUNDER_CATEGORIES.items()
-                if category in [FunderCategory.GRANTMAKER, FunderCategory.OTHER]
+                if category in [FunderCategory.GRANTMAKER]
             ],
         ),
         "Top 300",
