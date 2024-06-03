@@ -84,6 +84,10 @@ def grantmakers_trends(request, fy, filetype="html"):
         )
         return response
 
+    query = ""
+    if "effective_date" in request.GET:
+        query = f"?effective_date={request.GET['effective_date']}"
+
     return render(
         request,
         "financial_year.html.j2",
@@ -94,11 +98,13 @@ def grantmakers_trends(request, fy, filetype="html"):
             "links": {
                 "Download as XLSX": reverse(
                     "grantmakers_trends_xlsx", kwargs={"fy": fy}
-                ),
+                )
+                + query,
                 "Download all funders as CSV": reverse(
                     "all_grantmakers_csv", kwargs={"fy": fy}
                 ),
-                "Grantmakers data": reverse("financial_year", kwargs={"fy": fy}),
+                "Grantmakers data": reverse("financial_year", kwargs={"fy": fy})
+                + query,
             },
         },
     )
@@ -464,6 +470,10 @@ def financial_year(request, fy, filetype="html"):
         response["Content-Disposition"] = f"attachment; filename=grantmakers-{fy}.xlsx"
         return response
 
+    query = ""
+    if "effective_date" in request.GET:
+        query = f"?effective_date={request.GET['effective_date']}"
+
     return render(
         request,
         "financial_year.html.j2",
@@ -472,13 +482,15 @@ def financial_year(request, fy, filetype="html"):
             "output": output,
             "skip_sheets": ["All general grantmakers"],
             "links": {
-                "Download as XLSX": reverse("financial_year_xlsx", kwargs={"fy": fy}),
+                "Download as XLSX": reverse("financial_year_xlsx", kwargs={"fy": fy})
+                + query,
                 "Download all funders as CSV": reverse(
                     "all_grantmakers_csv", kwargs={"fy": fy}
                 ),
                 "Grantmakers trends data": reverse(
                     "grantmakers_trends", kwargs={"fy": fy}
-                ),
+                )
+                + query,
             },
         },
     )
