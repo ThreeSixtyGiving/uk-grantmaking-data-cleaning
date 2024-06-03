@@ -592,16 +592,33 @@ def grants_by_country(
     return grant_crosstab(df, groupby, column_field="country", **kwargs)
 
 
+def explode_crosstab(df: pd.DataFrame, groupby: list[str], field: str, **kwargs):
+    ct = grant_crosstab(
+        df[df[field].notnull()].explode(field).reset_index(),
+        groupby,
+        column_field=field,
+        **kwargs,
+    )
+    ct_total = grant_crosstab(
+        df[df[field].notnull()].assign(**{field: "Blah"}),
+        groupby,
+        column_field=field,
+        **kwargs,
+    )
+    ct.loc[:, "Total"] = ct_total.loc[:, "Total"]
+    return ct
+
+
 def grants_by_who(
     df: pd.DataFrame,
     groupby: list[str] = ["category", "segment"],
     **kwargs,
 ):
     field = "recipient__who"
-    return grant_crosstab(
-        df[df[field].notnull()].explode(field).reset_index(),
+    return explode_crosstab(
+        df,
         groupby,
-        column_field=field,
+        field,
         **kwargs,
     )
 
@@ -612,10 +629,10 @@ def grants_by_how(
     **kwargs,
 ):
     field = "recipient__how"
-    return grant_crosstab(
-        df[df[field].notnull()].explode(field).reset_index(),
+    return explode_crosstab(
+        df,
         groupby,
-        column_field=field,
+        field,
         **kwargs,
     )
 
@@ -626,10 +643,10 @@ def grants_by_what(
     **kwargs,
 ):
     field = "recipient__what"
-    return grant_crosstab(
-        df[df[field].notnull()].explode(field).reset_index(),
+    return explode_crosstab(
+        df,
         groupby,
-        column_field=field,
+        field,
         **kwargs,
     )
 
@@ -696,7 +713,7 @@ def who_funds_with_who(df: pd.DataFrame, groupby: str = "segment"):
         for value_2 in df[groupby].unique():
             if value_1 == value_2:
                 continue
-            count = wfww[wfww[value_1].gt(0) & wfww[value_2].gt(0)].size
+            count = wfww[wfww[value_1].gt(0) & wfww[value_2].gt(0)].shape[0]
             if count > 0:
                 summary.append(
                     (

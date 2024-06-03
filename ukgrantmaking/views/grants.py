@@ -74,7 +74,7 @@ def for_flourish(grants):
     }
 
     charts = [
-        # name, function, categories, flip, drop unknown
+        # name, function, categories, flip, drop unknown, use_total
         ("Recipient type", recipient_types, categories, False, None, True),
         (
             "Size of grant recipients",
@@ -106,7 +106,7 @@ def for_flourish(grants):
             simple_segments,
             False,
             None,
-            False,
+            True,
         ),
         (
             "Themes",
@@ -114,7 +114,7 @@ def for_flourish(grants):
             simple_segments,
             False,
             None,
-            False,
+            True,
         ),
         (
             "Grant duration",
@@ -340,6 +340,20 @@ def financial_year_grants_view(request, fy, filetype="html"):
                 title="Summary by grant size (by amount awarded)",
             )
             output.add_table(
+                recipients_by_size(london_grants, groupby=["london_category"]),
+                summary_title,
+                title="Summary by charity size",
+            )
+            output.add_table(
+                recipients_by_size(
+                    london_grants,
+                    groupby=["london_category"],
+                    values_field="amount_awarded_GBP",
+                ),
+                summary_title,
+                title="Summary by charity size (by amount awarded)",
+            )
+            output.add_table(
                 grant_by_duration(london_grants, groupby=["london_category"]),
                 summary_title,
                 title="Summary by duration",
@@ -353,6 +367,32 @@ def financial_year_grants_view(request, fy, filetype="html"):
                 summary_title,
                 title="Summary by duration (by amount awarded)",
             )
+            for field in [
+                "recipient__who",
+                "recipient__what",
+                "recipient__how",
+            ]:
+                summary = grant_summary(
+                    london_grants[london_grants[field].notnull()].explode(field),
+                    groupby=[field],
+                )
+                summary_total = grant_summary(
+                    london_grants[london_grants[field].notnull()].assign(
+                        **{field: "Blah"}
+                    ),
+                    groupby=[field],
+                )
+                summary.loc["Total", :] = summary_total.loc["Total", :]
+                output.add_table(
+                    summary.reset_index().rename(
+                        columns={
+                            field: "Category",
+                        }
+                    ),
+                    summary_title,
+                    title="CC Classification: "
+                    + field.replace("recipient__", "").title(),
+                )
             output.add_table(
                 who_funds_with_who(
                     london_grants[
@@ -518,15 +558,21 @@ def financial_year_grants_view(request, fy, filetype="html"):
                 "recipient__what",
                 "recipient__how",
             ]:
+                summary = grant_summary(
+                    all_grants[
+                        summary_filters["criteria"] & all_grants[field].notnull()
+                    ].explode(field),
+                    groupby=[field],
+                )
+                summary_total = grant_summary(
+                    all_grants[
+                        summary_filters["criteria"] & all_grants[field].notnull()
+                    ].assign(**{field: "Blah"}),
+                    groupby=[field],
+                )
+                summary.loc["Total", :] = summary_total.loc["Total", :]
                 output.add_table(
-                    grant_summary(
-                        all_grants[
-                            summary_filters["criteria"] & all_grants[field].notnull()
-                        ].explode(field),
-                        groupby=[field],
-                    )
-                    .reset_index()
-                    .rename(
+                    summary.reset_index().rename(
                         columns={
                             field: "Category",
                         }
