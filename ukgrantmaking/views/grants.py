@@ -51,27 +51,29 @@ def all_grants_csv(request, fy):
     return response
 
 
-def for_flourish(grants):
-    categories = {
-        "Charity": ("Charity", "Total"),
-        "Grantmaker": ("Grantmaker", "Total"),
-        "Lottery Distributor": ("Lottery", "Lottery Distributor"),
-        "Government": ("Government", "Total"),
-        "Other": ("Other", "Donor Advised Fund"),
-    }
-    simple_segments = {
-        "Government": ("Government", "Total"),
-        "Community Foundation": ("Grantmaker", "Community Foundation"),
-        "Corporate Foundation": ("Grantmaker", "Corporate Foundation"),
-        "Family Foundation": ("Grantmaker", "Family Foundation"),
-        "Fundraising Grantmaker": ("Grantmaker", "Fundraising Grantmaker"),
-        "General grantmaker": ("Grantmaker", "General grantmaker"),
-        "Government/Lottery Endowed": ("Grantmaker", "Government/Lottery Endowed"),
-        "Member/Trade Funded": ("Grantmaker", "Member/Trade Funded"),
-        "Lottery Distributors": ("Lottery", "Lottery Distributor"),
-        "Charity": ("Charity", "Total"),
-        "All grantmakers": ("Total", "Total"),
-    }
+def for_flourish(grants, categories=None, simple_segments=None):
+    if not categories:
+        categories = {
+            "Charity": ("Charity", "Total"),
+            "Grantmaker": ("Grantmaker", "Total"),
+            "Lottery Distributor": ("Lottery", "Lottery Distributor"),
+            "Government": ("Government", "Total"),
+            "Other": ("Other", "Donor Advised Fund"),
+        }
+    if not simple_segments:
+        simple_segments = {
+            "Government": ("Government", "Total"),
+            "Community Foundation": ("Grantmaker", "Community Foundation"),
+            "Corporate Foundation": ("Grantmaker", "Corporate Foundation"),
+            "Family Foundation": ("Grantmaker", "Family Foundation"),
+            "Fundraising Grantmaker": ("Grantmaker", "Fundraising Grantmaker"),
+            "General grantmaker": ("Grantmaker", "General grantmaker"),
+            "Government/Lottery Endowed": ("Grantmaker", "Government/Lottery Endowed"),
+            "Member/Trade Funded": ("Grantmaker", "Member/Trade Funded"),
+            "Lottery Distributors": ("Lottery", "Lottery Distributor"),
+            "Charity": ("Charity", "Total"),
+            "All grantmakers": ("Total", "Total"),
+        }
 
     charts = [
         # name, function, categories, flip, drop unknown, use_total
@@ -215,7 +217,7 @@ def for_flourish(grants):
             aggfunc="sum",
         )
         .fillna(pd.NA)
-        .drop("Total", axis=0),
+        .drop("Total", axis=0, errors="ignore"),
     )
 
     by_size = grant_by_size(grants)
@@ -240,7 +242,7 @@ def for_flourish(grants):
             aggfunc="sum",
         )
         .fillna(pd.NA)
-        .drop("Total", axis=0),
+        .drop("Total", axis=0, errors="ignore"),
     )
 
 
@@ -406,6 +408,24 @@ def financial_year_grants_view(request, fy, filetype="html"):
                 summary_title,
                 title="Who funds with who (London funder member)",
             )
+
+            for chart_name, chart_output in for_flourish(
+                london_grants.assign(
+                    **{
+                        "segment": lambda x: x["london_category"],
+                        "category": lambda x: x["london_category"],
+                    }
+                ),
+                categories={
+                    **{v: (v, v) for v in london_grants["london_category"].unique()},
+                    **{"Total": ("Total", "Total")},
+                },
+                simple_segments={
+                    **{v: (v, v) for v in london_grants["london_category"].unique()},
+                    **{"Total": ("Total", "Total")},
+                },
+            ):
+                output.add_table(chart_output, "London For flourish", title=chart_name)
             continue
 
         output.add_table(

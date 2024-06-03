@@ -85,7 +85,7 @@ DURATION_BINS = [
 DURATION_BINS_LABELS = [
     "Up to 6 months",
     "7-12 months",
-    "18 months - 2 years",
+    "13 months - 2 years",
     "3 years and more",
 ]
 
