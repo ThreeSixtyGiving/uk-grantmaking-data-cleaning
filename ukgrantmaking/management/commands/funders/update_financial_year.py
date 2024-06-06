@@ -11,6 +11,7 @@ from django.db.models.functions import (
 )
 
 from ukgrantmaking.models import (
+    DEFAULT_BREAK_MONTH,
     DEFAULT_FINANCIAL_YEAR,
     FinancialYears,
     Funder,
@@ -20,8 +21,10 @@ from ukgrantmaking.models import (
 
 @click.command()
 @click.option("--financial-year", type=FinancialYears, default=DEFAULT_FINANCIAL_YEAR)
-@click.option("--break-month", type=int, default=5)
-def financial_year(financial_year=DEFAULT_FINANCIAL_YEAR, break_month=5):
+@click.option("--break-month", type=int, default=DEFAULT_BREAK_MONTH)
+def financial_year(
+    financial_year=DEFAULT_FINANCIAL_YEAR, break_month=DEFAULT_BREAK_MONTH
+):
     with transaction.atomic():
         click.secho("Updating financial years", fg="green")
         fy_update = 0

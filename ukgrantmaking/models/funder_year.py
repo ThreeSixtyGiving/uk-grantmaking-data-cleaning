@@ -2,7 +2,7 @@ from django.db import models
 from django.db.models.functions import Coalesce
 from django.db.models.lookups import IsNull
 
-from ukgrantmaking.models.financial_years import FinancialYears
+from ukgrantmaking.models.financial_years import DEFAULT_BREAK_MONTH, FinancialYears
 
 
 class FunderYear(models.Model):
@@ -210,7 +210,7 @@ class FunderYear(models.Model):
 
     def save(self, *args, **kwargs):
         if self.financial_year_end:
-            if self.financial_year_end.month < 4:
+            if self.financial_year_end.month < DEFAULT_BREAK_MONTH:
                 self.financial_year = f"{self.financial_year_end.year - 1}-{self.financial_year_end.year % 100:02d}"
             else:
                 self.financial_year = f"{self.financial_year_end.year}-{(self.financial_year_end.year + 1) % 100:02d}"

@@ -35,3 +35,4 @@ class FinancialYears(models.TextChoices):
 
 
 DEFAULT_FINANCIAL_YEAR = FinancialYears.FY_2022_23
+DEFAULT_BREAK_MONTH = 5
