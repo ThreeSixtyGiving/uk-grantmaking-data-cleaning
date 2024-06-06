@@ -103,6 +103,7 @@ def funder_table(
     py_data["scale"] = py_data["spending_grant_making"].fillna(py_data["spending"])
     df = funders.join(
         cy_data.groupby("funder_id").agg(
+            cy_fyend=("financial_year_end", "first"),
             cy_income=(
                 "income",
                 lambda x: x.sum(min_count=1),
@@ -145,6 +146,7 @@ def funder_table(
         how="left",
     ).join(
         py_data.groupby("funder_id").agg(
+            py_fyend=("financial_year_end", "first"),
             py_income=(
                 "income",
                 lambda x: x.sum(min_count=1),
@@ -197,6 +199,8 @@ def funder_table(
         .rank(ascending=ascending, method="min", na_option="bottom")
         .astype(int)
     )
+    df["cy_fye"] = pd.to_datetime(df["cy_fyend"]).dt.strftime("%b %y")
+    df["py_fye"] = pd.to_datetime(df["py_fyend"]).dt.strftime("%b %y")
 
     if spending_threshold is not None:
         df = df[
@@ -274,6 +278,8 @@ def funder_table(
                 "org_id": "Org ID",
                 "name": "Name",
                 "segment": "Segment",
+                "cy_fye": "FY End",
+                "py_fye": "FY End (Previous year)",
                 "makes_grants_to_individuals": "Grants to Individuals",
                 **{slugify(tag).replace("-", "_"): tag_name for tag, tag_name in tags},
                 **{
