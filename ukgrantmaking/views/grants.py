@@ -408,6 +408,18 @@ def financial_year_grants_view(request, fy, filetype="html"):
                 summary_title,
                 title="Who funds with who (London funder member)",
             )
+            output.add_table(
+                who_funds_with_who(
+                    london_grants[
+                        london_grants["london_category"].notnull()
+                        & london_grants["london_funder_member"].eq(
+                            "London funder member"
+                        )
+                    ],
+                ),
+                summary_title,
+                title="Who funds with who (London funder segments)",
+            )
 
             for chart_name, chart_output in for_flourish(
                 london_grants.assign(
