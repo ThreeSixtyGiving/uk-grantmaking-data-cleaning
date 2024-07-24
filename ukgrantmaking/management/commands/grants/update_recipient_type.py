@@ -312,14 +312,6 @@ def recipient_type(db_con, company_batch_size):
                     ]
                 ),
             ),
-            (
-                Grant.InclusionStatus.OVERSEAS_GOVERNMENT_TRANSFER,
-                Q(
-                    recipient_type_manual__in=[
-                        Grant.RecipientType.OVERSEAS_GOVERNMENT,
-                    ]
-                ),
-            ),
         ]
         for inclusion, filter in exclusions:
             updated = Grant.objects.filter(
