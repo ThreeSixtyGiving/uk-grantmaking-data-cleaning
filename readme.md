@@ -2,7 +2,7 @@
 
 ## Initial setup
 
-```
+```sh
 python -m venv env
 env\Scripts\activate
 pip install wheel pip-tools
@@ -10,22 +10,37 @@ pip-compile
 pip-sync
 ```
 
+### With UV
+
+```sh
+uv venv
+uv pip compile requirements.in -o requirements.txt
+uv pip sync requirements.txt
+```
+
+#### Update dependencies
+
+```sh
+uv pip compile requirements.in -o requirements.txt
+uv pip sync requirements.txt
+```
+
 ### Setup Django
 
-```
+```sh
 python manage.py migrate
 python manage.py createsuperuser
 ```
 
 ### Run django server
 
-```
+```sh
 python manage.py runserver
 ```
 
 ### Linting and code formatting
 
-```
+```sh
 ruff check . --fix
 ruff format .
 ```
@@ -64,7 +79,7 @@ dokku config:set uk-grantmaking-data --no-restart DEBUG=false ALLOWED_HOSTS="hos
 dokku run uk-grantmaking-data python manage.py createsuperuser
 ```
 
-```
+```sh
 git remote add dokku dokku@SERVER_HOST:uk-grantmaking-data
 git push dokku main
 ```

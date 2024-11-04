@@ -1,0 +1,27 @@
+{% macro display_sidebar_item(sidebar_item) %}
+<li>
+    {% if sidebar_item.view == "logout" %}
+    <form action="{{ url_for('logout') }}" method="post">
+        {{ csrf_input }}
+        <button type="submit" class="sidebar-item">{{ sidebar_item.title }}</button>
+    </form>
+    {% else %}
+    <a href="{{ sidebar_item.url }}" class="sidebar-item">{{ sidebar_item.title }}</a>
+    {% endif %}
+</li>
+{% endmacro %}
+<nav>
+    <a href="{{ url_for('index') }}" rel="home" class="main-logo">
+        <img src="{{ url_for('static', filename='images/logo.svg') }}" alt="{{ default_title }}">
+    </a>
+    <ul class="main">
+        {% for sidebar_item in sidebar %}
+        {{ display_sidebar_item(sidebar_item) }}
+        {% endfor %}
+    </ul>
+    <ul class="settings">
+        {% for sidebar_item in sidebar_settings %}
+        {{ display_sidebar_item(sidebar_item) }}
+        {% endfor %}
+    </ul>
+</nav>
