@@ -40,8 +40,14 @@ def sidebar(request):
         options["sidebar"].extend(
             [
                 SidebarItem(
-                    title="Funders",
+                    title="Grantmakers",
                     view="admin:index",
+                    children=[
+                        SidebarItem(title="All Grantmakers", view="admin:index"),
+                        SidebarItem(title="All Grants", view="admin:index"),
+                        SidebarItem(title="All Grantmakers CSV", view="admin:index"),
+                        SidebarItem(title="All Grants CSV", view="admin:index"),
+                    ],
                 ),
                 SidebarItem(title="Grants", view="admin:index"),
             ]

@@ -8,6 +8,13 @@
     {% else %}
     <a href="{{ sidebar_item.url }}" class="sidebar-item">{{ sidebar_item.title }}</a>
     {% endif %}
+    {% if sidebar_item.children %}
+    <ul>
+        {% for child in sidebar_item.children %}
+        {{ display_sidebar_item(child) }}
+        {% endfor %}
+    </ul>
+    {% endif %}
 </li>
 {% endmacro %}
 <nav>
