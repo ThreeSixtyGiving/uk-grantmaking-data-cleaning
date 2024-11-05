@@ -599,6 +599,19 @@ details>summary {
     gap: 0.5rem;
 }
 
+
+.tl {
+    text-align: left;
+}
+
+.tr {
+    text-align: right;
+}
+
+.tc {
+    text-align: center;
+}
+
 ul.pagination {
     list-style-type: none;
     padding: 0;

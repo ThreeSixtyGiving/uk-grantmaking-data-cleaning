@@ -16,7 +16,7 @@ from ukgrantmaking.views.grantmakers_results import (
     financial_year,
     grantmakers_trends,
 )
-from ukgrantmaking.views.grants import (
+from ukgrantmaking.views.grants_results import (
     all_grants_csv,
     financial_year_grants_view,
 )

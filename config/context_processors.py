@@ -39,17 +39,10 @@ def sidebar(request):
     if request.user.is_authenticated:
         options["sidebar"].extend(
             [
+                SidebarItem(title="Grantmakers", view="grantmakers:index"),
                 SidebarItem(
-                    title="Grantmakers",
-                    view="grantmakers:index",
-                    children=[
-                        # SidebarItem(title="All Grantmakers", view="admin:index"),
-                        # SidebarItem(title="All Grants", view="admin:index"),
-                        # SidebarItem(title="All Grantmakers CSV", view="admin:index"),
-                        # SidebarItem(title="All Grants CSV", view="admin:index"),
-                    ],
+                    title="Grants", view="admin:ukgrantmaking_grant_changelist"
                 ),
-                SidebarItem(title="Grants", view="admin:index"),
             ]
         )
         options["sidebar_settings"].extend(
