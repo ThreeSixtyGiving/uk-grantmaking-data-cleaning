@@ -14,6 +14,7 @@ from django_htmx.jinja import django_htmx_script
 from markdownx.utils import markdownify
 
 from jinja2 import Environment
+from ukgrantmaking.models.funder import FunderSegment
 
 VOWELS = re.compile("[AEIOUYaeiouy]")
 ORD_NUMBERS_RE = re.compile(r"([0-9]+(?:st|nd|rd|th))")
@@ -246,6 +247,7 @@ def environment(**options):
             "author": "360Giving",
             "author_email": "labs@threesixtygiving.org",
             "author_website": "https://threesixtygiving.org/",
+            "segments": FunderSegment,
         }
     )
     env.filters.update(

@@ -1,0 +1,18 @@
+<div x-data="{ edit_name: false }" id="funder-header" style="margin-bottom: 2rem;">
+    <h2 class="flex-row">Grantmaker: {{ object.name }}
+        <a href="#" x-on:click="edit_name = !edit_name" class="button">
+            edit name
+        </a>
+    </h2>
+    {% if object.name_manual and object.name_registered and (object.name_manual != object.name_registered) %}
+    <p><small>Original name: {{ object.name_registered }}</small></p>
+    {% endif %}
+
+    <form action="{{ url_for('grantmakers:change_status', org_id=object.org_id) }}" method="post" x-show="edit_name"
+        class="flex-row" hx-post="{{ url_for('grantmakers:change_status', org_id=object.org_id) }}"
+        hx-target="#funder-header" hx-swap="outerHTML">
+        <input type="hidden" name="action" value="change_name" />
+        <input type="text" name="name" value="{{ object.name }}" />
+        <button type="submit" class="button">Save</button>
+    </form>
+</div>

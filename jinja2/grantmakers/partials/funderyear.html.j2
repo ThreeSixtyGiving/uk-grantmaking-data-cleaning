@@ -85,9 +85,9 @@
             hx-get="{{ url_for('grantmakers:edit_funderyear', org_id=object.org_id, funderyear_id=funder_year.id) }}"
             hx-trigger="click" hx-target="#funder-year-{{ funder_year.id }}" hx-swap="outerHTML">Edit</a>
         <a href="#" class="button red"
-            hx-post="{{ url_for('grantmakers:edit_funderyear', org_id=object.org_id, funderyear_id=funder_year.id) }}"
-            hx-trigger="click" hx-target="#funder-year-{{ funder_year.id }}" hx-swap="outerHTML"
-            hx-include=".funder-year-edit">Delete</a>
+            hx-delete="{{ url_for('grantmakers:edit_funderyear', org_id=object.org_id, funderyear_id=funder_year.id) }}"
+            hx-confirm="Are you sure you wish to delete this row?" hx-trigger="click"
+            hx-target="#funder-year-{{ funder_year.id }}" hx-swap="outerHTML" hx-include=".funder-year-edit">Delete</a>
     </div>
 </td>
 {% endmacro %}
@@ -105,7 +105,7 @@
         {% endif %}
         {% endif %}
     </td>
-    <td colspan="5">
+    <td colspan="4">
         <table class="table">
             <thead>
                 <tr>
@@ -178,6 +178,7 @@
             hx-trigger="click" hx-target="#funder-year-new" hx-swap="outerHTML" hx-include=".funder-year-edit">Save</a>
         {% endif %}
     </td>
+    <td></td>
     {% else %}
     {{ funder_year_row(funder_year)}}
     {% endif %}

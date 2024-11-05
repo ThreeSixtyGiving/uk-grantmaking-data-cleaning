@@ -27,6 +27,7 @@ class FunderSegment(models.TextChoices):
     CENTRAL = "Central", "Central"
     DEVOLVED = "Devolved", "Devolved"
 
+    @property
     def category(self):
         return FUNDER_CATEGORIES[self]
 
@@ -223,6 +224,15 @@ class Funder(models.Model):
 
     def __str__(self):
         return f"{self.name} ({self.org_id})"
+
+    @property
+    def checked(self):
+        if self.latest_year:
+            if self.latest_year.checked_by:
+                return self.latest_year.checked_by
+            if self.latest_year.checked:
+                return "Checked"
+        return False
 
     def save(self, *args, **kwargs):
         latest_fy = (

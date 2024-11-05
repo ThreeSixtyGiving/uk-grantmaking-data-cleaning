@@ -2,43 +2,8 @@
 {% from 'components/values.html.j2' import display_date, display_number, display_longtext, display_list, display_text, none_wrapper, display_boolean, display_url %}
 
 {% block content %}
-<h2>Grantmaker: {{ object.name }}</h2>
-{# @todo edit name #}
-{% if object.name_manual and object.name_registered and (object.name_manual != object.name_registered) %}
-<p><small>Original name: {{ object.name_registered }}</small></p>
-{% endif %}
-
-<ul class="status notes" id="funder-status">
-    <li>
-        <header>Org ID</header>
-        <code>{{object.org_id }}</code>
-    </li>
-    <li class="{% if object.included %}positive{% else %}negative{% endif %}">
-        <header>Status</header>
-        {% if object.included %}Included{% else %}Excluded{% endif %}
-        {# @todo button to change status #}
-    </li>
-    <li class="{% if object.makes_grants_to_individuals %}positive{% else %}negative{% endif %}">
-        <header>Makes grants to individuals</header>
-        {% if object.makes_grants_to_individuals %}Yes{% else %}No{% endif %}
-        {# @todo button to mark as making grants to individuals #}
-    </li>
-    <li class="{% if object.latest_year and object.latest_year.checked %}positive{% else %}negative{% endif %}">
-        <header>Checked</header>{% if object.latest_year %}
-        {% if object.latest_year.checked_by %}
-        {{ object.latest_year.checked_by }}
-        {% elif object.latest_year.checked %}
-        Checked
-        {% endif %}
-        {% endif %}
-        {# @todo button to mark as checked #}
-    </li>
-    <li>
-        <header>Segment</header>
-        {{ object.segment }}
-        {# @todo dropdown to change segment #}
-    </li>
-</ul>
+{% include 'grantmakers/partials/funderheader.html.j2' %}
+{% include 'grantmakers/partials/funderstatus.html.j2' %}
 
 <h3>Details</h3>
 
@@ -73,7 +38,7 @@
         <tr>
             <th>Activities</th>
             <td>
-                <p>{{ object.activities }}</p>
+                <p>{{ display_text(object.activities) }}</p>
             </td>
         </tr>
     </tbody>
@@ -97,7 +62,6 @@
         </tr>
     </thead>
     <tbody>
-        {# @todo delete row #}
         <tr id="funder-year-new">
             <td colspan="6">
                 <a class="button" hx-target="#funder-year-new" hx-swap="outerHTML"

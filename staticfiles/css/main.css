@@ -400,7 +400,12 @@ ul.tags {
         padding-right: 1rem;
         padding-bottom: 1rem;
 
-        >header {
+        &:has(>footer) {
+            padding-bottom: 0;
+        }
+
+        >header,
+        >footer {
             font-weight: 600;
             margin-left: -1rem;
             margin-right: -1rem;
@@ -412,6 +417,54 @@ ul.tags {
             background-color: var(--color-green);
             border-radius: 0.5rem 0.5rem 0 0;
             color: var(--color-white);
+        }
+
+        >footer {
+            margin-top: 1rem;
+            margin-bottom: 0;
+            border-radius: 0 0 0.5rem 0.5rem;
+            background-color: var(--color-green-light);
+            color: var(--color-green);
+
+            &:has(a),
+            &:has(select) {
+                padding: 0;
+
+                >a {
+                    border-radius: 0 0 0.5rem 0.5rem;
+                    display: block;
+                    padding-left: 1rem;
+                    padding-right: 1rem;
+                    padding-top: 0.6rem;
+                    padding-bottom: 0.6rem;
+                }
+
+                >select {
+                    max-width: 100%;
+                    width: 100%;
+                    background-color: var(--color-green);
+                    color: var(--color-white);
+                    border: 0;
+                    border-radius: 0 0 0.5rem 0.5rem;
+                    display: block;
+                    padding-left: 1rem;
+                    padding-right: 1rem;
+                    padding-top: 0.6rem;
+                    padding-bottom: 0.6rem;
+                    filter: drop-shadow(0 0 0.15rem var(--color-green));
+
+                    &:hover {
+                        color: var(--color-green);
+                        background-color: var(--color-green-light);
+                    }
+
+                    optgroup,
+                    option {
+                        background-color: var(--color-white);
+                        color: var(--color-black);
+                    }
+                }
+            }
         }
 
         &.positive {
@@ -441,12 +494,15 @@ ul.tags {
         >.note, >li {
 
             text-align: center;
-            display: flex;
-            flex-direction: column;
+            display: grid;
+            grid-template-rows: min-content 1fr min-content;
+            grid-template-columns: 1fr;
+            align-items: center;
             justify-content: space-between;
             font-size: 1.1rem;
 
-            >header {
+            >header,
+            >footer {
                 font-size: 0.95rem;
             }
         }
@@ -464,7 +520,8 @@ ul.tags {
     text-decoration: none;
     padding: .5rem .75rem;
     display: block;
-    border: none;
+    border: 0;
+    filter: drop-shadow(0 0 0.15rem var(--color-green));
     text-align: center;
 
     &.w-100 {
@@ -478,6 +535,7 @@ ul.tags {
 
     &.red {
         background-color: var(--color-red-dark);
+        filter: drop-shadow(0 0 0.25rem var(--color-red-dark));
 
         &:hover {
             color: var(--color-red);
@@ -532,7 +590,13 @@ details>summary {
 .flex-column {
     display: flex;
     flex-direction: column;
-    gap: 0.2rem;
+    gap: 0.5rem;
+}
+
+.flex-row {
+    display: flex;
+    flex-direction: row;
+    gap: 0.5rem;
 }
 
 ul.pagination {

@@ -8,7 +8,7 @@
         {{ note.note|markdownify|safe }}
     </li>
     {% endfor %}
-    {% for funder_year in object.funderyear_set.filter(notes__isnull=false) %}
+    {% for funder_year in object.funderyear_set.filter(notes__isnull=false).exclude(notes__exact='') %}
     <li class="note">
         <header>
             <strong>FY{{ funder_year.financial_year }}</strong>
@@ -21,7 +21,7 @@
     <li class="note">
         <header>Add note</header>
         <form action="{{ url_for('grantmakers:add_note', org_id=object.org_id) }}" method="post"
-            hx-target="#funder-notes" hx-swap="outerHTML"
+            hx-target="#funder-notes" hx-swap="outerHTML" class="flex-column"
             hx-post="{{ url_for('grantmakers:add_note', org_id=object.org_id) }}">
             <textarea name="note" id="note" rows="5" style="width: 100%;"></textarea>
             <button type="submit" class="button">Add note</button>

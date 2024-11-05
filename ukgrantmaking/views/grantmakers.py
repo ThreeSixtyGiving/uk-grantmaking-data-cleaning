@@ -1,7 +1,7 @@
 from dateutil import parser
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
-from django.http import HttpResponseBadRequest
+from django.http import HttpResponse, HttpResponseBadRequest
 from django.shortcuts import render
 from django.utils import timezone
 
@@ -58,6 +58,43 @@ def htmx_tags_edit(request, org_id):
 
 
 @login_required
+def htmx_edit_funder(request, org_id):
+    if not request.htmx:
+        return HttpResponseBadRequest("This view is only accessible via htmx")
+    funder = Funder.objects.get(org_id=org_id)
+    action = request.POST.get("action")
+    if action == "exclude":
+        funder.included = False
+    elif action == "include":
+        funder.included = True
+    elif action == "doesnt_make_grants_to_individuals":
+        funder.makes_grants_to_individuals = False
+    elif action == "makes_grants_to_individuals":
+        funder.makes_grants_to_individuals = True
+    elif action == "marked_as_checked":
+        if funder.latest_year:
+            funder.latest_year.checked_on = timezone.now()
+            funder.latest_year.checked_by = request.user.username
+            funder.latest_year.save()
+    elif action == "update_segment":
+        funder.segment = request.POST.get("segment")
+    elif action == "change_name":
+        new_name = request.POST.get("name")
+        if not new_name:
+            new_name = None
+        funder.name_manual = new_name
+    funder.save()
+
+    template = "grantmakers/partials/funderstatus.html.j2"
+    if request.headers.get("HX-Target") == "funder-header":
+        template = "grantmakers/partials/funderheader.html.j2"
+
+    return render(
+        request, template, {"object": Funder.objects.get(org_id=funder.org_id)}
+    )
+
+
+@login_required
 def htmx_edit_funderyear(request, org_id, funderyear_id=None):
     if not request.htmx:
         return HttpResponseBadRequest("This view is only accessible via htmx")
@@ -73,6 +110,10 @@ def htmx_edit_funderyear(request, org_id, funderyear_id=None):
             .order_by("-financial_year_end")
             .first()
         )
+
+        if request.method == "DELETE":
+            funder_year.delete()
+            return HttpResponse("")
     else:
         funder_year = funder.funderyear_set.create(financial_year_end=timezone.now())
 

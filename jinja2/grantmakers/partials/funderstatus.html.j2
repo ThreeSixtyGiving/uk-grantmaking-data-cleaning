@@ -1,0 +1,66 @@
+<ul class="status notes" id="funder-status">
+    <li>
+        <header>Org ID</header>
+        <code>{{object.org_id }}</code>
+    </li>
+    <li class="{% if object.included %}positive{% else %}negative{% endif %}">
+        <header>Status</header>
+        {% if object.included %}Included{% else %}Excluded{% endif %}
+        <footer>
+            {% if object.included %}
+            <a href="#" hx-target="#funder-status" hx-swap="outerHTML" class="button"
+                hx-post="{{ url_for('grantmakers:change_status', org_id=object.org_id) }}"
+                hx-vals='{"action": "exclude"}'>Exclude</a>
+            {% else %}
+            <a href="#" hx-target="#funder-status" hx-swap="outerHTML" class="button"
+                hx-post="{{ url_for('grantmakers:change_status', org_id=object.org_id) }}"
+                hx-vals='{"action": "include"}'>Include</a>
+            {% endif %}
+        </footer>
+    </li>
+    <li class="{% if object.makes_grants_to_individuals %}positive{% else %}negative{% endif %}">
+        <header>Makes grants to individuals</header>
+        {% if object.makes_grants_to_individuals %}Yes{% else %}No{% endif %}
+        <footer>
+            {% if object.makes_grants_to_individuals %}
+            <a href="#" hx-target="#funder-status" hx-swap="outerHTML" class="button"
+                hx-post="{{ url_for('grantmakers:change_status', org_id=object.org_id) }}"
+                hx-vals='{"action": "doesnt_make_grants_to_individuals"}'>Change to no</a>
+            {% else %}
+            <a href="#" hx-target="#funder-status" hx-swap="outerHTML" class="button"
+                hx-post="{{ url_for('grantmakers:change_status', org_id=object.org_id) }}"
+                hx-vals='{"action": "makes_grants_to_individuals"}'>Change to yes</a>
+            {% endif %}
+        </footer>
+    </li>
+    <li class="{% if object.latest_year and object.latest_year.checked %}positive{% else %}negative{% endif %}">
+        <header>Checked</header>
+        <span>{{ object.checked or '' }}</span>
+        {% if not object.checked %}
+        <footer>
+            <a href="#" hx-target="#funder-status" hx-swap="outerHTML" class="button"
+                hx-post="{{ url_for('grantmakers:change_status', org_id=object.org_id) }}"
+                hx-vals='{"action": "marked_as_checked"}'>Mark as checked</a>
+        </footer>
+        {% endif %}
+    </li>
+    <li>
+        <header>Segment</header>
+        <p>{{ object.segment or 'Not set' }}</p>
+        <footer>
+            <select hx-target="#funder-status" hx-swap="outerHTML" name="segment" id="segment"
+                hx-post="{{ url_for('grantmakers:change_status', org_id=object.org_id) }}"
+                hx-vals='{"action": "update_segment"}'>
+                <option>No segment</option>
+                {% for category, category_segments in segments|groupby(attribute='category') %}
+                <optgroup label="{{ category }}">
+                    {% for segment in category_segments %}
+                    <option value="{{ segment }}" {% if segment == object.segment %}selected="selected" {% endif %}>
+                        {{ segment }}</option>
+                    {% endfor %}
+                </optgroup>
+                {% endfor %}
+            </select>
+        </footer>
+    </li>
+</ul>
