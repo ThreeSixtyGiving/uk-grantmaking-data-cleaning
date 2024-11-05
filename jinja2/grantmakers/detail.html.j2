@@ -1,0 +1,140 @@
+{% extends 'base.html.j2' %}
+{% from 'components/values.html.j2' import display_date, display_number, display_longtext, display_list, display_text, none_wrapper, display_boolean, display_url %}
+
+{% block content %}
+<h2>Grantmaker: {{ object.name }}</h2>
+{# @todo edit name #}
+{% if object.name_manual and object.name_registered and (object.name_manual != object.name_registered) %}
+<p><small>Original name: {{ object.name_registered }}</small></p>
+{% endif %}
+
+<ul class="status notes" id="funder-status">
+    <li>
+        <header>Org ID</header>
+        <code>{{object.org_id }}</code>
+    </li>
+    <li class="{% if object.included %}positive{% else %}negative{% endif %}">
+        <header>Status</header>
+        {% if object.included %}Included{% else %}Excluded{% endif %}
+        {# @todo button to change status #}
+    </li>
+    <li class="{% if object.makes_grants_to_individuals %}positive{% else %}negative{% endif %}">
+        <header>Makes grants to individuals</header>
+        {% if object.makes_grants_to_individuals %}Yes{% else %}No{% endif %}
+        {# @todo button to mark as making grants to individuals #}
+    </li>
+    <li class="{% if object.latest_year and object.latest_year.checked %}positive{% else %}negative{% endif %}">
+        <header>Checked</header>{% if object.latest_year %}
+        {% if object.latest_year.checked_by %}
+        {{ object.latest_year.checked_by }}
+        {% elif object.latest_year.checked %}
+        Checked
+        {% endif %}
+        {% endif %}
+        {# @todo button to mark as checked #}
+    </li>
+    <li>
+        <header>Segment</header>
+        {{ object.segment }}
+        {# @todo dropdown to change segment #}
+    </li>
+</ul>
+
+<h3>Details</h3>
+
+<table class="table">
+    <tbody>
+        <tr>
+            <th>Tags</th>
+            <td>
+                {% include 'grantmakers/partials/tags.html.j2' %}
+            </td>
+        </tr>
+        <tr>
+            <th>Website</th>
+            <td>
+                {% if object.website %}
+                <a href="{{ object.website|working_url }}" target="_blank">{{ object.website|clean_url }}</a>
+                {% endif %}
+            </td>
+        </tr>
+        <tr>
+            <th>Date of registration</th>
+            <td>{{ display_date(object.date_of_registration) }}</td>
+        </tr>
+        <tr>
+            <th>Date of removal</th>
+            <td>{{ display_date(object.date_of_removal) }}</td>
+        </tr>
+        <tr>
+            <th>Active</th>
+            <td>{{ display_boolean(object.active) }}</td>
+        </tr>
+        <tr>
+            <th>Activities</th>
+            <td>
+                <p>{{ object.activities }}</p>
+            </td>
+        </tr>
+    </tbody>
+</table>
+
+
+<h3>Notes</h3>
+{% include 'grantmakers/partials/notes.html.j2' %}
+
+<h3>Financial years</h3>
+
+<table class="table">
+    <thead>
+        <tr>
+            <th>Financial year</th>
+            <th>Income</th>
+            <th>Spending</th>
+            <th>Funds</th>
+            <th>Employees</th>
+            <th>Checked</th>
+        </tr>
+    </thead>
+    <tbody>
+        {# @todo delete row #}
+        <tr id="funder-year-new">
+            <td colspan="6">
+                <a class="button" hx-target="#funder-year-new" hx-swap="outerHTML"
+                    hx-get="{{ url_for('grantmakers:add_funderyear', org_id=object.org_id) }}"
+                    href="{{ url_for('grantmakers:add_funderyear', org_id=object.org_id) }}">
+                    Add new financial year
+                </a>
+            </td>
+        </tr>
+        {% for funder_year in object.funderyear_set.all() %}
+        {% include 'grantmakers/partials/funderyear.html.j2' %}
+        {% endfor %}
+    </tbody>
+</table>
+
+
+<h3>Grants made</h3>
+
+<table class="table">
+    <thead>
+        <tr>
+            <th>Recipient</th>
+            <th>Recipient Type</th>
+            <th class="tr">Amount Awarded</th>
+            <th>Award Date</th>
+            <th>Inclusion</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for grant in object.grants.order_by("-award_date").all()[0:25] %}
+        <tr>
+            <td>{{ grant.recipient }}</td>
+            <td>{{ grant.recipient_type }}</td>
+            <td class="tr">£{{ display_number(grant.amount_awarded) }}</td>
+            <td>{{ display_date(grant.award_date) }}</td>
+            <td>{{ grant.inclusion }}</td>
+        </tr>
+        {% endfor %}
+</table>
+{% endblock %}

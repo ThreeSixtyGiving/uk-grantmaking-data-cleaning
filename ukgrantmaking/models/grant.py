@@ -1,5 +1,6 @@
 from django.db import models
 from django.db.models.functions import Coalesce, Left, Length, Right, StrIndex
+from markdownx.models import MarkdownxField
 
 from ukgrantmaking.models.financial_years import FinancialYears
 
@@ -319,7 +320,7 @@ class Grant(models.Model):
         db_index=True,
         verbose_name="Exclusion status",
     )
-    notes = models.TextField(null=True, blank=True)
+    notes = MarkdownxField(null=True, blank=True)
     checked_by = models.CharField(max_length=255, null=True, blank=True)
 
     annual_amount = models.GeneratedField(

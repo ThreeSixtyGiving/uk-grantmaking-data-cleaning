@@ -38,6 +38,11 @@ urlpatterns = [
         name="index",
     ),
     path(
+        "grantmakers/",
+        include("ukgrantmaking.urls.grantmakers", namespace="grantmakers"),
+        name="grantmakers",
+    ),
+    path(
         "table-creator/",
         table_creator_view,
         name="table_creator",
@@ -100,4 +105,5 @@ urlpatterns = [
     path("export/funders.xlsx", export_funders_view),
     path("export/grants.xlsx", export_grants_view),
     path("user-from-cookies", check_cookies_view),
+    path("markdownx/", include("markdownx.urls")),
 ]

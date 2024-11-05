@@ -49,18 +49,26 @@ django==5.0.6
     #   -r requirements.in
     #   dj-database-url
     #   django-debug-toolbar
+    #   django-filter
     #   django-htmx
+    #   django-markdownx
     #   django-storages
 django-click==2.4.0
     # via -r requirements.in
 django-debug-toolbar==4.3.0
     # via -r requirements.in
+django-filter==24.3
+    # via -r requirements.in
 django-htmx==1.17.3
+    # via -r requirements.in
+django-markdownx==4.0.7
     # via -r requirements.in
 django-storages==1.14.3
     # via -r requirements.in
 et-xmlfile==1.1.0
     # via openpyxl
+exceptiongroup==1.2.2
+    # via anyio
 greenlet==3.0.3
     # via sqlalchemy
 gunicorn==22.0.0
@@ -98,6 +106,8 @@ jmespath==1.0.1
     # via
     #   boto3
     #   botocore
+markdown==3.7
+    # via django-markdownx
 markupsafe==2.1.5
     # via jinja2
 mergedeep==1.3.4
@@ -116,6 +126,8 @@ pandas==2.2.2
     # via
     #   -r requirements.in
     #   caradoc
+pillow==11.0.0
+    # via django-markdownx
 pint==0.23
     # via datasette
 pip==24.0
@@ -162,12 +174,15 @@ typeguard==4.2.1
     # via inflect
 typing-extensions==4.11.0
     # via
+    #   anyio
+    #   asgiref
     #   dj-database-url
     #   inflect
     #   janus
     #   pint
     #   sqlalchemy
     #   typeguard
+    #   uvicorn
 tzdata==2024.1
     # via
     #   django

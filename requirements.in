@@ -21,3 +21,5 @@ caradoc
 datasette
 uvicorn
 datasette-auth-existing-cookies>=1.0a1
+django-markdownx
+django-filter

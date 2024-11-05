@@ -41,12 +41,12 @@ def sidebar(request):
             [
                 SidebarItem(
                     title="Grantmakers",
-                    view="admin:index",
+                    view="grantmakers:index",
                     children=[
-                        SidebarItem(title="All Grantmakers", view="admin:index"),
-                        SidebarItem(title="All Grants", view="admin:index"),
-                        SidebarItem(title="All Grantmakers CSV", view="admin:index"),
-                        SidebarItem(title="All Grants CSV", view="admin:index"),
+                        # SidebarItem(title="All Grantmakers", view="admin:index"),
+                        # SidebarItem(title="All Grants", view="admin:index"),
+                        # SidebarItem(title="All Grantmakers CSV", view="admin:index"),
+                        # SidebarItem(title="All Grants CSV", view="admin:index"),
                     ],
                 ),
                 SidebarItem(title="Grants", view="admin:index"),

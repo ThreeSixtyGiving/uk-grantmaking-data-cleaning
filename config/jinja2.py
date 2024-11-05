@@ -1,14 +1,17 @@
 import re
 import urllib.parse
 from datetime import date, datetime
+from decimal import Decimal
 
 import titlecase
 from django.contrib.humanize.templatetags.humanize import naturalday, naturaltime
+from django.http import HttpRequest
 from django.shortcuts import resolve_url
 from django.templatetags.static import static
 from django.urls import NoReverseMatch, reverse
 from django.utils.text import slugify
 from django_htmx.jinja import django_htmx_script
+from markdownx.utils import markdownify
 
 from jinja2 import Environment
 
@@ -166,6 +169,8 @@ def strip_whitespace(text):
 
 
 def replace_url_params(url, **kwargs):
+    if isinstance(url, HttpRequest):
+        url = url.get_full_path()
     parsed_url = urllib.parse.urlparse(url)
     params = urllib.parse.parse_qs(parsed_url.query)
     params = {**params, **kwargs}
@@ -193,6 +198,41 @@ def dateformat_filter(d, f="%Y-%m-%d", o=None):
     return parse_datetime(d, f, o)
 
 
+def clean_url(url: str) -> str:
+    url = re.sub(r"(https?:)?//", "", url)
+    if url.startswith("www."):
+        url = url[4:]
+    if url.endswith("/"):
+        url = url[:-1]
+    return url.lower()
+
+
+def working_url(url: str) -> str:
+    if url.startswith("http"):
+        return url
+    return "https://" + url
+
+
+def format_number(v, format_str=None):
+    if isinstance(v, str):
+        return v
+    if v is None:
+        return "-"
+    if format_str:
+        return format_str.format(v)
+    if isinstance(v, float):
+        if v.is_integer():
+            return "{:,.0f}".format(v)
+        return "{:,.2f}".format(v)
+    if isinstance(v, int):
+        return "{:,.0f}".format(v)
+    if isinstance(v, Decimal):
+        if v % 1 == 0:
+            return "{:,.0f}".format(v)
+        return "{:,.2f}".format(v)
+    return str(v)
+
+
 def environment(**options):
     env = Environment(**options)
 
@@ -217,6 +257,10 @@ def environment(**options):
             "to_titlecase": to_titlecase,
             "naturaltime": naturaltime,
             "naturalday": naturalday,
+            "clean_url": clean_url,
+            "working_url": working_url,
+            "markdownify": markdownify,
+            "format_number": format_number,
         }
     )
     return env

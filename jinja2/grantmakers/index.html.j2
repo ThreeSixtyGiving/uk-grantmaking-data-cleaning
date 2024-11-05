@@ -1,0 +1,64 @@
+{% extends 'base.html.j2' %}
+{% from 'components/values.html.j2' import display_date, display_number, display_longtext, display_list, display_text, none_wrapper, display_boolean, display_url %}
+{% from 'components/pagination.html.j2' import pagination, results_header %}
+
+{% block bodyclass %}{{ super() }} aside{% endblock %}
+
+{% block content %}
+<h2>Grantmakers</h2>
+
+<p class="">{{ results_header(page_obj) }}</p>
+
+{% if page_obj.object_list %}
+<table class="table">
+    <thead>
+        <tr>
+            <th>Org ID</th>
+            <th>Name</th>
+            <th>Segment</th>
+            <th class="tc">Included</th>
+            <th class="tc">Makes grants to individuals</th>
+            <th class="tr">Latest grantmaking</th>
+            <th>Tags</th>
+            <th>Checked</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for object in page_obj.object_list %}
+        <tr>
+            <td><a href="{{ url_for('grantmakers:detail', org_id=object.org_id) }}">{{ object.org_id }}</a></td>
+            <td><a class="b" href="{{ url_for('grantmakers:detail', org_id=object.org_id) }}">{{ object.name }}</a></td>
+            <td>{{ object.segment }}</td>
+            <td class="tc">{{ object.included }}</td>
+            <td class="tc">{{ object.makes_grants_to_individuals }}</td>
+            <td class="tr">{{ display_number(object.latest_grantmaking, format_str="£{:,.0f}") }}</td>
+            <td>
+                <ul class="tags">{% for tag in object.tags.values_list("tag", flat=true) %}<li>{{ tag }}</li>
+                    {% endfor %}</ul>
+            </td>
+            <td>
+                {% if object.latest_year %}
+                {% if object.latest_year.checked_by %}
+                {{ object.latest_year.checked_by }}
+                {% elif object.latest_year.checked %}
+                Checked
+                {% endif %}
+                {% endif %}
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+{{ pagination(page_obj, request) }}
+{% endif %}
+
+{% endblock %}
+
+{% block sidebar %}
+<h3>Filters</h3>
+<form action="{{ url_for('grantmakers:index') }}" method="get" class="filters">
+    {{ filters.form }}
+    <button type="submit">Search</button>
+</form>
+{% endblock %}

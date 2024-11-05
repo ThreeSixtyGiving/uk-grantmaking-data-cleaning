@@ -11,7 +11,7 @@ from ukgrantmaking.models import (
     FunderYear,
     Grant,
 )
-from ukgrantmaking.views.grantmakers import (
+from ukgrantmaking.views.grantmakers_results import (
     all_grantmakers_csv,
     financial_year,
     grantmakers_trends,
@@ -38,7 +38,30 @@ __all__ = [
 
 @login_required
 def index(request):
-    return render(request, "index.html.j2")
+    context = {
+        "stats": [
+            {"title": "Number of grantmakers", "value": Funder.objects.count()},
+            {
+                "title": "Number of included grantmakers",
+                "value": Funder.objects.filter(included=True).count(),
+            },
+            {
+                "title": "Funders who make grants to individuals",
+                "value": Funder.objects.filter(
+                    makes_grants_to_individuals=True
+                ).count(),
+            },
+            {
+                "title": "Funders with edited data",
+                "value": Funder.objects.filter(
+                    included=True,
+                    funderyear__financial_year="2022-23",
+                    funderyear__checked=True,
+                ).count(),
+            },
+        ]
+    }
+    return render(request, "index.html.j2", context)
 
 
 def check_cookies(request):

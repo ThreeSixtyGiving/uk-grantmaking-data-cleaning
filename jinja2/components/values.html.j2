@@ -1,0 +1,52 @@
+{% macro none_wrapper(value, missing_value="-") %}
+{% if value is none %}{{ missing_value }}{% else %}{{ caller() }}{% endif %}
+{% endmacro %}
+
+{% macro display_date(value, date_format="%d %b %Y", missing_value="-") %}
+{% call none_wrapper(value, missing_value) %}<time datetime="{{ value }}">{{ value|dateformat(o=date_format) }}</time>
+{% endcall %}
+{% endmacro %}
+
+{% macro display_number(value, missing_value="-" ,format_str=none) %}
+{% call none_wrapper(value, missing_value) %}<data
+    value="{{ value }}">{{ value|format_number(format_str) }}</data>{% endcall %}
+{% endmacro %}
+
+{% macro display_text(value, missing_value="-") %}
+{% call none_wrapper(value, missing_value) %}{{ value }}{% endcall %}
+{% endmacro %}
+
+{% macro display_longtext(value, missing_value="-") %}
+{% call none_wrapper(value, missing_value) %}
+<details style="text-wrap: auto;">
+    <summary style="min-width: 40ch;">{{ value|truncate(35) }}</summary>{{ value }}
+</details>
+{% endcall %}
+{% endmacro %}
+
+{% macro display_url(value, link=none, target="_blank", missing_value="-") %}
+{% if link is none %}
+{% set link = value %}
+{% endif %}
+{% call none_wrapper(value, missing_value) %}
+<a href="{{ link|working_url }}" target="{{ target }}">{{ value|clean_url }}</a>
+{% endcall %}
+{% endmacro %}
+
+{% macro display_boolean(value, missing_value="-") %}
+{% call none_wrapper(value, missing_value) %}
+{% if value %}<i class="primary inherit">check_circle</i>
+{% else %}<i class="error inherit">cancel</i>
+{% endif %}
+{% endcall %}
+{% endmacro %}
+
+{% macro display_list(value, missing_value="-") %}
+{% call none_wrapper(value, missing_value) %}
+<ul>
+    {% for item in value %}
+    <li>{{ item }}</li>
+    {% endfor %}
+</ul>
+{% endcall %}
+{% endmacro %}

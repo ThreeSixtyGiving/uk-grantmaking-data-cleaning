@@ -1,0 +1,30 @@
+<ul class="notes" id="funder-notes">
+    {% for note in object.notes.all() %}
+    <li class="note">
+        <header>
+            <time value="{{ note.date_added }}">{{ note.date_added|naturalday }}</time>
+            by <strong>{{ note.added_by }}</strong>
+        </header>
+        {{ note.note|markdownify|safe }}
+    </li>
+    {% endfor %}
+    {% for funder_year in object.funderyear_set.filter(notes__isnull=false) %}
+    <li class="note">
+        <header>
+            <strong>FY{{ funder_year.financial_year }}</strong>
+            <time value="{{ funder_year.checked_on }}">{{ funder_year.checked_on|naturalday }}</time>
+            by <strong>{{ funder_year.checked_by }}</strong>
+        </header>
+        {{ funder_year.notes|markdownify|safe }}
+    </li>
+    {% endfor %}
+    <li class="note">
+        <header>Add note</header>
+        <form action="{{ url_for('grantmakers:add_note', org_id=object.org_id) }}" method="post"
+            hx-target="#funder-notes" hx-swap="outerHTML"
+            hx-post="{{ url_for('grantmakers:add_note', org_id=object.org_id) }}">
+            <textarea name="note" id="note" rows="5" style="width: 100%;"></textarea>
+            <button type="submit" class="button">Add note</button>
+        </form>
+    </li>
+</ul>

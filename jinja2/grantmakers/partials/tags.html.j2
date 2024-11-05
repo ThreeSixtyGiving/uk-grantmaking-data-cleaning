@@ -1,0 +1,28 @@
+<div id="funder-tags">
+    {% if edit %}
+    {% set selected_tags = object.tags.values_list("tag", flat=true) %}
+    <ul class="tags">
+        {% for tag in tags.order_by("tag") %}
+        {% if tag.tag in selected_tags %}
+        <li><label><input type="checkbox" name="tags" value="{{ tag }}" checked="checked" />{{ tag }}</label></li>
+        {% else %}
+        <li><label><input type="checkbox" name="tags" value="{{ tag }}" />{{ tag }}</label></li>
+        {% endif %}
+        {% endfor %}
+        <li class="action">
+            <a href="#" hx-post="{{ url_for('grantmakers:edit_tags', org_id=object.org_id) }}" hx-target="#funder-tags"
+                hx-swap="innerHTML" hx-include="input[name=tags]" class="">Save</a>
+        </li>
+    </ul>
+    {% else %}
+    <ul class="tags">
+        {% for tag in object.tags.order_by("tag").values_list("tag", flat=true) %}
+        <li>{{ tag }}</li>
+        {% endfor %}
+        <li class="action">
+            <a href="#" hx-get="{{ url_for('grantmakers:edit_tags', org_id=object.org_id) }}" hx-target="#funder-tags"
+                hx-swap="innerHTML" class="">Edit</a>
+        </li>
+    </ul>
+    {% endif %}
+</div>

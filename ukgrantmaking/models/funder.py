@@ -1,5 +1,6 @@
 from django.db import models
 from django.db.models.functions import Coalesce, Left, Length, Right, StrIndex
+from markdownx.models import MarkdownxField
 
 from ukgrantmaking.models.financial_years import DEFAULT_FINANCIAL_YEAR
 
@@ -76,10 +77,11 @@ class FunderTag(models.Model):
 
 class FunderNote(models.Model):
     funder = models.ForeignKey("Funder", on_delete=models.CASCADE, related_name="notes")
-    note = models.TextField()
+    note = MarkdownxField()
     date_added = models.DateTimeField(auto_now_add=True)
     date_updated = models.DateTimeField(auto_now=True)
     added_by = models.CharField(max_length=255, null=True, blank=True)
+    resolved = models.BooleanField(default=False)
 
     def __str__(self):
         return self.note

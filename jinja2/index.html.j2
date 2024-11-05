@@ -1,1 +1,13 @@
 {% extends "base.html.j2" %}
+{% from 'components/values.html.j2' import display_number %}
+
+{% block content %}
+<ul class="status notes">
+    {% for stat in stats %}
+    <li class="big-stat">
+        <header>{{ stat.title }}</header>
+        {{ display_number(stat.value) }}
+    </li>
+    {% endfor %}
+</ul>
+{% endblock %}

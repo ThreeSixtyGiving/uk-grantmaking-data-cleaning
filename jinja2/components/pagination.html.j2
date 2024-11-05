@@ -1,0 +1,63 @@
+{% macro pagination(page, request, classes="", htmx_target=none) -%}
+{% if page.has_other_pages() %}
+{% if htmx_target %}
+<ul class="pagination {{ classes }}" hx-target="{{ htmx_target }}" hx-swap="innerHTML scroll:window:top">
+    {% if page.number > 2 %}
+    <li><a href="{{ request|replace_url_params(page=1) }}" hx-get="{{ request|replace_url_params(page=1) }}">&laquo;
+            First</a></li>
+    {% endif %}
+    {% if page.has_previous() %}
+    <li><a href="{{ request|replace_url_params(page=page.previous_page_number()) }}"
+            hx-get="{{ request|replace_url_params(page=page.previous_page_number()) }}">&laquo; Previous</a></li>
+    {% endif %}
+    {% for page_number in page.paginator.get_elided_page_range(page.number) %}
+    {% if page_number == page.paginator.ELLIPSIS %}
+    <li class="">{{ page_number }}</li>
+    {% else %}
+    <li class="{% if page_number == page.number %}active{% endif %}"><a
+            hx-get="{{ request|replace_url_params(page=page_number) }}"
+            href="{{ request|replace_url_params(page=page_number) }}">{{ page_number }}</a></li>
+    {% endif %}
+    {% endfor %}
+    {% if page.has_next() %}
+    <li><a href="{{ request|replace_url_params(page=page.next_page_number()) }}"
+            hx-get="{{ request|replace_url_params(page=page.next_page_number()) }}">Next &raquo;</a></li>
+    {% endif %}
+    {% if (page.paginator.num_pages - page.number) >= 2 %}
+    <li><a href="{{ request|replace_url_params(page=page.paginator.num_pages) }}"
+            hx-get="{{ request|replace_url_params(page=page.paginator.num_pages) }}">Last &raquo;</a></li>
+    {% endif %}
+</ul>
+{% else %}
+<ul class="pagination {{ classes }}">
+    {% if page.number > 2 %}
+    <li><a href="{{ request|replace_url_params(page=1) }}">&laquo; First</a></li>
+    {% endif %}
+    {% if page.has_previous() %}
+    <li><a href="{{ request|replace_url_params(page=page.previous_page_number()) }}">&laquo; Previous</a></li>
+    {% endif %}
+    {% for page_number in page.paginator.get_elided_page_range(page.number) %}
+    {% if page_number == page.paginator.ELLIPSIS %}
+    <li class="">{{ page_number }}</li>
+    {% else %}
+    <li class="{% if page_number == page.number %}active{% endif %}"><a
+            href="{{ request|replace_url_params(page=page_number) }}">{{ page_number }}</a></li>
+    {% endif %}
+    {% endfor %}
+    {% if page.has_next() %}
+    <li><a href="{{ request|replace_url_params(page=page.next_page_number()) }}">Next &raquo;</a></li>
+    {% endif %}
+    {% if (page.paginator.num_pages - page.number) >= 2 %}
+    <li><a href="{{ request|replace_url_params(page=page.paginator.num_pages) }}">Last &raquo;</a></li>
+    {% endif %}
+</ul>
+{% endif %}
+{% endif %}
+{% endmacro %}
+
+{% macro results_header(page, itemname="results") %}
+{{ page.paginator.count|format_number }} {{ itemname }}
+{% if page.has_other_pages() %}
+| Showing {{ itemname }} {{ page.start_index()|format_number }} to {{ page.end_index()|format_number }}
+{% endif %}
+{% endmacro %}

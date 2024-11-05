@@ -1,6 +1,8 @@
+from django.core.exceptions import FieldDoesNotExist
 from django.db import models
 from django.db.models.functions import Coalesce
 from django.db.models.lookups import IsNull
+from markdownx.models import MarkdownxField
 
 from ukgrantmaking.models.financial_years import DEFAULT_BREAK_MONTH, FinancialYears
 
@@ -173,7 +175,7 @@ class FunderYear(models.Model):
 
     checked_on = models.DateTimeField(null=True, blank=True)
     checked_by = models.CharField(max_length=255, null=True, blank=True)
-    notes = models.TextField(null=True, blank=True)
+    notes = MarkdownxField(null=True, blank=True)
     date_added = models.DateTimeField(auto_now_add=True, db_index=True)
     date_updated = models.DateTimeField(auto_now=True)
 
@@ -216,3 +218,43 @@ class FunderYear(models.Model):
                 self.financial_year = f"{self.financial_year_end.year}-{(self.financial_year_end.year + 1) % 100:02d}"
         self.funder.save()
         super().save(*args, **kwargs)
+
+    def editable_fields(self):
+        fields = [
+            "income",
+            "spending",
+            # "spending_charitable",
+            "spending_grant_making_individuals",
+            "spending_grant_making_institutions",
+            # "total_net_assets",
+            # "funds",
+            "funds_endowment",
+            "funds_restricted",
+            "funds_unrestricted",
+            "employees",
+        ]
+        field_return = []
+        for field in fields:
+            field_obj = {
+                "name": field,
+                "label": self._meta.get_field(field).verbose_name,
+                "registered": None,
+                "360Giving": None,
+                "manual": None,
+                "format_str": "{:,.0f}" if field == "employees" else "£{:,.0f}",
+            }
+            for i in ["registered", "360Giving", "manual"]:
+                try:
+                    field_obj[i] = self._meta.get_field(f"{field}_{i}")
+                except FieldDoesNotExist:
+                    pass
+            field_return.append(field_obj)
+        return field_return
+
+    @property
+    def account_url(self):
+        if self.funder.org_id.startswith("GB-CHC-"):
+            return "https://ccew.dkane.net/charity/{}/accounts/{}".format(
+                self.funder.org_id.replace("GB-CHC-", ""), self.financial_year_end
+            )
+        return None

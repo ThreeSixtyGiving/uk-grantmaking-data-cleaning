@@ -55,6 +55,8 @@ INSTALLED_APPS = [
     "django_htmx",
     "debug_toolbar",
     "ukgrantmaking",
+    "markdownx",
+    "django_filters",
 ]
 
 MIDDLEWARE = [

@@ -10,12 +10,16 @@
     rel="stylesheet">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
   <link rel="shortcut icon" href="{{ url_for('static', filename='images/favicon-64x64.png') }}">
+  <script src="{{ url_for('static', filename='js/htmx.min.js') }}" defer></script>
+  <script src="{{ url_for('static', filename='js/alpine.mask.min.js') }}" defer></script>
+  <script src="{{ url_for('static', filename='js/alpine.min.js') }}" defer></script>
+  {{ django_htmx_script() }}
   {% block headscripts %}
   {% endblock %}
   <title>{{ (title or default_title)|striptags }}</title>
 </head>
 
-<body class="grid" hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
+<body class="{% block bodyclass %}grid{% endblock %}" hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
   {% include 'components/header.html.j2' %}
   {% include 'components/nav.html.j2' %}
   <main class="">
@@ -49,10 +53,15 @@
     {% endwith %}
     {% endblock %}
     <section id="content" class="">
-      {% block content %}{% endblock %}
+      {% block content %}
       {{ lipsum(10) }}
+      {% endblock %}
     </section>
   </main>
+  <aside>
+    {% block sidebar %}
+    {% endblock %}
+  </aside>
   {% include 'components/footer.html.j2' %}
   {% block bodyscripts %}
   {% endblock %}
