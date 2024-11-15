@@ -4,16 +4,28 @@ jobs:
   django-test:
     runs-on: ubuntu-latest
 
+    services:
+      postgres_data:
+        image: postgres:14.5
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: github_actions_data
+        ports:
+          - 5432:5432
+        # needed because the postgres container does not provide a healthcheck
+        options: --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 5
+
     env:
-      DATABASE_URL: "sqlite:///:memory:"
+      DATABASE_URL: "postgres://postgres:postgres@localhost:5432/github_actions_data"
       SECRET_KEY: 1234567890
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Parse Python version
         run: sed  s/python-// runtime.txt | head > .python-version
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version-file: ".python-version"
       - name: psycopg2 prerequisites
@@ -22,6 +34,12 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
+      - name: ruff
+        run: |
+          ruff check .
+      - name: ruff format
+        run: |
+          ruff format . --check
       - name: Run migrations
         run: |
           python manage.py migrate
