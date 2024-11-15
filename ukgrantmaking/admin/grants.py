@@ -159,6 +159,7 @@ class GrantAdmin(CSVUploadModelAdmin):
         "recipient_individual_primary_grant_reason",
         "recipient_individual_secondary_grant_reason",
         "recipient_individual_grant_purpose",
+        "recipient_type_registered",
         "recipient_type",
         "funding_organisation_id",
         "funding_organisation_name",

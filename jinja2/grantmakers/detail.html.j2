@@ -10,13 +10,13 @@
 <table class="table">
     <tbody>
         <tr>
-            <th>Tags</th>
+            <th class="tr">Tags</th>
             <td>
                 {% include 'grantmakers/partials/tags.html.j2' %}
             </td>
         </tr>
         <tr>
-            <th>Website</th>
+            <th class="tr">Website</th>
             <td>
                 {% if object.website %}
                 <a href="{{ object.website|working_url }}" target="_blank">{{ object.website|clean_url }}</a>
@@ -24,19 +24,19 @@
             </td>
         </tr>
         <tr>
-            <th>Date of registration</th>
+            <th class="tr">Date of registration</th>
             <td>{{ display_date(object.date_of_registration) }}</td>
         </tr>
         <tr>
-            <th>Date of removal</th>
+            <th class="tr">Date of removal</th>
             <td>{{ display_date(object.date_of_removal) }}</td>
         </tr>
         <tr>
-            <th>Active</th>
+            <th class="tr">Active</th>
             <td>{{ display_boolean(object.active) }}</td>
         </tr>
         <tr>
-            <th>Activities</th>
+            <th class="tr">Activities</th>
             <td>
                 <p>{{ display_text(object.activities) }}</p>
             </td>
@@ -50,14 +50,14 @@
 
 <h3>Financial years</h3>
 
-<table class="table">
+<table class="table striped">
     <thead>
         <tr>
             <th>Financial year</th>
-            <th>Income</th>
+            <th>Income / Employees</th>
             <th>Spending</th>
+            <th>Grants</th>
             <th>Funds</th>
-            <th>Employees</th>
             <th>Checked</th>
         </tr>
     </thead>
@@ -71,8 +71,10 @@
                 </a>
             </td>
         </tr>
-        {% for funder_year in object.funderyear_set.all() %}
+        {% for financial_year in object.financial_years.order_by("-financial_year__fy") %}
+        {% for funder_year in financial_year.financial_years.order_by("-financial_year_end") %}
         {% include 'grantmakers/partials/funderyear.html.j2' %}
+        {% endfor %}
         {% endfor %}
     </tbody>
 </table>
@@ -80,7 +82,7 @@
 
 <h3>Grants made</h3>
 
-<table class="table">
+<table class="table striped">
     <thead>
         <tr>
             <th>Recipient</th>

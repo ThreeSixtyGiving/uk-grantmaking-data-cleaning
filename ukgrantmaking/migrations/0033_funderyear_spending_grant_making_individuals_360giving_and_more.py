@@ -30,28 +30,6 @@ class Migration(migrations.Migration):
         migrations.RemoveField(
             model_name="funderyear",
             name="spending_grant_making",
-            field=models.GeneratedField(
-                expression=models.Case(
-                    models.When(
-                        django.db.models.lookups.IsNull(
-                            models.F("spending_grant_making_individuals"), False
-                        )
-                        | django.db.models.lookups.IsNull(
-                            models.F("spending_grant_making_institutions"), False
-                        ),
-                        then=(
-                            django.db.models.functions.comparison.Coalesce(
-                                models.F("spending_grant_making_individuals"), 0
-                            )
-                            + django.db.models.functions.comparison.Coalesce(
-                                models.F("spending_grant_making_institutions"), 0
-                            )
-                        ),
-                    )
-                ),
-                output_field=models.BigIntegerField(),
-                db_persist=True,
-            ),
         ),
         migrations.RemoveField(
             model_name="funderyear",
@@ -68,14 +46,6 @@ class Migration(migrations.Migration):
         migrations.RemoveField(
             model_name="funderyear",
             name="spending_grant_making_institutions",
-            field=models.GeneratedField(
-                db_persist=True,
-                expression=django.db.models.functions.comparison.Coalesce(
-                    "spending_grant_making_institutions_manual",
-                    "spending_grant_making_institutions_registered",
-                ),
-                output_field=models.BigIntegerField(),
-            ),
         ),
         migrations.AddField(
             model_name="funderyear",
@@ -107,26 +77,54 @@ class Migration(migrations.Migration):
             model_name="funderyear",
             name="spending_grant_making",
             field=models.GeneratedField(
+                db_persist=True,
                 expression=models.Case(
                     models.When(
-                        django.db.models.lookups.IsNull(
-                            models.F("spending_grant_making_individuals"), False
-                        )
-                        | django.db.models.lookups.IsNull(
-                            models.F("spending_grant_making_institutions"), False
+                        models.Q(
+                            django.db.models.lookups.IsNull(
+                                django.db.models.functions.comparison.Coalesce(
+                                    "spending_grant_making_individuals_manual",
+                                    "spending_grant_making_individuals_360Giving",
+                                    "spending_grant_making_individuals_registered",
+                                    output_field=models.BigIntegerField(),
+                                ),
+                                False,
+                            ),
+                            django.db.models.lookups.IsNull(
+                                django.db.models.functions.comparison.Coalesce(
+                                    "spending_grant_making_institutions_manual",
+                                    "spending_grant_making_institutions_360Giving",
+                                    "spending_grant_making_institutions_registered",
+                                    output_field=models.BigIntegerField(),
+                                ),
+                                False,
+                            ),
+                            _connector="OR",
                         ),
-                        then=(
+                        then=django.db.models.expressions.CombinedExpression(
                             django.db.models.functions.comparison.Coalesce(
-                                models.F("spending_grant_making_individuals"), 0
-                            )
-                            + django.db.models.functions.comparison.Coalesce(
-                                models.F("spending_grant_making_institutions"), 0
-                            )
+                                django.db.models.functions.comparison.Coalesce(
+                                    "spending_grant_making_individuals_manual",
+                                    "spending_grant_making_individuals_360Giving",
+                                    "spending_grant_making_individuals_registered",
+                                    output_field=models.BigIntegerField(),
+                                ),
+                                0,
+                            ),
+                            "+",
+                            django.db.models.functions.comparison.Coalesce(
+                                django.db.models.functions.comparison.Coalesce(
+                                    "spending_grant_making_institutions_manual",
+                                    "spending_grant_making_institutions_360Giving",
+                                    "spending_grant_making_institutions_registered",
+                                    output_field=models.BigIntegerField(),
+                                ),
+                                0,
+                            ),
                         ),
                     )
                 ),
                 output_field=models.BigIntegerField(),
-                db_persist=True,
             ),
         ),
     ]

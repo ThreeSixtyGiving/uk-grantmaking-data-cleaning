@@ -58,9 +58,10 @@ h1, h2, h3, h4, h5, h6 {
 
 /* Main styles */
 
+html,
 body {
     font-family: Poppins, sans-serif;
-    font-size: 18px;
+    font-size: 15px;
     font-style: normal;
     font-weight: 300;
     letter-spacing: 0;
@@ -72,14 +73,13 @@ body.grid {
     min-height: 100vh;
     grid-template-columns: 1fr;
     grid-template-rows: min-content min-content 1fr min-content;
-    grid-template-areas: "header"
-        "nav"
+    grid-template-areas: "nav"
         "main"
         "footer";
 
     >header {
         grid-area: header;
-        display: grid;
+        display: none;
         grid-template-columns: 1fr;
         background-color: var(--color-purple);
         color: var(--color-white);
@@ -91,10 +91,13 @@ body.grid {
         }
     }
 
+    &:not(.aside)>aside {
+        display: none;
+    }
+
     &.aside {
         grid-template-columns: 1fr;
-        grid-template-areas: "header"
-            "nav"
+        grid-template-areas: "nav"
             "main"
             "aside"
             "footer";
@@ -259,7 +262,7 @@ body.grid {
     body.grid {
         grid-template-columns: var(--grid-width) 1fr;
         grid-template-rows: var(--grid-height) 1fr min-content;
-        grid-template-areas: "nav header"
+        grid-template-areas: "nav main"
             "nav main"
             "nav footer";
 
@@ -276,7 +279,7 @@ body.grid {
         &.aside {
             grid-template-columns: var(--grid-width) 1fr var(--grid-width);
             grid-template-rows: var(--grid-height) 1fr min-content;
-            grid-template-areas: "nav header header"
+            grid-template-areas: "nav main aside"
                 "nav main aside"
                 "nav footer footer";
 
@@ -292,7 +295,7 @@ table.table {
     border-collapse: collapse;
     width: 100%;
     margin-bottom: 1.75rem;
-    font-size: 0.95rem;
+    /* font-size: 0.95rem; */
 
     th, td {
         padding: 0.5rem;
@@ -306,12 +309,14 @@ table.table {
         table.table {
             margin-bottom: 0;
 
-            tbody tr:nth-child(even) {
-                background-color: var(--color-green-lighter);
-            }
+            &.striped {
+                tbody tr:nth-child(even) {
+                    background-color: var(--color-green-lighter);
+                }
 
-            tbody tr:nth-child(odd) {
-                background-color: var(--color-white);
+                tbody tr:nth-child(odd) {
+                    background-color: var(--color-white);
+                }
             }
         }
 
@@ -333,12 +338,14 @@ table.table {
         color: var(--color-white);
     }
 
-    tbody tr:nth-child(odd) {
-        background-color: var(--color-green-lighter);
-    }
+    &.striped {
+        >tbody>tr:nth-child(odd) {
+            background-color: var(--color-green-lighter);
+        }
 
-    tbody tr:nth-child(even) {
-        background-color: var(--color-white);
+        >tbody>tr:nth-child(even) {
+            background-color: var(--color-white);
+        }
     }
 
     tbody tr.border>td {
@@ -660,4 +667,45 @@ ul.pagination {
 textarea.funder-year-edit {
     max-width: 100%;
     text-align: left;
+}
+
+.progress-grid {
+    width: 100%;
+    display: grid;
+    grid-template-columns: max-content 3fr max-content;
+    grid-gap: 1em;
+    align-items: center;
+
+    meter {
+        width: 100%;
+        -moz-appearance: none;
+        -webkit-appearance: none;
+        appearance: none;
+        height: 2em;
+        background: none;
+        background-color: var(--color-green-lighter);
+    }
+
+    meter::-webkit-meter-bar {
+        background: none;
+        background-color: var(--color-green-lighter);
+        height: 2em;
+    }
+
+    /* meter::-webkit-meter-optimum-value,
+    meter::-moz-meter-bar {
+        background: none;
+        background-color: var(--color-positive);
+        height: 2em;
+    } */
+
+    &.border {
+        meter {
+            border: 1px solid var(--color-purple);
+        }
+
+        meter::-webkit-meter-bar {
+            border: 1px solid var(--color-purple);
+        }
+    }
 }

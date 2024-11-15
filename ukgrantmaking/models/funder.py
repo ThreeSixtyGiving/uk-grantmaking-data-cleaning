@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.db import models
 from django.db.models.functions import Coalesce, Left, Length, Right, StrIndex
 from markdownx.models import MarkdownxField
@@ -62,7 +63,8 @@ FUNDER_CATEGORIES = {
 
 
 class FunderTag(models.Model):
-    tag = models.CharField(max_length=255, primary_key=True)
+    slug = models.SlugField(max_length=255, primary_key=True)
+    tag = models.CharField(max_length=255, db_index=True, unique=True)
     description = models.TextField(null=True, blank=True)
     parent = models.ForeignKey(
         "self",
@@ -73,6 +75,8 @@ class FunderTag(models.Model):
     )
 
     def __str__(self):
+        if self.parent:
+            return f"{self.parent} - {self.tag}"
         return self.tag
 
 
@@ -81,7 +85,13 @@ class FunderNote(models.Model):
     note = MarkdownxField()
     date_added = models.DateTimeField(auto_now_add=True)
     date_updated = models.DateTimeField(auto_now=True)
-    added_by = models.CharField(max_length=255, null=True, blank=True)
+    added_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="funder_notes_added",
+    )
     resolved = models.BooleanField(default=False)
 
     def __str__(self):
@@ -109,6 +119,15 @@ class Funder(models.Model):
         default=False,
         db_index=True,
     )
+
+    successor = models.ForeignKey(
+        "self",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="predecessors",
+    )
+
     date_of_registration = models.DateField(null=True, blank=True)
     date_of_removal = models.DateField(null=True, blank=True)
     active = models.BooleanField(null=True, blank=True)
@@ -118,7 +137,7 @@ class Funder(models.Model):
         max_digits=16, decimal_places=2, null=True, blank=True, db_index=True
     )
     latest_year = models.ForeignKey(
-        "FunderYear",
+        "FinancialYear",
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
@@ -261,5 +280,18 @@ class Funder(models.Model):
         else:
             self.latest_year = None
             self.latest_grantmaking = None
+
+        # transfer financial years to successor
+        if self.successor:
+            for fy in self.funderyear_set.all():
+                fy.funder = self.successor
+                fy.save()
+
+        # transfer financial years from predecessors
+        if self.predecessors.exists():
+            for predecessor in self.predecessors.all():
+                for fy in predecessor.funderyear_set.all():
+                    fy.funder = self
+                    fy.save()
 
         super().save(*args, **kwargs)

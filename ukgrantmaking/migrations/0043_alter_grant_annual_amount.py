@@ -26,7 +26,7 @@ class Migration(migrations.Migration):
                                     models.F("amount_awarded_GBP"), models.FloatField()
                                 ),
                                 "/",
-                                django.db.models.aggregates.Max(
+                                django.db.models.functions.Greatest(
                                     models.F("planned_dates_duration"),
                                     models.Value(12, models.FloatField()),
                                 ),
@@ -56,7 +56,7 @@ class Migration(migrations.Migration):
                                     models.F("amount_awarded_GBP"), models.FloatField()
                                 ),
                                 "/",
-                                django.db.models.aggregates.Max(
+                                django.db.models.functions.Greatest(
                                     models.F("planned_dates_duration"),
                                     models.Value(12, models.FloatField()),
                                 ),

@@ -36,3 +36,53 @@ class FinancialYears(models.TextChoices):
 
 DEFAULT_FINANCIAL_YEAR = FinancialYears.FY_2022_23
 DEFAULT_BREAK_MONTH = 5
+
+
+class FinancialYearStatus(models.TextChoices):
+    OPEN = "Open", "Open"
+    CLOSED = "Closed", "Closed"
+    FUTURE = "Future", "Future"
+
+
+class FinancialYear(models.Model):
+    fy = models.CharField(
+        max_length=7,
+        choices=FinancialYears.choices,
+        default=DEFAULT_FINANCIAL_YEAR,
+        primary_key=True,
+    )
+    funders_start_date = models.DateField()
+    funders_end_date = models.DateField()
+    grants_start_date = models.DateField()
+    grants_end_date = models.DateField()
+
+    current = models.BooleanField(default=False)
+
+    status = models.CharField(
+        max_length=6,
+        choices=FinancialYearStatus.choices,
+        default=FinancialYearStatus.CLOSED,
+    )
+
+    @property
+    def first_year(self):
+        years = self.fy.split("-")
+        return int(years[0])
+
+    @property
+    def last_year(self):
+        return self.first_year + 1
+
+    def save(self, *args, **kwargs):
+        if not self.funders_start_date:
+            self.funders_start_date = f"{self.first_year}-05-01"
+        if not self.funders_end_date:
+            self.funders_end_date = f"{self.last_year}-04-30"
+        if not self.grants_start_date:
+            self.grants_start_date = f"{self.first_year}-04-01"
+        if not self.grants_end_date:
+            self.grants_end_date = f"{self.last_year}-03-31"
+
+        if self.current:
+            FinancialYear.objects.filter(current=True).update(current=False)
+        super().save(*args, **kwargs)

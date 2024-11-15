@@ -19,24 +19,37 @@ class Migration(migrations.Migration):
             name="checked",
             field=models.GeneratedField(
                 db_persist=True,
-                expression=django.db.models.lookups.IsNull(
-                    django.db.models.functions.comparison.Coalesce(
-                        "checked_by",
-                        "notes",
-                        "income_manual",
-                        "spending_manual",
-                        "spending_charitable_manual",
-                        "spending_grant_making_individuals_manual",
-                        "spending_grant_making_institutions_manual",
-                        "total_net_assets_manual",
-                        "funds_manual",
-                        "funds_endowment_manual",
-                        "funds_restricted_manual",
-                        "funds_unrestricted_manual",
-                        "employees_manual",
-                        output_field=models.BooleanField(),
+                expression=models.Q(
+                    django.db.models.lookups.IsNull(models.F("checked_by"), False),
+                    django.db.models.lookups.IsNull(models.F("notes"), False),
+                    django.db.models.lookups.IsNull(models.F("income_manual"), False),
+                    django.db.models.lookups.IsNull(models.F("spending_manual"), False),
+                    django.db.models.lookups.IsNull(
+                        models.F("spending_charitable_manual"), False
                     ),
-                    False,
+                    django.db.models.lookups.IsNull(
+                        models.F("spending_grant_making_individuals_manual"), False
+                    ),
+                    django.db.models.lookups.IsNull(
+                        models.F("spending_grant_making_institutions_manual"), False
+                    ),
+                    django.db.models.lookups.IsNull(
+                        models.F("total_net_assets_manual"), False
+                    ),
+                    django.db.models.lookups.IsNull(models.F("funds_manual"), False),
+                    django.db.models.lookups.IsNull(
+                        models.F("funds_endowment_manual"), False
+                    ),
+                    django.db.models.lookups.IsNull(
+                        models.F("funds_restricted_manual"), False
+                    ),
+                    django.db.models.lookups.IsNull(
+                        models.F("funds_unrestricted_manual"), False
+                    ),
+                    django.db.models.lookups.IsNull(
+                        models.F("employees_manual"), False
+                    ),
+                    _connector="OR",
                 ),
                 output_field=models.BooleanField(),
             ),

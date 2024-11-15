@@ -17,6 +17,9 @@ class FunderYearInline(admin.StackedInline):
         "spending_charitable",
         "spending_grant_making",
         "spending_grant_making_individuals",
+        "spending_grant_making_institutions_charitable",
+        "spending_grant_making_institutions_noncharitable",
+        "spending_grant_making_institutions_unknown",
         "spending_grant_making_institutions",
         "accounts_link",
         "total_net_assets_registered",
@@ -48,7 +51,9 @@ class FunderYearInline(admin.StackedInline):
                     ),
                     (
                         "income",
+                        "income_investment",
                         "spending",
+                        "spending_investment",
                         "spending_charitable",
                         "spending_grant_making",
                     ),
@@ -57,9 +62,18 @@ class FunderYearInline(admin.StackedInline):
                         "spending_grant_making_individuals_manual",
                     ),
                     (
-                        "spending_grant_making_institutions",
-                        "spending_grant_making_institutions_manual",
+                        "spending_grant_making_institutions_charitable",
+                        "spending_grant_making_institutions_charitable_manual",
                     ),
+                    (
+                        "spending_grant_making_institutions_noncharitable",
+                        "spending_grant_making_institutions_noncharitable_manual",
+                    ),
+                    (
+                        "spending_grant_making_institutions_unknown",
+                        "spending_grant_making_institutions_unknown_manual",
+                    ),
+                    ("spending_grant_making_institutions",),
                     (
                         "checked_by",
                         "notes",
@@ -137,7 +151,7 @@ class FunderAdmin(CSVUploadModelAdmin):
         "tags",
         "makes_grants_to_individuals",
         "org_id_schema",
-        "latest_year__checked",
+        # "latest_year__checked",
         ("latest_year", admin.EmptyFieldListFilter),
     )
     show_facets = admin.ShowFacets.NEVER
@@ -147,7 +161,10 @@ class FunderAdmin(CSVUploadModelAdmin):
         "makes_grants_to_individuals",
     )
     filter_horizontal = ("tags",)
-    inlines = (FunderYearInline, FunderNoteInline)
+    inlines = (
+        # FunderYearInline,
+        FunderNoteInline,
+    )
     readonly_fields = (
         "name_registered",
         "date_of_registration",
@@ -155,6 +172,7 @@ class FunderAdmin(CSVUploadModelAdmin):
         "latest_grantmaking",
         "ftc_link",
     )
+    autocomplete_fields = ("successor",)
     fieldsets = (
         (
             None,
@@ -163,6 +181,7 @@ class FunderAdmin(CSVUploadModelAdmin):
                     "org_id",
                     ("charity_number", "ftc_link"),
                     ("name_registered", "name_manual"),
+                    "successor",
                     "segment",
                     "tags",
                     "included",
@@ -211,7 +230,9 @@ class FunderTagAdmin(admin.ModelAdmin):
 
 class FunderYearAdmin(CSVUploadModelAdmin):
     list_display = (
-        "funder",
+        "funder__org_id",
+        "funder__name",
+        "fy",
         "financial_year_end",
         "funder__segment",
         "funder__included",
@@ -222,24 +243,31 @@ class FunderYearAdmin(CSVUploadModelAdmin):
     )
     show_facets = admin.ShowFacets.ALWAYS
     list_display_links = ("financial_year_end",)
-    search_fields = ("funder__name",)
+    search_fields = ("financial_year__funder__name",)
     list_filter = (
-        "funder__included",
-        "financial_year",
-        "funder__segment",
+        "financial_year__included",
+        "financial_year__financial_year__fy",
+        "financial_year__segment",
         "checked",
         ("checked_by", admin.EmptyFieldListFilter),
     )
     readonly_fields = (
         "income_registered",
         "income",
+        "income_investment_registered",
         "spending_registered",
+        "spending_investment_registered",
         "spending_charitable_registered",
         "spending_grant_making",
         "spending_grant_making_individuals_registered",
         "spending_grant_making_individuals_360Giving",
-        "spending_grant_making_institutions_registered",
-        "spending_grant_making_institutions_360Giving",
+        "spending_grant_making_institutions_charitable_registered",
+        "spending_grant_making_institutions_charitable_360Giving",
+        "spending_grant_making_institutions_noncharitable_registered",
+        "spending_grant_making_institutions_noncharitable_360Giving",
+        "spending_grant_making_institutions_unknown_registered",
+        "spending_grant_making_institutions_unknown_360Giving",
+        "spending_grant_making_institutions",
         "total_net_assets_registered",
         "funds_registered",
         "funds_endowment_registered",
@@ -250,16 +278,20 @@ class FunderYearAdmin(CSVUploadModelAdmin):
         "checked",
         "date_added",
         "date_updated",
-        "financial_year",
+        # "financial_year",
     )
-    raw_id_fields = ("funder",)
+    # raw_id_fields = ("funder",)
     fieldsets = (
         (
             None,
             {
                 "fields": [
                     "funder",
-                    ("financial_year_end", "financial_year_start", "financial_year"),
+                    (
+                        "financial_year_end",
+                        "financial_year_start",
+                        # "financial_year",
+                    ),
                 ]
             },
         ),
@@ -268,6 +300,7 @@ class FunderYearAdmin(CSVUploadModelAdmin):
             {
                 "fields": [
                     ("income_registered", "income_manual"),
+                    ("income_investment_registered", "income_investment_manual"),
                 ]
             },
         ),
@@ -276,6 +309,7 @@ class FunderYearAdmin(CSVUploadModelAdmin):
             {
                 "fields": [
                     ("spending_registered", "spending_manual"),
+                    ("spending_investment_registered", "spending_investment_manual"),
                     ("spending_charitable_registered", "spending_charitable_manual"),
                     ("spending_grant_making",),
                     (
@@ -284,10 +318,21 @@ class FunderYearAdmin(CSVUploadModelAdmin):
                         "spending_grant_making_individuals_manual",
                     ),
                     (
-                        "spending_grant_making_institutions_registered",
-                        "spending_grant_making_institutions_360Giving",
-                        "spending_grant_making_institutions_manual",
+                        "spending_grant_making_institutions_charitable_registered",
+                        "spending_grant_making_institutions_charitable_360Giving",
+                        "spending_grant_making_institutions_charitable_manual",
                     ),
+                    (
+                        "spending_grant_making_institutions_noncharitable_registered",
+                        "spending_grant_making_institutions_noncharitable_360Giving",
+                        "spending_grant_making_institutions_noncharitable_manual",
+                    ),
+                    (
+                        "spending_grant_making_institutions_unknown_registered",
+                        "spending_grant_making_institutions_unknown_360Giving",
+                        "spending_grant_making_institutions_unknown_manual",
+                    ),
+                    ("spending_grant_making_institutions",),
                 ]
             },
         ),
@@ -329,10 +374,22 @@ class FunderYearAdmin(CSVUploadModelAdmin):
         ),
     )
 
+    @admin.display(description="Financial Year")
+    def fy(self, obj):
+        return obj.financial_year.financial_year.fy
+
     @admin.display(description="Segment")
     def funder__segment(self, obj):
-        return obj.funder.segment
+        return obj.financial_year.segment
 
     @admin.display(description="Included", boolean=True)
     def funder__included(self, obj):
-        return obj.funder.included
+        return obj.financial_year.included
+
+    @admin.display(description="Funder ID")
+    def funder__org_id(self, obj):
+        return obj.financial_year.funder.org_id
+
+    @admin.display(description="Funder Name")
+    def funder__name(self, obj):
+        return obj.financial_year.funder.name

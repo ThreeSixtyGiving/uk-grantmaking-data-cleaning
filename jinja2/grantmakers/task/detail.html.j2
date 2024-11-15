@@ -1,0 +1,69 @@
+{% extends 'base.html.j2' %}
+{% from 'components/values.html.j2' import display_date, display_number, display_longtext, display_list, display_text, none_wrapper, display_boolean, display_url %}
+{% from 'components/pagination.html.j2' import pagination, results_header %}
+{% from 'components/meter.html.j2' import meter %}
+
+{% block content %}
+<h2>{{ object.name }}</h2>
+{% if object.description %}
+<p>{{ object.description }}</p>
+{% endif %}
+
+{% if status %}
+<div class="progress-grid">
+    {% for status_value in status %}
+    {{ meter(status_value) }}
+    {% endfor %}
+</div>
+{% endif %}
+
+<p class="">{{ results_header(page_obj) }}</p>
+
+{% if page_obj.object_list %}
+<table class="table striped">
+    <thead>
+        <tr>
+            <th colspan="2">Funder</th>
+            <th class="tc">Included</th>
+            <th class="tc">Grants to individuals</th>
+            <th>Segment</th>
+            <th>Segment checked</th>
+            <th>Checked</th>
+            <th>Tags</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for object in page_obj.object_list %}
+        <tr>
+            <td><a
+                    href="{{ url_for('grantmakers:detail', org_id=object.financial_year.funder_id) }}">{{ object.financial_year.funder.org_id }}</a>
+            </td>
+            <td><a class="b"
+                    href="{{ url_for('grantmakers:detail', org_id=object.financial_year.funder_id) }}">{{ object.financial_year.funder.name }}</a>
+            </td>
+            <td class="tc">{{ object.financial_year.included }}</td>
+            <td class="tc">{{ object.financial_year.makes_grants_to_individuals }}</td>
+            <td>{{ object.financial_year.segment }}</td>
+            <td class="tc">
+                {{ object.financial_year.segment_checked }}
+            </td>
+            <td class="tl">
+                {% if object.financial_year.checked == "Checked" %}
+                {{ object.financial_year.checked_by|user_name }}
+                {% if object.financial_year.checked_on %}{{ object.financial_year.checked_on|naturaltime }}{% endif %}
+                {% endif %}
+            </td>
+            <td>
+                <ul class="tags">{% for tag in object.financial_year.tags.values_list("tag", flat=true) %}<li>{{ tag }}
+                    </li>
+                    {% endfor %}</ul>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+{{ pagination(page_obj, request) }}
+{% endif %}
+
+{% endblock %}

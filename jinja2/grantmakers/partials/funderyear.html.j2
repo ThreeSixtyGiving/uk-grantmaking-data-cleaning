@@ -8,8 +8,11 @@
 
 {% macro funder_year_row(funder_year)%}
 <td>
-    <strong>{{ funder_year.financial_year }}</strong><br>
-    <small>{{ display_date(funder_year.financial_year_start) }} to
+    <strong>{{ funder_year.financial_year.financial_year_id }}</strong><br>
+    <small>
+        {% if funder_year.financial_year_start %}
+        {{ display_date(funder_year.financial_year_start) }}<br>to
+        {% endif %}
         {{ display_date(funder_year.financial_year_end) }}</small>
     {% if funder_year.account_url %}
     <br><a href="{{ funder_year.account_url }}" target="_blank">Accounts PDF</a>
@@ -21,29 +24,68 @@
     </details>
     {% endif %}
 </td>
-{{ funder_year_value_cell(funder_year, "income") }}
-<td>
+<td style="padding-right: 34px;">
     <table class="table">
         <tbody>
             <tr>
-                <td>Total</td>
+                <td class="tr">Total Income</td>
+                {{ funder_year_value_cell(funder_year, "income") }}
+            </tr>
+            <tr>
+                <td class="tr">Investment income</td>
+                {{ funder_year_value_cell(funder_year, "income_investment") }}
+            </tr>
+            <tr>
+                <td></td>
+                <td></td>
+            </tr>
+            <tr>
+                <td class="tr">Employees</td>
+                {{ funder_year_value_cell(funder_year, "employees", format_str="{:,.0f}") }}
+            </tr>
+        </tbody>
+    </table>
+</td>
+<td style="padding-right: 34px;">
+    <table class="table">
+        <tbody>
+            <tr>
+                <td class="tr">Total spending</td>
                 {{ funder_year_value_cell(funder_year, "spending") }}
             </tr>
             <tr>
-                <td>Charitable</td>
-                {{ funder_year_value_cell(funder_year, "spending_charitable") }}
+                <td class="tr">Investment spending</td>
+                {{ funder_year_value_cell(funder_year, "spending_investment") }}
             </tr>
             <tr>
-                <td>Grantmaking</td>
+                <td class="tr">Charitable</td>
+                {{ funder_year_value_cell(funder_year, "spending_charitable") }}
+            </tr>
+        </tbody>
+    </table>
+</td>
+<td style="padding-right: 34px;">
+    <table class="table">
+        <tbody>
+            <tr>
+                <td class="tr">Grantmaking</td>
                 {{ funder_year_value_cell(funder_year, "spending_grant_making") }}
             </tr>
             <tr>
-                <td>Grants to individuals</td>
+                <td class="tr">Grants to individuals</td>
                 {{ funder_year_value_cell(funder_year, "spending_grant_making_individuals") }}
             </tr>
             <tr>
-                <td>Grants to institutions</td>
+                <td class="tr">Grants to institutions</td>
                 {{ funder_year_value_cell(funder_year, "spending_grant_making_institutions") }}
+            </tr>
+            <tr>
+                <td class="tr"> - charitable institutions</td>
+                {{ funder_year_value_cell(funder_year, "spending_grant_making_institutions_charitable") }}
+            </tr>
+            <tr>
+                <td class="tr"> - noncharitable institutions</td>
+                {{ funder_year_value_cell(funder_year, "spending_grant_making_institutions_noncharitable") }}
             </tr>
         </tbody>
     </table>
@@ -52,29 +94,29 @@
     <table class="table">
         <tbody>
             <tr>
-                <td>Net assets</td>
+                <td class="tr">Net assets</td>
                 {{ funder_year_value_cell(funder_year, "total_net_assets") }}
             </tr>
             <tr>
-                <td>Funds</td>
+                <td class="tr">Funds</td>
                 {{ funder_year_value_cell(funder_year, "funds") }}
             </tr>
             <tr>
-                <td>Endowment funds</td>
+                <td class="tr">Endowment funds</td>
                 {{ funder_year_value_cell(funder_year, "funds_endowment") }}
             </tr>
             <tr>
-                <td>Unrestricted funds</td>
+                <td class="tr">Unrestricted funds</td>
                 {{ funder_year_value_cell(funder_year, "funds_unrestricted") }}
             </tr>
             <tr>
-                <td>Restricted funds</td>
+                <td class="tr">Restricted funds</td>
                 {{ funder_year_value_cell(funder_year, "funds_restricted") }}
             </tr>
         </tbody>
     </table>
 </td>
-{{ funder_year_value_cell(funder_year, "employees", format_str="{:,.0f}") }}
+
 <td>
     <div class="flex-column">
         {{ display_date(funder_year.checked_on) }}
@@ -97,7 +139,7 @@
     {% if edit %}
     <td>
         {% if funder_year %}
-        <strong>{{ funder_year.financial_year }}</strong><br>
+        <strong>{{ funder_year.financial_year.financial_year_id }}</strong><br>
         <small>{{ display_date(funder_year.financial_year_start) }} to
             {{ display_date(funder_year.financial_year_end) }}</small>
         {% if funder_year.account_url %}
@@ -109,22 +151,31 @@
         <table class="table">
             <thead>
                 <tr>
-                    <th>Field</th>
-                    <th class="tr">Registered</th>
-                    <th class="tr">Current year</th>
+                    <th class="tr" rowspan="2">Field</th>
+                    <th class="tc" colspan="2">Current year</th>
                     {% if funder_year_py %}
-                    <th class="tr">Previous year</th>
+                    <th class="tc" colspan="2">Previous year</th>
+                    {% endif %}
+                </tr>
+                <tr>
+                    <th class="tr">Registered</th>
+                    <th class="tr">Overwrite</th>
+                    {% if funder_year_py %}
+                    <th class="tr">Registered</th>
+                    <th class="tr">Overwrite</th>
                     {% endif %}
                 </tr>
             </thead>
             <tbody>
                 <tr>
-                    <td colspan="2">Financial year end</td>
+                    <td class="tr"><strong>Financial year end</strong></td>
+                    <td class="tr"></td>
                     <td class="tr">
                         <input type="date" name="fye-cy" class="funder-year-edit"
                             value="{{ funder_year.financial_year_end or '' }}" />
                     </td>
                     {% if funder_year_py %}
+                    <td class="tr"></td>
                     <td class="tr">
                         <input type="hidden" name="py-id" class="funder-year-edit"
                             value="{{ funder_year_py.id or '' }}" />
@@ -135,7 +186,7 @@
                 </tr>
                 {% for field in funder_year.editable_fields() %}
                 <tr>
-                    <td><strong>{{ field.label|to_titlecase }}</strong></td>
+                    <td class="tr"><strong>{{ field.label|to_titlecase }}</strong></td>
                     <td class="tr">
                         {% if field['360Giving'] %}
                         {{ display_number(funder_year[field['360Giving'].name], format_str="[360Giving] " + field.format_str) }}<br>
@@ -153,6 +204,16 @@
                     </td>
                     {% if funder_year_py %}
                     <td class="tr">
+                        {% if field['360Giving'] %}
+                        {{ display_number(funder_year_py[field['360Giving'].name], format_str="[360Giving] " + field.format_str) }}<br>
+                        {% if field.registered %}
+                        {{ display_number(funder_year_py[field.registered.name], format_str="[Registered] " + field.format_str) }}<br>
+                        {% endif %}
+                        {% elif field.registered %}
+                        {{ display_number(funder_year_py[field.registered.name], format_str=field.format_str) }}
+                        {% endif %}
+                    </td>
+                    <td class="tr">
                         <input x-mask:dynamic="$money($input, '.', ',', 0)" type="text" name="{{ field.name }}-py"
                             class="funder-year-edit" placeholder="-"
                             value="{{ funder_year_py[field.manual.name] or '' }}" />
@@ -161,7 +222,7 @@
                 </tr>
                 {% endfor %}
                 <tr>
-                    <td>Note</td>
+                    <td class="tr">Note</td>
                     <td colspan="{% if funder_year_py %}3{% else %}2{% endif%}">
                         <textarea name="note" class="funder-year-edit" rows="7">{{ funder_year.notes or '' }}</textarea>
                     </td>

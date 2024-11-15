@@ -34,12 +34,12 @@ class GrantmakerFilter(django_filters.FilterSet):
         fields = [
             "search",
             "included",
-            "latest_year__checked",
+            # "latest_year__checked",
             "segment",
             "tags",
             "makes_grants_to_individuals",
             # "org_id_schema",
-            "latest_year__financial_year",
+            # "latest_year__financial_year",
             # "latest_grantmaking",
         ]
         filter_overrides = {

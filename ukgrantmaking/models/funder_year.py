@@ -1,22 +1,83 @@
+from django.conf import settings
 from django.core.exceptions import FieldDoesNotExist
 from django.db import models
 from django.db.models.functions import Coalesce
 from django.db.models.lookups import IsNull
 from markdownx.models import MarkdownxField
 
-from ukgrantmaking.models.financial_years import DEFAULT_BREAK_MONTH, FinancialYears
+from ukgrantmaking.models.funder import FunderSegment
 
 
-class FunderYear(models.Model):
-    funder = models.ForeignKey("Funder", on_delete=models.CASCADE)
-    financial_year_end = models.DateField()
-    financial_year_start = models.DateField(null=True, blank=True)
-    financial_year = models.CharField(
-        max_length=9,
-        choices=FinancialYears.choices,
+class RecordStatus(models.TextChoices):
+    UNCHECKED = "Unchecked", "Unchecked"
+    CHECKED = "Checked", "Checked"
+
+
+class FunderFinancialYear(models.Model):
+    funder = models.ForeignKey(
+        "Funder", on_delete=models.CASCADE, related_name="financial_years"
+    )
+    financial_year = models.ForeignKey(
+        "FinancialYear", on_delete=models.CASCADE, related_name="funders"
+    )
+
+    tags = models.ManyToManyField("FunderTag", blank=True)
+    segment = models.CharField(
+        max_length=50,
+        choices=FunderSegment.choices,
+        default=FunderSegment.GENERAL_GRANTMAKER,
         null=True,
         blank=True,
         db_index=True,
+    )
+    included = models.BooleanField(
+        default=True,
+        db_index=True,
+    )
+    makes_grants_to_individuals = models.BooleanField(
+        default=False,
+        db_index=True,
+    )
+
+    segment_checked = models.CharField(
+        max_length=50,
+        choices=RecordStatus.choices,
+        null=True,
+        blank=True,
+        db_index=True,
+        default=RecordStatus.UNCHECKED,
+    )
+    checked = models.CharField(
+        max_length=50,
+        choices=RecordStatus.choices,
+        null=True,
+        blank=True,
+        db_index=True,
+        default=RecordStatus.UNCHECKED,
+    )
+    checked_on = models.DateTimeField(null=True, blank=True)
+    checked_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+    )
+    notes = MarkdownxField(null=True, blank=True)
+    date_added = models.DateTimeField(
+        auto_now_add=True, db_index=True, null=True, blank=True
+    )
+    date_updated = models.DateTimeField(auto_now=True, null=True, blank=True)
+
+
+class FunderYear(models.Model):
+    financial_year_end = models.DateField()
+    financial_year_start = models.DateField(null=True, blank=True)
+    financial_year = models.ForeignKey(
+        FunderFinancialYear,
+        on_delete=models.CASCADE,
+        related_name="financial_years",
+        null=True,
+        blank=True,
     )
 
     income_registered = models.DecimalField(
@@ -31,6 +92,18 @@ class FunderYear(models.Model):
         db_persist=True,
     )
 
+    income_investment_registered = models.DecimalField(
+        max_digits=16, decimal_places=2, null=True, blank=True
+    )
+    income_investment_manual = models.DecimalField(
+        max_digits=16, decimal_places=2, null=True, blank=True
+    )
+    income_investment = models.GeneratedField(
+        expression=Coalesce("income_investment_manual", "income_investment_registered"),
+        output_field=models.BigIntegerField(),
+        db_persist=True,
+    )
+
     spending_registered = models.DecimalField(
         max_digits=16, decimal_places=2, null=True, blank=True
     )
@@ -39,6 +112,19 @@ class FunderYear(models.Model):
     )
     spending = models.GeneratedField(
         expression=Coalesce("spending_manual", "spending_registered"),
+        output_field=models.BigIntegerField(),
+        db_persist=True,
+    )
+    spending_investment_registered = models.DecimalField(
+        max_digits=16, decimal_places=2, null=True, blank=True
+    )
+    spending_investment_manual = models.DecimalField(
+        max_digits=16, decimal_places=2, null=True, blank=True
+    )
+    spending_investment = models.GeneratedField(
+        expression=Coalesce(
+            "spending_investment_manual", "spending_investment_registered"
+        ),
         output_field=models.BigIntegerField(),
         db_persist=True,
     )
@@ -58,11 +144,65 @@ class FunderYear(models.Model):
     spending_grant_making = models.GeneratedField(
         expression=models.Case(
             models.When(
-                IsNull(models.F("spending_grant_making_individuals"), False)
-                | IsNull(models.F("spending_grant_making_institutions"), False),
+                IsNull(
+                    Coalesce(
+                        "spending_grant_making_individuals_manual",
+                        "spending_grant_making_individuals_registered",
+                        "spending_grant_making_individuals_360Giving",
+                        output_field=models.BigIntegerField(),
+                    ),
+                    False,
+                )
+                | IsNull(
+                    Coalesce(
+                        "spending_grant_making_institutions_charitable_manual",
+                        "spending_grant_making_institutions_charitable_registered",
+                        "spending_grant_making_institutions_charitable_360Giving",
+                        output_field=models.BigIntegerField(),
+                    )
+                    + Coalesce(
+                        "spending_grant_making_institutions_noncharitable_manual",
+                        "spending_grant_making_institutions_noncharitable_registered",
+                        "spending_grant_making_institutions_noncharitable_360Giving",
+                        output_field=models.BigIntegerField(),
+                    )
+                    + Coalesce(
+                        "spending_grant_making_institutions_unknown_manual",
+                        "spending_grant_making_institutions_unknown_registered",
+                        "spending_grant_making_institutions_unknown_360Giving",
+                        output_field=models.BigIntegerField(),
+                    ),
+                    False,
+                ),
                 then=(
-                    Coalesce(models.F("spending_grant_making_individuals"), 0)
-                    + Coalesce(models.F("spending_grant_making_institutions"), 0)
+                    Coalesce(
+                        "spending_grant_making_individuals_manual",
+                        "spending_grant_making_individuals_registered",
+                        "spending_grant_making_individuals_360Giving",
+                        0,
+                        output_field=models.BigIntegerField(),
+                    )
+                    + Coalesce(
+                        "spending_grant_making_institutions_charitable_manual",
+                        "spending_grant_making_institutions_charitable_registered",
+                        "spending_grant_making_institutions_charitable_360Giving",
+                        0,
+                        output_field=models.BigIntegerField(),
+                    )
+                    + Coalesce(
+                        "spending_grant_making_institutions_noncharitable_manual",
+                        "spending_grant_making_institutions_noncharitable_registered",
+                        "spending_grant_making_institutions_noncharitable_360Giving",
+                        0,
+                        output_field=models.BigIntegerField(),
+                    )
+                    + Coalesce(
+                        "spending_grant_making_institutions_unknown_manual",
+                        "spending_grant_making_institutions_unknown_registered",
+                        "spending_grant_making_institutions_unknown_360Giving",
+                        0,
+                        output_field=models.BigIntegerField(),
+                    )
                 ),
             )
         ),
@@ -87,20 +227,80 @@ class FunderYear(models.Model):
         output_field=models.BigIntegerField(),
         db_persist=True,
     )
-    spending_grant_making_institutions_registered = models.DecimalField(
+    spending_grant_making_institutions_charitable_registered = models.DecimalField(
         max_digits=16, decimal_places=2, null=True, blank=True
     )
-    spending_grant_making_institutions_360Giving = models.DecimalField(
+    spending_grant_making_institutions_charitable_360Giving = models.DecimalField(
         max_digits=16, decimal_places=2, null=True, blank=True
     )
-    spending_grant_making_institutions_manual = models.DecimalField(
+    spending_grant_making_institutions_charitable_manual = models.DecimalField(
         max_digits=16, decimal_places=2, null=True, blank=True
+    )
+    spending_grant_making_institutions_charitable = models.GeneratedField(
+        expression=Coalesce(
+            "spending_grant_making_institutions_charitable_manual",
+            "spending_grant_making_institutions_charitable_registered",
+            "spending_grant_making_institutions_charitable_360Giving",
+        ),
+        output_field=models.BigIntegerField(),
+        db_persist=True,
+    )
+    spending_grant_making_institutions_noncharitable_registered = models.DecimalField(
+        max_digits=16, decimal_places=2, null=True, blank=True
+    )
+    spending_grant_making_institutions_noncharitable_360Giving = models.DecimalField(
+        max_digits=16, decimal_places=2, null=True, blank=True
+    )
+    spending_grant_making_institutions_noncharitable_manual = models.DecimalField(
+        max_digits=16, decimal_places=2, null=True, blank=True
+    )
+    spending_grant_making_institutions_noncharitable = models.GeneratedField(
+        expression=Coalesce(
+            "spending_grant_making_institutions_noncharitable_manual",
+            "spending_grant_making_institutions_noncharitable_registered",
+            "spending_grant_making_institutions_noncharitable_360Giving",
+        ),
+        output_field=models.BigIntegerField(),
+        db_persist=True,
+    )
+    spending_grant_making_institutions_unknown_registered = models.DecimalField(
+        max_digits=16, decimal_places=2, null=True, blank=True
+    )
+    spending_grant_making_institutions_unknown_360Giving = models.DecimalField(
+        max_digits=16, decimal_places=2, null=True, blank=True
+    )
+    spending_grant_making_institutions_unknown_manual = models.DecimalField(
+        max_digits=16, decimal_places=2, null=True, blank=True
+    )
+    spending_grant_making_institutions_unknown = models.GeneratedField(
+        expression=Coalesce(
+            "spending_grant_making_institutions_unknown_manual",
+            "spending_grant_making_institutions_unknown_registered",
+            "spending_grant_making_institutions_unknown_360Giving",
+        ),
+        output_field=models.BigIntegerField(),
+        db_persist=True,
     )
     spending_grant_making_institutions = models.GeneratedField(
-        expression=Coalesce(
-            "spending_grant_making_institutions_manual",
-            "spending_grant_making_institutions_registered",
-            "spending_grant_making_institutions_360Giving",
+        expression=(
+            Coalesce(
+                "spending_grant_making_institutions_charitable_manual",
+                "spending_grant_making_institutions_charitable_registered",
+                "spending_grant_making_institutions_charitable_360Giving",
+                0,
+            )
+            + Coalesce(
+                "spending_grant_making_institutions_noncharitable_manual",
+                "spending_grant_making_institutions_noncharitable_registered",
+                "spending_grant_making_institutions_noncharitable_360Giving",
+                0,
+            )
+            + Coalesce(
+                "spending_grant_making_institutions_unknown_manual",
+                "spending_grant_making_institutions_unknown_registered",
+                "spending_grant_making_institutions_unknown_360Giving",
+                0,
+            )
         ),
         output_field=models.BigIntegerField(),
         db_persist=True,
@@ -180,52 +380,59 @@ class FunderYear(models.Model):
     date_updated = models.DateTimeField(auto_now=True)
 
     checked = models.GeneratedField(
-        expression=IsNull(
-            Coalesce(
-                "checked_by",
-                "notes",
-                "income_manual",
-                "spending_manual",
-                "spending_charitable_manual",
-                "spending_grant_making_individuals_manual",
-                "spending_grant_making_institutions_manual",
-                "total_net_assets_manual",
-                "funds_manual",
-                "funds_endowment_manual",
-                "funds_restricted_manual",
-                "funds_unrestricted_manual",
-                "employees_manual",
-                output_field=models.BooleanField(),
+        db_persist=True,
+        expression=models.Q(
+            models.lookups.IsNull(models.F("checked_by"), False),
+            models.lookups.IsNull(models.F("notes"), False),
+            models.lookups.IsNull(models.F("income_manual"), False),
+            models.lookups.IsNull(models.F("spending_manual"), False),
+            models.lookups.IsNull(models.F("spending_charitable_manual"), False),
+            models.lookups.IsNull(
+                models.F("spending_grant_making_individuals_manual"), False
             ),
-            False,
+            models.lookups.IsNull(
+                models.F("spending_grant_making_institutions_charitable_manual"), False
+            ),
+            models.lookups.IsNull(
+                models.F("spending_grant_making_institutions_noncharitable_manual"),
+                False,
+            ),
+            models.lookups.IsNull(
+                models.F("spending_grant_making_institutions_unknown_manual"), False
+            ),
+            models.lookups.IsNull(models.F("total_net_assets_manual"), False),
+            models.lookups.IsNull(models.F("funds_manual"), False),
+            models.lookups.IsNull(models.F("funds_endowment_manual"), False),
+            models.lookups.IsNull(models.F("funds_restricted_manual"), False),
+            models.lookups.IsNull(models.F("funds_unrestricted_manual"), False),
+            models.lookups.IsNull(models.F("employees_manual"), False),
+            _connector="OR",
         ),
         output_field=models.BooleanField(),
-        db_persist=True,
     )
 
     class Meta:
-        unique_together = [["funder", "financial_year_end"]]
-        ordering = ["funder", "-financial_year_end"]
+        unique_together = [["financial_year", "financial_year_end"]]
+        ordering = ["financial_year", "-financial_year_end"]
 
     def __str__(self):
-        return f"{self.funder.name} ({self.financial_year_end})"
+        return f"{self.financial_year.funder.name} ({self.financial_year_end})"
 
     def save(self, *args, **kwargs):
-        if self.financial_year_end:
-            if self.financial_year_end.month < DEFAULT_BREAK_MONTH:
-                self.financial_year = f"{self.financial_year_end.year - 1}-{self.financial_year_end.year % 100:02d}"
-            else:
-                self.financial_year = f"{self.financial_year_end.year}-{(self.financial_year_end.year + 1) % 100:02d}"
-        self.funder.save()
+        self.financial_year.save()
         super().save(*args, **kwargs)
 
     def editable_fields(self):
         fields = [
             "income",
+            "income_investment",
             "spending",
-            # "spending_charitable",
+            "spending_investment",
             "spending_grant_making_individuals",
-            "spending_grant_making_institutions",
+            # "spending_grant_making_institutions",
+            "spending_grant_making_institutions_charitable",
+            "spending_grant_making_institutions_noncharitable",
+            "spending_grant_making_institutions_unknown",
             # "total_net_assets",
             # "funds",
             "funds_endowment",
@@ -253,8 +460,9 @@ class FunderYear(models.Model):
 
     @property
     def account_url(self):
-        if self.funder.org_id.startswith("GB-CHC-"):
+        if self.financial_year.funder_id.startswith("GB-CHC-"):
             return "https://ccew.dkane.net/charity/{}/accounts/{}".format(
-                self.funder.org_id.replace("GB-CHC-", ""), self.financial_year_end
+                self.financial_year.funder_id.replace("GB-CHC-", ""),
+                self.financial_year_end,
             )
         return None

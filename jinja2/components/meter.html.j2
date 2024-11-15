@@ -1,0 +1,7 @@
+{% macro meter(meter_obj) %}
+<label for="checked">{{ meter_obj.name }}:</label>
+<meter id="checked" min="{{ meter_obj.min }}" max="{{ meter_obj.max }}" low="{{ meter_obj.low }}"
+    high="{{ meter_obj.high }}" optimum="{{ meter_obj.optimum }}"
+    value="{{ meter_obj.value }}">{{ meter_obj.value }}</meter>
+<span>{{ meter_obj.value }} / {{ meter_obj.total }}</span>
+{% endmacro %}

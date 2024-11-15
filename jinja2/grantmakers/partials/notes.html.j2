@@ -8,14 +8,14 @@
         {{ note.note|markdownify|safe }}
     </li>
     {% endfor %}
-    {% for funder_year in object.funderyear_set.filter(notes__isnull=false).exclude(notes__exact='') %}
+    {% for financial_year in object.financial_years.filter(notes__isnull=false).exclude(notes__exact='') %}
     <li class="note">
         <header>
-            <strong>FY{{ funder_year.financial_year }}</strong>
-            <time value="{{ funder_year.checked_on }}">{{ funder_year.checked_on|naturalday }}</time>
-            by <strong>{{ funder_year.checked_by }}</strong>
+            <strong>FY{{ financial_year.financial_year_id }}</strong>
+            <time value="{{ financial_year.checked_on }}">{{ financial_year.checked_on|naturalday }}</time>
+            by <strong>{{ financial_year.checked_by|user_name }}</strong>
         </header>
-        {{ funder_year.notes|markdownify|safe }}
+        {{ financial_year.notes|markdownify|safe }}
     </li>
     {% endfor %}
     <li class="note">

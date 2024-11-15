@@ -234,6 +234,14 @@ def format_number(v, format_str=None):
     return str(v)
 
 
+def user_name(user=None):
+    if not user:
+        return "Anonymous"
+    if user.first_name and user.last_name:
+        return f"{user.first_name} {user.last_name}"
+    return user.username
+
+
 def environment(**options):
     env = Environment(**options)
 
@@ -263,6 +271,7 @@ def environment(**options):
             "working_url": working_url,
             "markdownify": markdownify,
             "format_number": format_number,
+            "user_name": user_name,
         }
     )
     return env

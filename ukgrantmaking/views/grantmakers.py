@@ -6,8 +6,8 @@ from django.shortcuts import render
 from django.utils import timezone
 
 from ukgrantmaking.filters.grantmakers import GrantmakerFilter
-from ukgrantmaking.models import Funder
-from ukgrantmaking.models.funder import FunderTag
+from ukgrantmaking.models import CleaningStatus, FinancialYear, Funder, FunderTag
+from ukgrantmaking.models.funder_year import FunderYear
 
 
 @login_required
@@ -18,6 +18,45 @@ def index(request):
     page_obj = paginator.get_page(page_number)
     return render(
         request, "grantmakers/index.html.j2", {"page_obj": page_obj, "filters": filters}
+    )
+
+
+@login_required
+def task_index(request):
+    current_fy = FinancialYear.objects.get(current=True)
+    cleaning_tasks = CleaningStatus.objects.filter(
+        type=CleaningStatus.CleaningStatusType.GRANTMAKER
+    )
+    base_qs = FunderYear.objects.filter(financial_year__financial_year=current_fy)
+    statuses = {task.id: task.get_status(base_qs) for task in cleaning_tasks}
+    return render(
+        request,
+        "grantmakers/task/index.html.j2",
+        {"object_list": cleaning_tasks, "statuses": statuses},
+    )
+
+
+@login_required
+def task_detail(request, task_id):
+    current_fy = FinancialYear.objects.get(current=True)
+    cleaning_task = CleaningStatus.objects.filter(
+        type=CleaningStatus.CleaningStatusType.GRANTMAKER
+    ).get(id=task_id)
+    base_qs = FunderYear.objects.filter(financial_year__financial_year=current_fy)
+    qs = cleaning_task.run(base_qs)
+    status = cleaning_task.get_status(base_qs)
+    paginator = Paginator(qs, 25)
+    page_number = request.GET.get("page")
+    page_obj = paginator.get_page(page_number)
+    return render(
+        request,
+        "grantmakers/task/detail.html.j2",
+        {
+            "page_obj": page_obj,
+            "object": cleaning_task,
+            "current_fy": current_fy,
+            "status": status,
+        },
     )
 
 
@@ -102,10 +141,15 @@ def htmx_edit_funderyear(request, org_id, funderyear_id=None):
     funder_year = None
     funder_year_py = None
     if funderyear_id:
-        funder_year = funder.funderyear_set.get(id=funderyear_id)
+        funder_year = FunderYear.objects.filter(
+            financial_year__funder=funder, id=funderyear_id
+        ).first()
+        if not funder_year:
+            return HttpResponseBadRequest("Invalid funderyear_id")
         funder_year_py = (
-            funder.funderyear_set.filter(
-                financial_year_end__lt=funder_year.financial_year_end
+            FunderYear.objects.filter(
+                financial_year__funder=funder,
+                financial_year_end__lt=funder_year.financial_year_end,
             )
             .order_by("-financial_year_end")
             .first()
@@ -133,16 +177,18 @@ def htmx_edit_funderyear(request, org_id, funderyear_id=None):
             else:
                 setattr(funder_year, field["manual"].name, None)
         funder_year.checked_on = timezone.now()
-        funder_year.checked_by = request.user.username
+        funder_year.checked_by = request.user
         if "note" in request.POST:
             funder_year.notes = request.POST.get("note")
         funder_year.save()
-        context["funder_year"] = funder.funderyear_set.get(id=funder_year.id)
+        context["funder_year"] = FunderYear.objects.filter(
+            financial_year__funder=funder, id=funder_year.id
+        ).first()
 
         if request.POST.get("py-id"):
-            context["funder_year_py"] = funder.funderyear_set.get(
-                id=request.POST.get("py-id")
-            )
+            context["funder_year_py"] = FunderYear.objects.filter(
+                financial_year__funder=funder, id=request.POST.get("py-id")
+            ).first()
 
         if context["funder_year_py"]:
             if "fye-py" in request.POST:
@@ -157,11 +203,11 @@ def htmx_edit_funderyear(request, org_id, funderyear_id=None):
                 else:
                     setattr(context["funder_year_py"], field["manual"].name, None)
             context["funder_year_py"].checked_on = timezone.now()
-            context["funder_year_py"].checked_by = request.user.username
+            context["funder_year_py"].checked_by = request.user
             context["funder_year_py"].save()
-            context["funder_year_py"] = funder.funderyear_set.get(
-                id=context["funder_year_py"].id
-            )
+            context["funder_year_py"] = FunderYear.objects.filter(
+                financial_year__funder=funder, id=context["funder_year_py"].id
+            ).first()
         context["edit"] = False
     return render(
         request,

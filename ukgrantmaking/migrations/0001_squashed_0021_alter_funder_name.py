@@ -472,22 +472,39 @@ class Migration(migrations.Migration):
                             models.When(
                                 models.Q(
                                     django.db.models.lookups.IsNull(
-                                        models.F("spending_grant_making_individuals"),
+                                        django.db.models.functions.comparison.Coalesce(
+                                            "spending_grant_making_individuals_manual",
+                                            "spending_grant_making_individuals_registered",
+                                            output_field=models.BigIntegerField(),
+                                        ),
                                         False,
                                     ),
                                     django.db.models.lookups.IsNull(
-                                        models.F("spending_grant_making_institutions"),
+                                        django.db.models.functions.comparison.Coalesce(
+                                            "spending_grant_making_institutions_manual",
+                                            "spending_grant_making_institutions_registered",
+                                            output_field=models.BigIntegerField(),
+                                        ),
                                         False,
                                     ),
                                     _connector="OR",
                                 ),
                                 then=django.db.models.expressions.CombinedExpression(
                                     django.db.models.functions.comparison.Coalesce(
-                                        models.F("spending_grant_making_individuals"), 0
+                                        django.db.models.functions.comparison.Coalesce(
+                                            "spending_grant_making_individuals_manual",
+                                            "spending_grant_making_individuals_registered",
+                                            output_field=models.BigIntegerField(),
+                                        ),
+                                        0,
                                     ),
                                     "+",
                                     django.db.models.functions.comparison.Coalesce(
-                                        models.F("spending_grant_making_institutions"),
+                                        django.db.models.functions.comparison.Coalesce(
+                                            "spending_grant_making_institutions_manual",
+                                            "spending_grant_making_institutions_registered",
+                                            output_field=models.BigIntegerField(),
+                                        ),
                                         0,
                                     ),
                                 ),

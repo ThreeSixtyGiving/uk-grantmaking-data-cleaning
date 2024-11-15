@@ -51,14 +51,14 @@ def index(request):
                     makes_grants_to_individuals=True
                 ).count(),
             },
-            {
-                "title": "Funders with edited data",
-                "value": Funder.objects.filter(
-                    included=True,
-                    funderyear__financial_year="2022-23",
-                    funderyear__checked=True,
-                ).count(),
-            },
+            # {
+            #     "title": "Funders with edited data",
+            #     "value": Funder.objects.filter(
+            #         included=True,
+            #         latest_year__financial_year="2022-23",
+            #         latest_year__checked=True,
+            #     ).count(),
+            # },
         ]
     }
     return render(request, "index.html.j2", context)

@@ -2,7 +2,7 @@ from django.db import models
 from django.db.models.functions import Coalesce, Left, Length, Right, StrIndex
 from markdownx.models import MarkdownxField
 
-from ukgrantmaking.models.financial_years import FinancialYears
+from ukgrantmaking.models.financial_years import FinancialYear
 
 
 class Grant(models.Model):
@@ -223,7 +223,7 @@ class Grant(models.Model):
         )  # Supporting a community or cause not solely driven by the needs of the individual receiving the grant, campaigns, community development
 
     grant_id = models.CharField(max_length=255, primary_key=True)
-    title = models.CharField(max_length=255)
+    title = models.TextField()
     description = models.TextField(null=True, blank=True)
     currency = models.CharField(max_length=3, default="GBP")
     amount_awarded = models.DecimalField(max_digits=16, decimal_places=2, db_index=True)
@@ -251,11 +251,24 @@ class Grant(models.Model):
     recipient_individual_grant_purpose = models.CharField(
         max_length=255, null=True, blank=True
     )
-    recipient_type = models.CharField(
+    recipient_type_registered = models.CharField(
         max_length=50,
         choices=RecipientType.choices,
         default=RecipientType.ORGANISATION,
         db_index=True,
+    )
+    recipient_type_manual = models.CharField(
+        max_length=50,
+        choices=RecipientType.choices,
+        default=None,
+        null=True,
+        blank=True,
+        db_index=True,
+    )
+    recipient_type = models.GeneratedField(
+        expression=Coalesce("recipient_type_manual", "recipient_type_registered"),
+        output_field=models.CharField(max_length=255, null=True, blank=True),
+        db_persist=True,
     )
     funding_organisation_id = models.CharField(
         max_length=255, null=True, blank=True, db_index=True
@@ -305,14 +318,6 @@ class Grant(models.Model):
         blank=True,
         db_constraint=False,
     )
-    recipient_type_manual = models.CharField(
-        max_length=50,
-        choices=RecipientType.choices,
-        default=None,
-        null=True,
-        blank=True,
-        db_index=True,
-    )
     inclusion = models.CharField(
         max_length=50,
         choices=InclusionStatus.choices,
@@ -322,6 +327,14 @@ class Grant(models.Model):
     )
     notes = MarkdownxField(null=True, blank=True)
     checked_by = models.CharField(max_length=255, null=True, blank=True)
+    financial_year = models.ForeignKey(
+        FinancialYear,
+        on_delete=models.CASCADE,
+        related_name="grants",
+        null=True,
+        blank=True,
+        db_constraint=False,
+    )
 
     annual_amount = models.GeneratedField(
         expression=models.Case(
@@ -331,7 +344,7 @@ class Grant(models.Model):
                     models.functions.Cast(
                         models.F("amount_awarded_GBP"), models.FloatField()
                     )
-                    / models.Max(
+                    / models.functions.Greatest(
                         models.F("planned_dates_duration"),
                         models.Value(12, models.FloatField()),
                     )
@@ -592,12 +605,13 @@ class GrantRecipientYear(models.Model):
     recipient = models.ForeignKey("GrantRecipient", on_delete=models.CASCADE)
     financial_year_end = models.DateField()
     financial_year_start = models.DateField(null=True, blank=True)
-    financial_year = models.CharField(
-        max_length=9,
-        choices=FinancialYears.choices,
+    financial_year = models.ForeignKey(
+        FinancialYear,
+        on_delete=models.CASCADE,
+        related_name="recipient_years",
         null=True,
         blank=True,
-        db_index=True,
+        db_constraint=False,
     )
 
     income_registered = models.DecimalField(

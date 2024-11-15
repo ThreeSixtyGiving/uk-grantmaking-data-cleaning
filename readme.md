@@ -47,6 +47,8 @@ ruff format .
 
 ## Setup on Dokku
 
+### Initial app setup (on server)
+
 ```sh
 # create app
 dokku apps:create uk-grantmaking-data
@@ -79,7 +81,16 @@ dokku config:set uk-grantmaking-data --no-restart DEBUG=false ALLOWED_HOSTS="hos
 dokku run uk-grantmaking-data python manage.py createsuperuser
 ```
 
+### Deploy the app for the first time (on local computer)
+
 ```sh
 git remote add dokku dokku@SERVER_HOST:uk-grantmaking-data
 git push dokku main
+```
+
+### After deployment (on server)
+
+```sh
+# create superuser account
+dokku run uk-grantmaking-data python manage.py createsuperuser
 ```

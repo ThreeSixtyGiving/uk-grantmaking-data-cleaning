@@ -1,0 +1,41 @@
+{% extends 'base.html.j2' %}
+{% from 'components/values.html.j2' import display_date, display_number, display_longtext, display_list, display_text, none_wrapper, display_boolean, display_url %}
+{% from 'components/pagination.html.j2' import pagination, results_header %}
+{% from 'components/meter.html.j2' import meter %}
+
+{% block content %}
+<h2>Cleaning Tasks</h2>
+
+{% if object_list %}
+<table class="table striped">
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Status</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for object in object_list %}
+        <tr>
+            <td>
+                <a href="{{ url_for('grantmakers:task_detail', task_id=object.id) }}">{{ object.name }}</a>
+                {% if object.description %}
+                <p>{{ object.description }}</p>
+                {% endif %}
+            </td>
+            <td>
+                {% if statuses[object.id] %}
+                <div class="progress-grid border">
+                    {% for status_value in statuses[object.id] %}
+                    {{ meter(status_value) }}
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endif %}
+
+{% endblock %}

@@ -2,6 +2,8 @@ from django.contrib import admin
 from django.urls import reverse
 from django.urls.exceptions import NoReverseMatch
 
+from ukgrantmaking.admin.cleaningstatus import CleaningStatusAdmin
+from ukgrantmaking.admin.financial_year import FinancialYearAdmin
 from ukgrantmaking.admin.funders import FunderAdmin, FunderTagAdmin, FunderYearAdmin
 from ukgrantmaking.admin.grants import (
     CurrencyConverterAdmin,
@@ -10,7 +12,9 @@ from ukgrantmaking.admin.grants import (
     GrantRecipientYearAdmin,
 )
 from ukgrantmaking.models import (
+    CleaningStatus,
     CurrencyConverter,
+    FinancialYear,
     Funder,
     FunderTag,
     FunderYear,
@@ -63,3 +67,7 @@ admin_site.register(Grant, GrantAdmin)
 admin_site.register(CurrencyConverter, CurrencyConverterAdmin)
 admin_site.register(GrantRecipient, GrantRecipientAdmin)
 admin_site.register(GrantRecipientYear, GrantRecipientYearAdmin)
+
+admin_site.register(FinancialYear, FinancialYearAdmin)
+
+admin_site.register(CleaningStatus, CleaningStatusAdmin)

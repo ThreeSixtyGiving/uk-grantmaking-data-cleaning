@@ -1,6 +1,11 @@
+from ukgrantmaking.models.cleaningstatus import (
+    CleaningStatus,
+    CleaningStatusQuery,
+)
 from ukgrantmaking.models.financial_years import (
     DEFAULT_BREAK_MONTH,
     DEFAULT_FINANCIAL_YEAR,
+    FinancialYear,
     FinancialYears,
 )
 from ukgrantmaking.models.funder import (
@@ -34,4 +39,7 @@ __all__ = [
     "GrantRecipient",
     "GrantRecipientYear",
     "CurrencyConverter",
+    "CleaningStatus",
+    "CleaningStatusQuery",
+    "FinancialYear",
 ]
