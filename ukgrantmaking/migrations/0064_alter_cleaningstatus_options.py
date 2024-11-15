@@ -4,7 +4,6 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("ukgrantmaking", "0063_alter_cleaningstatus_sort_by_and_more"),
     ]
