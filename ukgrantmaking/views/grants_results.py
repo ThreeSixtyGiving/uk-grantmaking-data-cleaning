@@ -9,11 +9,13 @@ from django.urls import reverse
 from django.utils.text import slugify
 
 from ukgrantmaking.models.funder import (
-    FUNDER_CATEGORIES,
     Funder,
+    FunderTag,
+)
+from ukgrantmaking.models.funder_utils import (
+    FUNDER_CATEGORIES,
     FunderCategory,
     FunderSegment,
-    FunderTag,
 )
 from ukgrantmaking.utils.grant import (
     DEFAULT_COLUMNS,

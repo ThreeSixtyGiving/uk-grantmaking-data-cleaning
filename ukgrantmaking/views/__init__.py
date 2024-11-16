@@ -87,6 +87,7 @@ def export_all_data_excel(models, filename):
     return filename
 
 
+@login_required
 def export_funders_excel(request):
     models = [Funder, FunderYear, FunderTag]
     buffer = export_all_data_excel(models, BytesIO())
@@ -97,6 +98,7 @@ def export_funders_excel(request):
     )
 
 
+@login_required
 def export_grants_excel(request):
     models = [Grant]
     buffer = export_all_data_excel(models, BytesIO())
@@ -107,5 +109,6 @@ def export_grants_excel(request):
     )
 
 
+@login_required
 def table_creator(request):
     return render(request, "table_creator.html.j2")

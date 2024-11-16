@@ -46,4 +46,4 @@ jobs:
           python manage.py collectstatic
       - name: Test with django test
         run: |
-          python manage.py test
+          pytest

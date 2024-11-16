@@ -5,12 +5,7 @@ from django.db.models.functions import Coalesce
 from django.db.models.lookups import IsNull
 from markdownx.models import MarkdownxField
 
-from ukgrantmaking.models.funder import FunderSegment
-
-
-class RecordStatus(models.TextChoices):
-    UNCHECKED = "Unchecked", "Unchecked"
-    CHECKED = "Checked", "Checked"
+from ukgrantmaking.models.funder_utils import FunderSegment, RecordStatus
 
 
 class FunderFinancialYear(models.Model):
@@ -67,6 +62,13 @@ class FunderFinancialYear(models.Model):
         auto_now_add=True, db_index=True, null=True, blank=True
     )
     date_updated = models.DateTimeField(auto_now=True, null=True, blank=True)
+
+    def save(self, *args, **kwargs):
+        if self.financial_year.current:
+            self.segment = self.funder.segment
+            self.included = self.funder.included
+            self.makes_grants_to_individuals = self.funder.makes_grants_to_individuals
+        super().save(*args, **kwargs)
 
 
 class FunderYear(models.Model):

@@ -222,4 +222,4 @@ class CleaningStatusQuery(models.Model):
         if self.comparison == self.Comparison.NOT_EQUAL:
             return qs.filter(**{self.field: self.value})
 
-        return {f"{self.field}__{self.comparison.lower()}": self.value}
+        raise NotImplementedError(f"Comparison {self.comparison} not implemented")

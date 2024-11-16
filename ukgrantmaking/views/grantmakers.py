@@ -1,9 +1,15 @@
 from dateutil import parser
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
-from django.http import HttpResponse, HttpResponseBadRequest
-from django.shortcuts import render
+from django.http import (
+    Http404,
+    HttpResponse,
+    HttpResponseBadRequest,
+    HttpResponseNotAllowed,
+)
+from django.shortcuts import get_object_or_404, render
 from django.utils import timezone
+from django.utils.text import slugify
 
 from ukgrantmaking.filters.grantmakers import GrantmakerFilter
 from ukgrantmaking.models import CleaningStatus, FinancialYear, Funder, FunderTag
@@ -39,9 +45,12 @@ def task_index(request):
 @login_required
 def task_detail(request, task_id):
     current_fy = FinancialYear.objects.get(current=True)
-    cleaning_task = CleaningStatus.objects.filter(
-        type=CleaningStatus.CleaningStatusType.GRANTMAKER
-    ).get(id=task_id)
+    try:
+        cleaning_task = CleaningStatus.objects.filter(
+            type=CleaningStatus.CleaningStatusType.GRANTMAKER
+        ).get(id=task_id)
+    except CleaningStatus.DoesNotExist:
+        raise Http404("Task not found")
     base_qs = FunderYear.objects.filter(financial_year__financial_year=current_fy)
     qs = cleaning_task.run(base_qs)
     status = cleaning_task.get_status(base_qs)
@@ -62,7 +71,7 @@ def task_detail(request, task_id):
 
 @login_required
 def detail(request, org_id):
-    funder = Funder.objects.get(org_id=org_id)
+    funder = get_object_or_404(Funder, org_id=org_id)
     return render(request, "grantmakers/detail.html.j2", {"object": funder})
 
 
@@ -70,13 +79,15 @@ def detail(request, org_id):
 def htmx_edit_note(request, org_id, note_id=None):
     if not request.htmx:
         return HttpResponseBadRequest("This view is only accessible via htmx")
-    funder = Funder.objects.get(org_id=org_id)
-    if note_id:
-        note = funder.notes.get(id=note_id)
-        note.note = request.POST["note"]
-        note.save()
-    else:
-        funder.notes.create(note=request.POST["note"], added_by=request.user.username)
+    funder = get_object_or_404(Funder, org_id=org_id)
+    if request.method == "POST":
+        note_content = request.POST.get("note")
+        if note_id:
+            note = funder.notes.get(id=note_id)
+            note.note = note_content
+            note.save()
+        else:
+            funder.notes.create(note=note_content, added_by=request.user)
     return render(request, "grantmakers/partials/notes.html.j2", {"object": funder})
 
 
@@ -84,10 +95,18 @@ def htmx_edit_note(request, org_id, note_id=None):
 def htmx_tags_edit(request, org_id):
     if not request.htmx:
         return HttpResponseBadRequest("This view is only accessible via htmx")
-    funder = Funder.objects.get(org_id=org_id)
+    funder = get_object_or_404(Funder, org_id=org_id)
     context = {"object": funder, "tags": FunderTag.objects.all(), "edit": True}
     if request.method == "POST":
-        funder.tags.set(FunderTag.objects.filter(tag__in=request.POST.getlist("tags")))
+        new_tags = []
+        for tag in request.POST.getlist("tags"):
+            if not tag:
+                continue
+            new_tag, _ = FunderTag.objects.get_or_create(
+                slug=slugify(tag), defaults={"tag": tag}
+            )
+            new_tags.append(new_tag)
+        funder.tags.set(new_tags)
         context["edit"] = False
     return render(
         request,
@@ -100,7 +119,9 @@ def htmx_tags_edit(request, org_id):
 def htmx_edit_funder(request, org_id):
     if not request.htmx:
         return HttpResponseBadRequest("This view is only accessible via htmx")
-    funder = Funder.objects.get(org_id=org_id)
+    if not request.method == "POST":
+        return HttpResponseNotAllowed(["POST"], "This view only accepts POST requests")
+    funder = get_object_or_404(Funder, org_id=org_id)
     action = request.POST.get("action")
     if action == "exclude":
         funder.included = False
@@ -113,7 +134,7 @@ def htmx_edit_funder(request, org_id):
     elif action == "marked_as_checked":
         if funder.latest_year:
             funder.latest_year.checked_on = timezone.now()
-            funder.latest_year.checked_by = request.user.username
+            funder.latest_year.checked_by = request.user
             funder.latest_year.save()
     elif action == "update_segment":
         funder.segment = request.POST.get("segment")
@@ -137,7 +158,7 @@ def htmx_edit_funder(request, org_id):
 def htmx_edit_funderyear(request, org_id, funderyear_id=None):
     if not request.htmx:
         return HttpResponseBadRequest("This view is only accessible via htmx")
-    funder = Funder.objects.get(org_id=org_id)
+    funder = get_object_or_404(Funder, org_id=org_id)
     funder_year = None
     funder_year_py = None
     if funderyear_id:
@@ -159,7 +180,13 @@ def htmx_edit_funderyear(request, org_id, funderyear_id=None):
             funder_year.delete()
             return HttpResponse("")
     else:
-        funder_year = funder.funderyear_set.create(financial_year_end=timezone.now())
+        funder_financial_year = funder.financial_years.filter(
+            financial_year__current=True
+        ).first()
+        if funder_financial_year:
+            funder_year = funder_financial_year.financial_years.create(
+                financial_year_end=funder_financial_year.financial_year.grants_end_date
+            )
 
     context = {
         "object": funder,

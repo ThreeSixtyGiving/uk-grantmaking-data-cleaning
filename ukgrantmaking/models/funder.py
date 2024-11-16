@@ -1,65 +1,12 @@
 from django.conf import settings
 from django.db import models
 from django.db.models.functions import Coalesce, Left, Length, Right, StrIndex
+from django.utils.text import slugify
 from markdownx.models import MarkdownxField
 
-from ukgrantmaking.models.financial_years import DEFAULT_FINANCIAL_YEAR
-
-
-class FunderSegment(models.TextChoices):
-    DONOR_ADVISED_FUND = "Donor Advised Fund", "Donor Advised Fund"
-    WELLCOME_TRUST = "Wellcome Trust", "Wellcome Trust"
-    CHARITY = "Charity", "Charity"
-    LOTTERY_DISTRIBUTOR = "Lottery Distributor", "Lottery Distributor"
-    ARMS_LENGTH_BODY = "Arms Length Body", "Arms Length Body"
-    CORPORATE_FOUNDATION = "Corporate Foundation", "Corporate Foundation"
-    FAMILY_FOUNDATION = "Family Foundation", "Family Foundation"
-    FUNDRAISING_GRANTMAKER = "Fundraising Grantmaker", "Fundraising Grantmaker"
-    GENERAL_GRANTMAKER = "General grantmaker", "General grantmaker"
-    MEMBER_TRADE_FUNDED = "Member/Trade Funded", "Member/Trade Funded"
-    NHS_HOSPITAL_FOUNDATION = "NHS/Hospital Foundation", "NHS/Hospital Foundation"
-    GOVERNMENT_LOTTERY_ENDOWED = (
-        "Government/Lottery Endowed",
-        "Government/Lottery Endowed",
-    )
-    SMALL_GRANTMAKER = "Small grantmaker", "Small grantmaker"
-    COMMUNITY_FOUNDATION = "Community Foundation", "Community Foundation"
-    LOCAL = "Local", "Local"
-    CENTRAL = "Central", "Central"
-    DEVOLVED = "Devolved", "Devolved"
-
-    @property
-    def category(self):
-        return FUNDER_CATEGORIES[self]
-
-
-class FunderCategory(models.TextChoices):
-    GRANTMAKER = "Grantmaker", "Grantmaker"
-    LOTTERY = "Lottery", "Lottery"
-    CHARITY = "Charity", "Charity"
-    GOVERNMENT = "Government", "Government"
-    OTHER = "Other", "Other"
-
-
-FUNDER_CATEGORIES = {
-    FunderSegment.COMMUNITY_FOUNDATION: FunderCategory.GRANTMAKER,
-    FunderSegment.CORPORATE_FOUNDATION: FunderCategory.GRANTMAKER,
-    FunderSegment.FAMILY_FOUNDATION: FunderCategory.GRANTMAKER,
-    FunderSegment.FUNDRAISING_GRANTMAKER: FunderCategory.GRANTMAKER,
-    FunderSegment.GENERAL_GRANTMAKER: FunderCategory.GRANTMAKER,
-    FunderSegment.GOVERNMENT_LOTTERY_ENDOWED: FunderCategory.GRANTMAKER,
-    FunderSegment.MEMBER_TRADE_FUNDED: FunderCategory.GRANTMAKER,
-    FunderSegment.SMALL_GRANTMAKER: FunderCategory.GRANTMAKER,
-    FunderSegment.WELLCOME_TRUST: FunderCategory.GRANTMAKER,
-    FunderSegment.LOTTERY_DISTRIBUTOR: FunderCategory.LOTTERY,
-    FunderSegment.CHARITY: FunderCategory.CHARITY,
-    FunderSegment.NHS_HOSPITAL_FOUNDATION: FunderCategory.CHARITY,
-    FunderSegment.LOCAL: FunderCategory.GOVERNMENT,
-    FunderSegment.CENTRAL: FunderCategory.GOVERNMENT,
-    FunderSegment.DEVOLVED: FunderCategory.GOVERNMENT,
-    FunderSegment.ARMS_LENGTH_BODY: FunderCategory.GOVERNMENT,
-    FunderSegment.DONOR_ADVISED_FUND: FunderCategory.OTHER,
-}
+from ukgrantmaking.models.financial_years import FinancialYear
+from ukgrantmaking.models.funder_utils import FunderSegment
+from ukgrantmaking.models.funder_year import FunderFinancialYear, FunderYear
 
 
 class FunderTag(models.Model):
@@ -78,6 +25,11 @@ class FunderTag(models.Model):
         if self.parent:
             return f"{self.parent} - {self.tag}"
         return self.tag
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            self.slug = slugify(self.tag)
+        super().save(*args, **kwargs)
 
 
 class FunderNote(models.Model):
@@ -137,7 +89,7 @@ class Funder(models.Model):
         max_digits=16, decimal_places=2, null=True, blank=True, db_index=True
     )
     latest_year = models.ForeignKey(
-        "FinancialYear",
+        FunderFinancialYear,
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
@@ -254,13 +206,16 @@ class Funder(models.Model):
         return False
 
     def save(self, *args, **kwargs):
+        current_fy = FinancialYear.objects.current()
         latest_fy = (
-            self.funderyear_set.filter(financial_year=DEFAULT_FINANCIAL_YEAR)
+            FunderYear.objects.filter(
+                financial_year__funder=self, financial_year__financial_year=current_fy
+            )
             .order_by("-financial_year_end")
             .first()
         )
         if latest_fy:
-            self.latest_year = latest_fy
+            self.latest_year = latest_fy.financial_year
             if latest_fy.spending_grant_making is not None:
                 self.latest_grantmaking = latest_fy.spending_grant_making
             elif latest_fy.spending_grant_making_institutions:
@@ -281,17 +236,20 @@ class Funder(models.Model):
             self.latest_year = None
             self.latest_grantmaking = None
 
-        # transfer financial years to successor
-        if self.successor:
-            for fy in self.funderyear_set.all():
-                fy.funder = self.successor
-                fy.save()
+        # # transfer financial years to successor
+        # @TODO work out the logic for this
+        # if self.successor:
+        #     for fy in FunderYear.objects.filter(financial_year__funder=self):
+        #         fy.funder = self.successor
+        #         fy.save()
 
-        # transfer financial years from predecessors
-        if self.predecessors.exists():
-            for predecessor in self.predecessors.all():
-                for fy in predecessor.funderyear_set.all():
-                    fy.funder = self
-                    fy.save()
+        # # transfer financial years from predecessors
+        # if self.predecessors.exists():
+        #     for predecessor in self.predecessors.all():
+        #         for fy in predecessor.funderyear_set.all():
+        #             fy.funder = self
+        #             fy.save()
 
         super().save(*args, **kwargs)
+        if self.latest_year:
+            self.latest_year.save()

@@ -37,7 +37,9 @@ click==8.1.7
 click-default-group==1.2.4
     # via datasette
 colorama==0.4.6
-    # via click
+    # via
+    #   click
+    #   pytest
 datasette==0.64.6
     # via -r requirements.in
 datasette-auth-existing-cookies==1.0a1
@@ -68,7 +70,9 @@ django-storages==1.14.3
 et-xmlfile==1.1.0
     # via openpyxl
 exceptiongroup==1.2.2
-    # via anyio
+    # via
+    #   anyio
+    #   pytest
 greenlet==3.0.3
     # via sqlalchemy
 gunicorn==22.0.0
@@ -92,6 +96,8 @@ idna==3.7
     #   requests
 inflect==7.2.1
     # via -r requirements.in
+iniconfig==2.0.0
+    # via pytest
 itsdangerous==2.2.0
     # via
     #   asgi-csrf
@@ -121,7 +127,9 @@ openpyxl==3.1.2
     #   -r requirements.in
     #   caradoc
 packaging==24.0
-    # via gunicorn
+    # via
+    #   gunicorn
+    #   pytest
 pandas==2.2.2
     # via
     #   -r requirements.in
@@ -133,8 +141,14 @@ pint==0.23
 pip==24.0
     # via datasette
 pluggy==1.5.0
-    # via datasette
+    # via
+    #   datasette
+    #   pytest
 psycopg2-binary==2.9.9
+    # via -r requirements.in
+pytest==8.3.3
+    # via pytest-django
+pytest-django==4.9.0
     # via -r requirements.in
 python-dateutil==2.9.0.post0
     # via
@@ -170,6 +184,8 @@ sqlparse==0.5.0
     #   django-debug-toolbar
 titlecase==2.4.1
     # via -r requirements.in
+tomli==2.1.0
+    # via pytest
 typeguard==4.2.1
     # via inflect
 typing-extensions==4.11.0

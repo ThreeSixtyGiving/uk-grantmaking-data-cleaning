@@ -38,6 +38,11 @@ DEFAULT_FINANCIAL_YEAR = FinancialYears.FY_2022_23
 DEFAULT_BREAK_MONTH = 5
 
 
+class FinancialYearManager(models.Manager):
+    def current(self):
+        return self.get_queryset().get(current=True)
+
+
 class FinancialYearStatus(models.TextChoices):
     OPEN = "Open", "Open"
     CLOSED = "Closed", "Closed"
@@ -63,6 +68,8 @@ class FinancialYear(models.Model):
         choices=FinancialYearStatus.choices,
         default=FinancialYearStatus.CLOSED,
     )
+
+    objects = FinancialYearManager()
 
     @property
     def first_year(self):

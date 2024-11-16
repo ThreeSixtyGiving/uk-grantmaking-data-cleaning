@@ -9,12 +9,14 @@ from ukgrantmaking.models.financial_years import (
     FinancialYears,
 )
 from ukgrantmaking.models.funder import (
-    FUNDER_CATEGORIES,
     Funder,
-    FunderCategory,
     FunderNote,
-    FunderSegment,
     FunderTag,
+)
+from ukgrantmaking.models.funder_utils import (
+    FUNDER_CATEGORIES,
+    FunderCategory,
+    FunderSegment,
 )
 from ukgrantmaking.models.funder_year import FunderYear
 from ukgrantmaking.models.grant import (

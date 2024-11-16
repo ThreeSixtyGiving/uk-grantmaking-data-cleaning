@@ -4,7 +4,7 @@ import pandas as pd
 from caradoc import FinancialYear
 from django.db import models
 
-from ukgrantmaking.models.funder import FUNDER_CATEGORIES
+from ukgrantmaking.models.funder_utils import FUNDER_CATEGORIES
 from ukgrantmaking.models.grant import Grant, GrantRecipientYear
 
 DEFAULT_COLUMNS = [
