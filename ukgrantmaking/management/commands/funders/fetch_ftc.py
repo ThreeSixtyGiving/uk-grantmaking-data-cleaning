@@ -1,3 +1,4 @@
+import logging
 from itertools import islice
 
 import djclick as click
@@ -10,6 +11,11 @@ from ukgrantmaking.models.funder import Funder
 from ukgrantmaking.models.funder_year import FunderFinancialYear, FunderYear
 from ukgrantmaking.utils.text import to_titlecase
 
+# @TODO Ensure that funders with a successor don't have new data added
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+
 
 @click.command()
 @click.argument("db_con", envvar="FTC_DB_URL")
@@ -21,7 +27,7 @@ def ftc(db_con, do_funders, do_financial):
 
     if do_funders:
         # get updated names and date of registration from FTC
-        click.echo("Fetching organisations from FTC")
+        logging.info("Fetching organisations from FTC")
         org_records = pd.read_sql(
             """
             SELECT org_id,
@@ -35,7 +41,7 @@ def ftc(db_con, do_funders, do_financial):
             params={"org_id": org_ids},
             con=db_con,
         )
-        click.echo(f"Fetched {len(org_records):,.0f} organisations from FTC")
+        logger.info(f"Fetched {len(org_records):,.0f} organisations from FTC")
         with transaction.atomic():
             with click.progressbar(
                 org_records.itertuples(),
@@ -57,10 +63,10 @@ def ftc(db_con, do_funders, do_financial):
     financial_years = pd.DataFrame(FinancialYear.objects.all().values())
 
     # get all funder years
-    click.echo("Fetching funder financial years from DB")
+    logger.info("Fetching funder financial years from DB")
     funder_financial_years = (
         pd.DataFrame(
-            FunderFinancialYear.objects.all().values(
+            FunderFinancialYear.objects.values(
                 "id",
                 "funder_id",
                 "financial_year__fy",
@@ -69,9 +75,18 @@ def ftc(db_con, do_funders, do_financial):
         .set_index(["funder_id", "financial_year__fy"])["id"]
         .rename("funder_financial_year_id")
     )
-    click.echo(f"Fetched {len(funder_financial_years):,.0f} financial years from DB")
+    logger.info(f"Fetched {len(funder_financial_years):,.0f} financial years from DB")
 
-    click.echo("Fetching financial records from FTC")
+    # get successor lookups
+    logger.info("Fetching successor lookups from DB")
+    successor_lookups = dict(
+        Funder.objects.filter(successor__isnull=False).values_list(
+            "org_id", "successor_id"
+        )
+    )
+    logger.info(f"Fetched {len(successor_lookups):,.0f} successor lookups from DB")
+
+    logger.info("Fetching financial records from FTC")
     finance_records = pd.read_sql(
         """
         SELECT charity_id AS org_id,
@@ -95,7 +110,11 @@ def ftc(db_con, do_funders, do_financial):
         params={"org_id": org_ids},
         con=db_con,
     )
-    click.echo(f"Fetched {len(finance_records):,.0f} financial records from FTC")
+    logger.info(f"Fetched {len(finance_records):,.0f} financial records from FTC")
+
+    # replace org IDs with successor IDs
+    finance_records["original_org_id"] = finance_records["org_id"]
+    finance_records["org_id"] = finance_records["org_id"].replace(successor_lookups)
 
     finance_records["fy"] = None
     for fy in financial_years.itertuples():
@@ -105,18 +124,27 @@ def ftc(db_con, do_funders, do_financial):
             "fy",
         ] = fy.fy
 
-    # @TODO: What to do with records that don't match a financial year?
-    # shouldn't be too many, as the financial years should exist anyway.
     finance_records = finance_records.join(
         funder_financial_years,
         on=["org_id", "fy"],
         how="left",
+    ).join(
+        funder_financial_years.rename("original_funder_financial_year_id"),
+        on=["org_id_original", "fy"],
+        how="left",
     )
+    finance_records.loc[
+        finance_records["funder_financial_year_id"]
+        == finance_records["original_funder_financial_year_id"],
+        "original_funder_financial_year_id",
+    ] = None
 
+    # @TODO: What to do with records that don't match a financial year?
+    # shouldn't be too many, as the financial years should exist anyway.
     no_fy = finance_records[finance_records.funder_financial_year_id.isnull()]
-    click.echo(f"Found {len(no_fy):,.0f} records that didn't match a financial year")
+    logger.info(f"Found {len(no_fy):,.0f} records that didn't match a financial year")
     for fy, count in no_fy["fy"].value_counts().items():
-        click.echo(f"  {fy}: {count:,.0f}")
+        logger.info(f"  {fy}: {count:,.0f}")
 
     finance_records = finance_records[
         ~finance_records.funder_financial_year_id.isnull()

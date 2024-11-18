@@ -3,6 +3,18 @@
         <header>Org ID</header>
         <code>{{object.org_id }}</code>
     </li>
+    {% if object.successor %}
+    <li>
+        <header>Succeeded by</header>
+        <div>
+            <a href="{{ url_for('grantmakers:detail', org_id=object.successor.org_id) }}"
+                title="{{ object.successor.name }}">
+                {{ object.successor.name }}<br>
+                ({{ object.successor.org_id }})
+            </a>
+        </div>
+    </li>
+    {% endif %}
     <li class="{% if object.included %}positive{% else %}negative{% endif %}">
         <header>Status</header>
         {% if object.included %}Included{% else %}Excluded{% endif %}

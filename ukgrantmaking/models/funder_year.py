@@ -144,12 +144,19 @@ class FunderFinancialYear(models.Model):
 
 
 class FunderYear(models.Model):
-    financial_year_end = models.DateField()
+    financial_year_end = models.DateField(db_index=True)
     financial_year_start = models.DateField(null=True, blank=True)
     funder_financial_year = models.ForeignKey(
         FunderFinancialYear,
         on_delete=models.CASCADE,
         related_name="funder_years",
+        null=True,
+        blank=True,
+    )
+    original_funder_financial_year = models.ForeignKey(
+        FunderFinancialYear,
+        on_delete=models.CASCADE,
+        related_name="new_funder_years",
         null=True,
         blank=True,
     )

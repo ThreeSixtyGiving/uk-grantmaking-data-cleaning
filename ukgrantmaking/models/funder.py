@@ -211,6 +211,36 @@ class Funder(models.Model):
                 return "Checked"
         return False
 
+    def funder_years(self):
+        return (
+            FunderYear.objects.filter(funder_financial_year__funder=self)
+            .select_related(
+                "funder_financial_year",
+                "funder_financial_year__financial_year",
+                "funder_financial_year__funder",
+                "original_funder_financial_year",
+                "original_funder_financial_year__financial_year",
+                "original_funder_financial_year__funder",
+            )
+            .order_by("-financial_year_end")
+        )
+
+    def original_funder_years(self):
+        return (
+            FunderYear.objects.filter(
+                models.Q(original_funder_financial_year__funder=self)
+            )
+            .select_related(
+                "funder_financial_year",
+                "funder_financial_year__financial_year",
+                "funder_financial_year__funder",
+                "original_funder_financial_year",
+                "original_funder_financial_year__financial_year",
+                "original_funder_financial_year__funder",
+            )
+            .order_by("-financial_year_end")
+        )
+
     def log_entries(self):
         return LogEntry.objects.filter(
             content_type=ContentType.objects.get_for_model(self),
@@ -248,10 +278,18 @@ class Funder(models.Model):
         if self.successor:
             for funder_financial_year in self.funder_financial_years.all():
                 for funder_year in funder_financial_year.funder_years.all():
+                    funder_year.original_funder_financial_year_id = (
+                        funder_financial_year.pk
+                    )
                     funder_year.funder_financial_year, created = (
                         FunderFinancialYear.objects.get_or_create(
                             funder=self.successor,
                             financial_year=funder_financial_year.financial_year,
+                            defaults={
+                                "segment": funder_financial_year.segment,
+                                "included": funder_financial_year.included,
+                                "makes_grants_to_individuals": funder_financial_year.makes_grants_to_individuals,
+                            },
                         )
                     )
                     if created:

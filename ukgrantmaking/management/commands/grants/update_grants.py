@@ -2,7 +2,6 @@ from collections import defaultdict
 from datetime import timedelta
 
 import djclick as click
-from caradoc import FinancialYear
 from django.core.management import call_command
 from django.db import transaction
 from django.db.models import F, Sum
@@ -11,8 +10,9 @@ from ukgrantmaking.models import (
     CurrencyConverter,
     Grant,
 )
+from ukgrantmaking.models.financial_years import FinancialYear, FinancialYearStatus
 from ukgrantmaking.models.funder import Funder
-from ukgrantmaking.models.funder_year import FinancialYears, FunderYear
+from ukgrantmaking.models.funder_year import FunderYear
 
 
 @click.command()
@@ -58,6 +58,9 @@ def grants():
             .values_list("funder_id", flat=True)
             .distinct()
         )
+        financial_years = FinancialYear.objects.filter(
+            current=True, status=FinancialYearStatus.OPEN
+        )
         bulk_update = []
         results = defaultdict(lambda: 0)
         for funder_id in funders:
@@ -66,11 +69,10 @@ def grants():
             except Funder.DoesNotExist:
                 click.secho(f"Funder {funder_id} not found", fg="red")
                 continue
-            for year, _ in FinancialYears.choices:
-                fy = FinancialYear(year)
+            for year in financial_years:
                 funder_years = FunderYear.objects.filter(
-                    funder=funder,
-                    financial_year=year,
+                    funder_financial_year__funder=funder,
+                    funder_financial_year__financial_year=year,
                 )
 
                 # if we've got existing data then use it
@@ -119,8 +121,8 @@ def grants():
                     grants_amount_by_recipient = (
                         Grant.objects.filter(
                             funder_id=funder.org_id,
-                            award_date__lte=fy.end_date,
-                            award_date__gte=fy.start_date,
+                            award_date__lte=year.grants_end_date,
+                            award_date__gte=year.grants_start_date,
                             inclusion__in=[
                                 Grant.InclusionStatus.INCLUDED,
                                 Grant.InclusionStatus.UNSURE,
@@ -133,8 +135,8 @@ def grants():
                         funder_year = FunderYear(
                             funder=funder,
                             financial_year=year,
-                            financial_year_start=fy.start_date,
-                            financial_year_end=fy.end_date,
+                            financial_year_start=year.grants_end_date,
+                            financial_year_end=year.grants_start_date,
                         )
                         click.secho(
                             f"Creating {funder_year.funder} {funder_year.financial_year_end}",

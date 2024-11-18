@@ -9,6 +9,25 @@
 
 {% macro funder_year_row(funder_year)%}
 <td>
+    {% if funder_year.original_funder_financial_year %}
+    {% set original_funder = funder_year.original_funder_financial_year.funder %}
+    {% set new_funder = funder_year.funder_financial_year.funder %}
+    <p class="negative">
+        <strong>
+            {% if original_funder == object %}
+            Moved to
+            <a href="{{ url_for('grantmakers:detail', org_id=new_funder.org_id) }}">
+                {{ new_funder.name }}
+            </a>
+            {% else %}
+            Originally from
+            <a href="{{ url_for('grantmakers:detail', org_id=original_funder.org_id) }}">
+                {{ original_funder.name }}
+            </a>
+            {% endif %}
+        </strong>
+    </p>
+    {% endif %}
     <strong>{{ funder_year.funder_financial_year.financial_year_id }}</strong><br>
     <small>
         {% if funder_year.financial_year_start %}

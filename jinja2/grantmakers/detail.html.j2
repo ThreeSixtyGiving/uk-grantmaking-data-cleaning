@@ -36,6 +36,13 @@
             </td>
         </tr>
         <tr>
+            <th class="tr">Admin link</th>
+            <td>
+                <a href="{{ url_for('admin:ukgrantmaking_funder_change', args=object.org_id) }}"
+                    target="_blank">Admin</a>
+            </td>
+        </tr>
+        <tr>
             <th class="tr">Date of registration</th>
             <td>{{ display_date(object.date_of_registration) }}</td>
         </tr>
@@ -53,6 +60,36 @@
                 <p>{{ display_text(object.activities) }}</p>
             </td>
         </tr>
+        {% if object.predecessors.exists() %}
+        <tr>
+            <th class="tr">Predecessors</th>
+            <td>
+                <ul>
+                    {% for predecessor in object.predecessors.all() %}
+                    <li>
+                        <a href="{{ url_for('grantmakers:detail', org_id=predecessor.org_id) }}"
+                            title="{{ predecessor.name }}">
+                            {{ predecessor.name }}
+                            ({{ predecessor.org_id }})
+                        </a>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </td>
+        </tr>
+        {% endif %}
+        {% if object.successor %}
+        <tr>
+            <th class="tr">Succeeded by</th>
+            <td>
+                <a href="{{ url_for('grantmakers:detail', org_id=object.successor.org_id) }}"
+                    title="{{ object.successor.name }}">
+                    {{ object.successor.name }}
+                    ({{ object.successor.org_id }})
+                </a>
+            </td>
+        </tr>
+        {% endif %}
     </tbody>
 </table>
 
@@ -60,7 +97,11 @@
 <h3>Notes</h3>
 {% include 'grantmakers/partials/notes.html.j2' %}
 
+{% if object.successor %}
+<h3>Original financial years</h3>
+{% else %}
 <h3>Financial years</h3>
+{% endif %}
 
 <table class="table striped">
     <thead>
@@ -74,6 +115,11 @@
         </tr>
     </thead>
     <tbody>
+        {% if object.successor %}
+        {% for funder_year in object.original_funder_years() %}
+        {% include 'grantmakers/partials/funderyear.html.j2' %}
+        {% endfor %}
+        {% else %}
         <tr id="funder-year-new">
             <td colspan="6">
                 <a class="button" hx-target="#funder-year-new" hx-swap="outerHTML"
@@ -83,11 +129,10 @@
                 </a>
             </td>
         </tr>
-        {% for funder_financial_year in object.funder_financial_years.order_by("-financial_year__fy") %}
-        {% for funder_year in funder_financial_year.funder_years.order_by("-financial_year_end") %}
+        {% for funder_year in object.funder_years() %}
         {% include 'grantmakers/partials/funderyear.html.j2' %}
         {% endfor %}
-        {% endfor %}
+        {% endif %}
     </tbody>
 </table>
 
