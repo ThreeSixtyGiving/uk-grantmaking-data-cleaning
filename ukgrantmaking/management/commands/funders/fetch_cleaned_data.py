@@ -7,7 +7,7 @@ import pandas as pd
 from ukgrantmaking.models import FunderYear
 
 
-@click.command()
+@click.command(deprecated=True)
 @click.argument("files", nargs=-1)
 def cleaned_data(files):
     index_columns = ["org_id", "fyend"]

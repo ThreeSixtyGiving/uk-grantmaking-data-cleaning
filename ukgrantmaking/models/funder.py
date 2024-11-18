@@ -221,13 +221,14 @@ class Funder(models.Model):
         current_fy = FinancialYear.objects.current()
         latest_fy = (
             FunderYear.objects.filter(
-                financial_year__funder=self, financial_year__financial_year=current_fy
+                funder_financial_year__funder=self,
+                funder_financial_year__financial_year=current_fy,
             )
             .order_by("-financial_year_end")
             .first()
         )
         if latest_fy:
-            self.latest_year = latest_fy.financial_year
+            self.latest_year = latest_fy.funder_financial_year
 
             if (
                 latest_fy.spending_grant_making_individuals
@@ -243,19 +244,24 @@ class Funder(models.Model):
                     funder=self, financial_year=current_fy
                 )
 
-        # # transfer financial years to successor
-        # @TODO work out the logic for this
-        # if self.successor:
-        #     for fy in FunderYear.objects.filter(financial_year__funder=self):
-        #         fy.funder = self.successor
-        #         fy.save()
+        # transfer financial years to successor
+        if self.successor:
+            for funder_financial_year in self.funder_financial_years.all():
+                for funder_year in funder_financial_year.funder_years.all():
+                    funder_year.funder_financial_year, created = (
+                        FunderFinancialYear.objects.get_or_create(
+                            funder=self.successor,
+                            financial_year=funder_financial_year.financial_year,
+                        )
+                    )
+                    if created:
+                        funder_year.funder_financial_year.save()
+                    funder_year.save()
 
-        # # transfer financial years from predecessors
-        # if self.predecessors.exists():
-        #     for predecessor in self.predecessors.all():
-        #         for fy in predecessor.funderyear_set.all():
-        #             fy.funder = self
-        #             fy.save()
+        # transfer financial years from predecessors
+        if self.predecessors.exists():
+            for predecessor in self.predecessors.all():
+                predecessor.save()
 
         super().save(*args, **kwargs)
         if self.latest_year:

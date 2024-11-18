@@ -54,19 +54,19 @@ FIELD_CHOICES = {
         "funds_unrestricted": "Funds unrestricted",
         "employees": "Employees",
         "checked": "Checked",
-        "financial_year__funder__org_id": "Funder ID",
-        "financial_year__funder__name": "Funder Name",
-        "financial_year__funder__status": "Funder status",
-        "financial_year__tags": "Tags",
-        "financial_year__segment": "Segment",
-        "financial_year__included": "Included",
-        "financial_year__makes_grants_to_individuals": "Makes grants to individuals",
-        "financial_year__checked": "Checked",
-        "financial_year__checked_on": "Checked on",
-        "financial_year__checked_by": "Checked by",
-        "financial_year__notes": "Notes",
-        "financial_year__date_added": "Date added",
-        "financial_year__date_updated": "Date updated",
+        "funder_financial_year__funder__org_id": "Funder ID",
+        "funder_financial_year__funder__name": "Funder Name",
+        "funder_financial_year__funder__status": "Funder status",
+        "funder_financial_year__tags": "Tags",
+        "funder_financial_year__segment": "Segment",
+        "funder_financial_year__included": "Included",
+        "funder_financial_year__makes_grants_to_individuals": "Makes grants to individuals",
+        "funder_financial_year__checked": "Checked",
+        "funder_financial_year__checked_on": "Checked on",
+        "funder_financial_year__checked_by": "Checked by",
+        "funder_financial_year__notes": "Notes",
+        "funder_financial_year__date_added": "Date added",
+        "funder_financial_year__date_updated": "Date updated",
     },
     "Grant": {
         "title": "Title",
@@ -166,7 +166,7 @@ class CleaningStatus(models.Model):
                     "name": "Checked",
                     "total": total,
                     "value": self.run(
-                        qs.filter(financial_year__checked="Checked")
+                        qs.filter(funder_financial_year__checked="Checked")
                     ).count(),
                 }
             ),
@@ -175,7 +175,7 @@ class CleaningStatus(models.Model):
             #         "name": "Checked segment",
             #         "total": total,
             #         "value": self.run(
-            #             qs.filter(financial_year__funder__status="Checked")
+            #             qs.filter(funder_financial_year__funder__status="Checked")
             #         ).count(),
             #     }
             # ),

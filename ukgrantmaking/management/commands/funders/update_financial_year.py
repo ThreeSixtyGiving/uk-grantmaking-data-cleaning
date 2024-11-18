@@ -75,7 +75,7 @@ def financial_year(
             latest_id=Max(
                 Case(
                     When(
-                        funderyear__financial_year=financial_year,
+                        funderyear__funder_financial_year=financial_year,
                         then=F("funderyear__id"),
                     )
                 )
@@ -83,7 +83,7 @@ def financial_year(
             most_recent_grants=Sum(
                 Case(
                     When(
-                        funderyear__financial_year=financial_year,
+                        funderyear__funder_financial_year=financial_year,
                         then=Coalesce(
                             NullIf(F("funderyear__spending_grant_making"), Value(0)),
                             F("funderyear__spending_grant_making_institutions"),

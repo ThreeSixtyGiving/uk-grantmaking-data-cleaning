@@ -9,7 +9,7 @@
 
 {% macro funder_year_row(funder_year)%}
 <td>
-    <strong>{{ funder_year.financial_year.financial_year_id }}</strong><br>
+    <strong>{{ funder_year.funder_financial_year.financial_year_id }}</strong><br>
     <small>
         {% if funder_year.financial_year_start %}
         {{ display_date(funder_year.financial_year_start) }}<br>to
@@ -143,7 +143,7 @@
 {% macro funder_year_row_edit(funder_year) %}
 <td>
     {% if funder_year %}
-    <strong>{{ funder_year.financial_year.financial_year_id }}</strong><br>
+    <strong>{{ funder_year.funder_financial_year.financial_year_id }}</strong><br>
     <small>{{ display_date(funder_year.financial_year_start) }} to
         {{ display_date(funder_year.financial_year_end) }}</small>
     {% if funder_year.account_url %}
@@ -191,8 +191,8 @@
             <tr>
                 <td class="tr"><strong>{{ field.label|to_titlecase }}</strong></td>
                 <td class="tr">
-                    {% if field['360Giving'] %}
-                    {{ display_number(funder_year[field['360Giving'].name], format_str="[360Giving] " + field.format_str) }}<br>
+                    {% if field.tsg %}
+                    {{ display_number(funder_year[field['tsg'].name], format_str="[360Giving] " + field.format_str) }}<br>
                     {% if field.registered %}
                     {{ display_number(funder_year[field.registered.name], format_str="[Registered] " + field.format_str) }}<br>
                     {% endif %}
@@ -206,8 +206,8 @@
                 </td>
                 {% if funder_year_py %}
                 <td class="tr">
-                    {% if field['360Giving'] %}
-                    {{ display_number(funder_year_py[field['360Giving'].name], format_str="[360Giving] " + field.format_str) }}<br>
+                    {% if field.tsg %}
+                    {{ display_number(funder_year_py[field.tsg.name], format_str="[360Giving] " + field.format_str) }}<br>
                     {% if field.registered %}
                     {{ display_number(funder_year_py[field.registered.name], format_str="[Registered] " + field.format_str) }}<br>
                     {% endif %}
@@ -249,7 +249,7 @@
 {% endmacro %}
 
 
-<tr class="funder-year border {% if funder_year.financial_year.financial_year.current %}current{% endif %}"
+<tr class="funder-year border {% if funder_year.funder_financial_year.financial_year.current %}current{% endif %}"
     id="funder-year-{% if funder_year %}{{ funder_year.id }}{% else %}new{% endif %}">
     {% if edit %}
     {{ funder_year_row_edit(funder_year)}}

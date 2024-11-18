@@ -5,15 +5,15 @@ from django.db.models.functions import Coalesce
 from django.db.models.lookups import IsNull
 from markdownx.models import MarkdownxField
 
-from ukgrantmaking.models.funder_utils import FunderSegment, RecordStatus
+from ukgrantmaking.models.funder_utils import EditableField, FunderSegment, RecordStatus
 
 
 class FunderFinancialYear(models.Model):
     funder = models.ForeignKey(
-        "Funder", on_delete=models.CASCADE, related_name="financial_years"
+        "Funder", on_delete=models.CASCADE, related_name="funder_financial_years"
     )
     financial_year = models.ForeignKey(
-        "FinancialYear", on_delete=models.CASCADE, related_name="funders"
+        "FinancialYear", on_delete=models.CASCADE, related_name="funder_financial_years"
     )
 
     tags = models.ManyToManyField("FunderTag", blank=True)
@@ -112,7 +112,7 @@ class FunderFinancialYear(models.Model):
             "employees",
         ]
         fys = list(
-            self.financial_years.order_by("-financial_year_end").values(
+            self.funder_years.order_by("-financial_year_end").values(
                 *(summed_fields + latest_fields)
             )
         )
@@ -146,10 +146,10 @@ class FunderFinancialYear(models.Model):
 class FunderYear(models.Model):
     financial_year_end = models.DateField()
     financial_year_start = models.DateField(null=True, blank=True)
-    financial_year = models.ForeignKey(
+    funder_financial_year = models.ForeignKey(
         FunderFinancialYear,
         on_delete=models.CASCADE,
-        related_name="financial_years",
+        related_name="funder_years",
         null=True,
         blank=True,
     )
@@ -514,17 +514,17 @@ class FunderYear(models.Model):
     )
 
     class Meta:
-        unique_together = [["financial_year", "financial_year_end"]]
-        ordering = ["financial_year", "-financial_year_end"]
+        # unique_together = [["financial_year", "financial_year_end"]]
+        ordering = ["funder_financial_year", "-financial_year_end"]
 
     def __str__(self):
-        return f"{self.financial_year.funder.name} ({self.financial_year_end})"
+        return f"{self.funder_financial_year.funder.name} ({self.financial_year_end})"
 
     def save(self, *args, **kwargs):
-        self.financial_year.save()
+        self.funder_financial_year.save()
         super().save(*args, **kwargs)
 
-    def editable_fields(self):
+    def editable_fields(self) -> list[EditableField]:
         fields = [
             "income",
             "income_investment",
@@ -547,19 +547,16 @@ class FunderYear(models.Model):
         }
         field_return = []
         for field in fields:
-            field_obj = {
-                "name": field,
-                "label": field_labels.get(
-                    field, self._meta.get_field(field).verbose_name
-                ),
-                "registered": None,
-                "360Giving": None,
-                "manual": None,
-                "format_str": "{:,.0f}" if field == "employees" else "£{:,.0f}",
-            }
+            field_obj = EditableField(
+                name=field,
+                label=field_labels.get(field, self._meta.get_field(field).verbose_name),
+                registered=None,
+                tsg=None,
+                manual=None,
+            )
             for i in ["registered", "360Giving", "manual"]:
                 try:
-                    field_obj[i] = self._meta.get_field(f"{field}_{i}")
+                    field_obj.set_field(i, self._meta.get_field(f"{field}_{i}"))
                 except FieldDoesNotExist:
                     pass
             field_return.append(field_obj)
@@ -567,9 +564,9 @@ class FunderYear(models.Model):
 
     @property
     def account_url(self):
-        if self.financial_year.funder_id.startswith("GB-CHC-"):
+        if self.funder_financial_year.funder_id.startswith("GB-CHC-"):
             return "https://ccew.dkane.net/charity/{}/accounts/{}".format(
-                self.financial_year.funder_id.replace("GB-CHC-", ""),
+                self.funder_financial_year.funder_id.replace("GB-CHC-", ""),
                 self.financial_year_end,
             )
         return None

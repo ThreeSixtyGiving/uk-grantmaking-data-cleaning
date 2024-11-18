@@ -5,7 +5,7 @@ import pandas as pd
 from ukgrantmaking.models import Funder, FunderTag
 
 
-@click.command()
+@click.command(deprecated=True)
 @click.argument("file")
 @click.option("--orgid-column", default="org_id")
 @click.option("--tag-column", default="tag")

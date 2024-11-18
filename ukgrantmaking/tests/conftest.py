@@ -31,10 +31,10 @@ def make_funder(financial_year):
             org_id=f"GB-CHC-{n:08}",
             name_registered=f"Test Funder {n}",
         )
-        ffy, _ = funder.financial_years.get_or_create(
+        funder_financial_year, _ = funder.funder_financial_years.get_or_create(
             financial_year=financial_year,
         )
-        ffy.financial_years.get_or_create(
+        funder_financial_year.funder_years.get_or_create(
             financial_year_end=financial_year.grants_end_date,
         )
         funder.save()
@@ -58,10 +58,10 @@ def funder_with_py(make_funder):
             "current": False,
         },
     )
-    ffy, _ = funder.financial_years.get_or_create(
+    funder_financial_year, _ = funder.funder_financial_years.get_or_create(
         financial_year=fy,
     )
-    ffy.financial_years.create(
+    funder_financial_year.funder_years.create(
         financial_year_end=fy.grants_end_date,
     )
     funder.save()
@@ -85,7 +85,7 @@ def complex_task(make_funder):
     )
     # add a condition to the task
     task.cleaningstatusquery_set.create(
-        field="financial_year__funder__name",
+        field="funder_financial_year__funder__name",
         comparison=CleaningStatusQuery.Comparison.EQUAL,
         value="Test Funder 1",
     )

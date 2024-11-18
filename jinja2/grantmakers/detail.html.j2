@@ -83,8 +83,8 @@
                 </a>
             </td>
         </tr>
-        {% for financial_year in object.financial_years.order_by("-financial_year__fy") %}
-        {% for funder_year in financial_year.financial_years.order_by("-financial_year_end") %}
+        {% for funder_financial_year in object.funder_financial_years.order_by("-financial_year__fy") %}
+        {% for funder_year in funder_financial_year.funder_years.order_by("-financial_year_end") %}
         {% include 'grantmakers/partials/funderyear.html.j2' %}
         {% endfor %}
         {% endfor %}

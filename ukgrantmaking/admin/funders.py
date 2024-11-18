@@ -42,11 +42,11 @@ class FunderYearInline(admin.StackedInline):
                     "extrapretty",
                 ),
                 "fields": [
-                    "funder",
+                    "funder_financial_year__funder",
                     (
                         "financial_year_end",
                         "financial_year_start",
-                        "financial_year",
+                        "funder_financial_year",
                         "accounts_link",
                     ),
                     (
@@ -241,11 +241,11 @@ class FunderYearAdmin(CSVUploadModelAdmin):
     )
     show_facets = admin.ShowFacets.ALWAYS
     list_display_links = ("financial_year_end",)
-    search_fields = ("financial_year__funder__name",)
+    search_fields = ("funder_financial_year__funder__name",)
     list_filter = (
-        "financial_year__included",
-        "financial_year__financial_year__fy",
-        "financial_year__segment",
+        "funder_financial_year__included",
+        "funder_financial_year__financial_year__fy",
+        "funder_financial_year__segment",
         "checked",
         ("checked_by", admin.EmptyFieldListFilter),
     )
@@ -374,20 +374,20 @@ class FunderYearAdmin(CSVUploadModelAdmin):
 
     @admin.display(description="Financial Year")
     def fy(self, obj):
-        return obj.financial_year.financial_year.fy
+        return obj.funder_financial_year.financial_year.fy
 
     @admin.display(description="Segment")
     def funder__segment(self, obj):
-        return obj.financial_year.segment
+        return obj.funder_financial_year.segment
 
     @admin.display(description="Included", boolean=True)
     def funder__included(self, obj):
-        return obj.financial_year.included
+        return obj.funder_financial_year.included
 
     @admin.display(description="Funder ID")
     def funder__org_id(self, obj):
-        return obj.financial_year.funder.org_id
+        return obj.funder_financial_year.funder.org_id
 
     @admin.display(description="Funder Name")
     def funder__name(self, obj):
-        return obj.financial_year.funder.name
+        return obj.funder_financial_year.funder.name

@@ -24,7 +24,7 @@ TAG_LOOKUP = {
 }
 
 
-@click.command()
+@click.command(deprecated=True)
 @click.argument("file")
 def master_list(file):
     click.secho("Opening {}".format(file), fg="green")

@@ -25,25 +25,26 @@
 {% if page_obj.object_list %}
 {% call wrap_table(class_="sticky") %}
 {% for object in page_obj.object_list %}
-<tr class="{% if object.financial_year.checked == 'Checked' %}positive{% endif %}">
+<tr class="{% if object.funder_financial_year.checked == 'Checked' %}positive{% endif %}">
     <td><a class="b"
-            href="{{ url_for('grantmakers:detail', org_id=object.financial_year.funder.org_id) }}">{{ object.financial_year.funder.name }}</a>
+            href="{{ url_for('grantmakers:detail', org_id=object.funder_financial_year.funder.org_id) }}">{{ object.funder_financial_year.funder.name }}</a>
     <td><a
-            href="{{ url_for('grantmakers:detail', org_id=object.financial_year.funder.org_id) }}">{{ object.financial_year.funder.org_id }}</a>
+            href="{{ url_for('grantmakers:detail', org_id=object.funder_financial_year.funder.org_id) }}">{{ object.funder_financial_year.funder.org_id }}</a>
     </td>
     </td>
-    <td>{{ display_text(object.financial_year.segment) }}</td>
-    <td class="tc">{{ display_boolean(object.financial_year.included) }}</td>
-    <td class="tc">{{ display_boolean(object.financial_year.makes_grants_to_individuals) }}</td>
+    <td>{{ display_text(object.funder_financial_year.segment) }}</td>
+    <td class="tc">{{ display_boolean(object.funder_financial_year.included) }}</td>
+    <td class="tc">{{ display_boolean(object.funder_financial_year.makes_grants_to_individuals) }}</td>
     <td>
-        <ul class="tags">{% for tag in object.financial_year.tags.values_list("tag", flat=true) %}<li>{{ tag }}</li>
+        <ul class="tags">{% for tag in object.funder_financial_year.tags.values_list("tag", flat=true) %}<li>{{ tag }}
+            </li>
             {% endfor %}</ul>
     </td>
     <td class="tc">
         <div class="flex-row">
-            {{ display_boolean(object.financial_year.checked == "Checked") }}
-            {% if object.financial_year.checked_by %}
-            {{ object.financial_year.checked_by|user_name }}
+            {{ display_boolean(object.funder_financial_year.checked == "Checked") }}
+            {% if object.funder_financial_year.checked_by %}
+            {{ object.funder_financial_year.checked_by|user_name }}
             {% endif %}
         </div>
     </td>

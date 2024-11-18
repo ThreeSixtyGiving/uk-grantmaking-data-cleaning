@@ -4,7 +4,7 @@ import pandas as pd
 from ukgrantmaking.models import Funder, FunderYear
 
 
-@click.command()
+@click.command(deprecated=True)
 @click.argument("file")
 def fgt(file):
     click.secho("Opening {}".format(file), fg="green")

@@ -1,3 +1,5 @@
+from decimal import Decimal
+
 from dateutil import parser
 from django.contrib.admin.models import CHANGE, LogEntry
 from django.contrib.auth.decorators import login_required
@@ -36,7 +38,9 @@ def task_index(request):
     cleaning_tasks = CleaningStatus.objects.filter(
         type=CleaningStatus.CleaningStatusType.GRANTMAKER
     )
-    base_qs = FunderYear.objects.filter(financial_year__financial_year=current_fy)
+    base_qs = FunderYear.objects.filter(
+        funder_financial_year__financial_year=current_fy
+    )
     statuses = {task.id: task.get_status(base_qs) for task in cleaning_tasks}
     return render(
         request,
@@ -54,7 +58,9 @@ def task_detail(request, task_id):
         ).get(id=task_id)
     except CleaningStatus.DoesNotExist:
         raise Http404("Task not found")
-    base_qs = FunderYear.objects.filter(financial_year__financial_year=current_fy)
+    base_qs = FunderYear.objects.filter(
+        funder_financial_year__financial_year=current_fy
+    )
     qs = cleaning_task.run(base_qs)
     status = cleaning_task.get_status(base_qs)
     paginator = Paginator(qs, 25)
@@ -183,14 +189,16 @@ def htmx_edit_funder(request, org_id):
                 f"Marked as unchecked for {funder.latest_year.financial_year.fy}"
             )
     elif action == "update_segment":
+        old_segment = funder.segment
         funder.segment = request.POST.get("segment")
-        change_message = f"Updated segment to {funder.segment}"
+        change_message = f"Updated segment '{old_segment}' to '{funder.segment}'"
     elif action == "change_name":
+        old_name = funder.name
         new_name = request.POST.get("name")
         if not new_name:
             new_name = None
         funder.name_manual = new_name
-        change_message = f"Updated name to {new_name}"
+        change_message = f"Updated name from '{old_name}' to '{new_name}'"
     if change_message:
         LogEntry.objects.log_action(
             user_id=request.user.id,
@@ -211,31 +219,53 @@ def htmx_edit_funder(request, org_id):
     )
 
 
-def edit_funderyear(funder_year, request, suffix="cy"):
+def edit_funderyear(funder_year: FunderYear, request, suffix: str = "cy"):
+    changed_values = []
     if request.POST.get(f"fye-{suffix}"):
+        existing_fy = funder_year.financial_year_end
         funder_year.financial_year_end = parser.parse(request.POST.get(f"fye-{suffix}"))
-    funder = funder_year.financial_year.funder
+        if existing_fy != funder_year.financial_year_end:
+            changed_values.append(
+                f"Financial year end from {existing_fy} to {funder_year.financial_year_end}"
+            )
+
+    funder = funder_year.funder_financial_year.funder
+
     for field in funder_year.editable_fields():
-        value = request.POST.get(f"{field['name']}-{suffix}")
+        current_value = getattr(funder_year, field.name)
+        value = request.POST.get(f"{field.name}-{suffix}")
         if value is not None and value != "":
-            value = value.replace(",", "")
-            setattr(funder_year, field["manual"].name, value)
+            value = Decimal(value.replace(",", ""))
+            setattr(funder_year, field.manual.name, value)
         else:
-            setattr(funder_year, field["manual"].name, None)
-    funder_year.financial_year.checked_on = timezone.now()
-    funder_year.financial_year.checked_by = request.user
+            setattr(funder_year, field.manual.name, None)
+        new_value = getattr(funder_year, field.manual.name)
+        if current_value != new_value:
+            changed_values.append(f"{field.name} from {current_value} to {new_value}")
+
     if "note" in request.POST:
+        existing_value = funder_year.notes
         funder_year.notes = request.POST.get("note")
-    funder_year.save()
-    funder_year.financial_year.save()
-    LogEntry.objects.log_action(
-        user_id=request.user.id,
-        content_type_id=ContentType.objects.get_for_model(funder).pk,
-        object_id=funder.pk,
-        object_repr=f"{funder.name} {funder_year.financial_year_end}",
-        action_flag=CHANGE,
-        change_message=f"Edited funder year {funder_year.financial_year_end}",
-    )
+        if existing_value != funder_year.notes:
+            changed_values.append(f"Note from {existing_value} to {funder_year.notes}")
+
+    if changed_values:
+        funder_year.funder_financial_year.checked_on = timezone.now()
+        funder_year.funder_financial_year.checked_by = request.user
+        funder_year.save()
+        funder_year.funder_financial_year.save()
+
+        LogEntry.objects.log_action(
+            user_id=request.user.id,
+            content_type_id=ContentType.objects.get_for_model(funder).pk,
+            object_id=funder.pk,
+            object_repr=f"{funder.name} {funder_year.financial_year_end}",
+            action_flag=CHANGE,
+            change_message=(
+                [f"Edited funder year {funder_year.financial_year_end}"]
+                + changed_values
+            ),
+        )
     funder_year.refresh_from_db()
     return funder_year
 
@@ -249,13 +279,13 @@ def htmx_edit_funderyear(request, org_id, funderyear_id=None):
     funder_year_py = None
     if funderyear_id:
         funder_year = FunderYear.objects.filter(
-            financial_year__funder=funder, id=funderyear_id
+            funder_financial_year__funder=funder, id=funderyear_id
         ).first()
         if not funder_year:
             return HttpResponseBadRequest("Invalid funderyear_id")
         funder_year_py = (
             FunderYear.objects.filter(
-                financial_year__funder=funder,
+                funder_financial_year__funder=funder,
                 financial_year_end__lt=funder_year.financial_year_end,
             )
             .order_by("-financial_year_end")
@@ -274,11 +304,11 @@ def htmx_edit_funderyear(request, org_id, funderyear_id=None):
             )
             return HttpResponse("")
     else:
-        funder_financial_year = funder.financial_years.filter(
+        funder_financial_year = funder.funder_financial_years.filter(
             financial_year__current=True
         ).first()
         if funder_financial_year:
-            funder_year = funder_financial_year.financial_years.create(
+            funder_year = funder_financial_year.funder_years.create(
                 financial_year_end=funder_financial_year.financial_year.grants_end_date
             )
             LogEntry.objects.log_action(
@@ -304,7 +334,7 @@ def htmx_edit_funderyear(request, org_id, funderyear_id=None):
 
             if request.POST.get("py-id"):
                 context["funder_year_py"] = FunderYear.objects.filter(
-                    financial_year__funder=funder, id=request.POST.get("py-id")
+                    funder_financial_year__funder=funder, id=request.POST.get("py-id")
                 ).first()
 
             if context["funder_year_py"]:

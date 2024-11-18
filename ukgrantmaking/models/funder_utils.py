@@ -1,3 +1,6 @@
+from dataclasses import dataclass
+from typing import Optional
+
 from django.db import models
 
 
@@ -61,3 +64,26 @@ class RecordStatus(models.TextChoices):
     UNCHECKED = "Unchecked", "Unchecked"
     CHECKED = "Checked", "Checked"
     NEW = "New", "New"
+
+
+@dataclass
+class EditableField:
+    name: str
+    label: str
+    registered: Optional[models.Field] = None
+    tsg: Optional[models.Field] = None
+    manual: Optional[models.Field] = None
+
+    @property
+    def format_str(self) -> str:
+        if self.name in ["employees"]:
+            return "{:,.0f}"
+        return "£{:,.0f}"
+
+    def set_field(self, field_name: str, field: models.Field):
+        if field_name == "registered":
+            self.registered = field
+        elif field_name == "360Giving":
+            self.tsg = field
+        elif field_name == "manual":
+            self.manual = field
