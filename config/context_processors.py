@@ -3,6 +3,8 @@ from typing import Optional
 
 from django.urls import reverse
 
+from ukgrantmaking.models.financial_years import FinancialYear
+
 
 @dataclass
 class SidebarItem:
@@ -82,3 +84,9 @@ def sidebar(request):
             item.active = True
 
     return options
+
+
+def current_fy(request):
+    if request.user.is_authenticated:
+        return {"current_fy": FinancialYear.objects.current()}
+    return {"current_fy": None}

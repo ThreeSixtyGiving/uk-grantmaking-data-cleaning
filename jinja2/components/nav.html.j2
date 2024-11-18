@@ -20,6 +20,12 @@
 <nav>
     <a href="{{ url_for('index') }}" rel="home" class="main-logo">
         <img src="{{ url_for('static', filename='images/logo.svg') }}" alt="{{ default_title }}">
+        <h1>
+            Data cleaning
+            {% if current_fy %}
+            <span class="f6">{{ current_fy }}</span>
+            {% endif %}
+        </h1>
     </a>
     <ul class="main">
         {% for sidebar_item in sidebar %}

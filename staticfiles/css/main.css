@@ -205,8 +205,19 @@ body {
             height: 100%;
             padding: 0.25rem;
             display: flex;
+            flex-direction: column;
             background-color: var(--color-white);
             max-height: var(--grid-height);
+            text-decoration: none;
+            color: inherit;
+            place-content: center;
+
+            >h1 {
+                margin: 0 auto;
+                max-width: 217px;
+                font-size: 1.1rem;
+                text-align: center;
+            }
 
             >img {
                 margin: 0 auto;
@@ -859,7 +870,7 @@ data.number {
         margin-bottom: 0.75rem;
         border-collapse: collapse;
 
-        th { 
+        th {
             text-align: left;
             text-wrap: balance;
         }
@@ -869,11 +880,11 @@ data.number {
             vertical-align: top;
         }
 
-        tr:nth-child(odd) > td {
+        tr:nth-child(odd)>td {
             background-color: var(--color-green-lighter);
         }
 
-        tr:nth-child(even) > td {
+        tr:nth-child(even)>td {
             background-color: var(--color-green-lightest);
         }
     }

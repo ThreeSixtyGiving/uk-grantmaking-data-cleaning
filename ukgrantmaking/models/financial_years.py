@@ -94,5 +94,7 @@ class FinancialYear(models.Model):
             self.grants_end_date = f"{self.last_year}-03-31"
 
         if self.current:
-            FinancialYear.objects.filter(current=True).update(current=False)
+            FinancialYear.objects.filter(current=True).exclude(fy=self.fy).update(
+                current=False
+            )
         super().save(*args, **kwargs)
