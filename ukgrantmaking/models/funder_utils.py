@@ -60,3 +60,4 @@ FUNDER_CATEGORIES = {
 class RecordStatus(models.TextChoices):
     UNCHECKED = "Unchecked", "Unchecked"
     CHECKED = "Checked", "Checked"
+    NEW = "New", "New"

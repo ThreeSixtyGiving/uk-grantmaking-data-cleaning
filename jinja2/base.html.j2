@@ -5,9 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link
-    href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap"
-    rel="stylesheet">
+  <link rel="stylesheet"
+    href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&text=£,.0123456789" />
   <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
   <link rel="shortcut icon" href="{{ url_for('static', filename='images/favicon-64x64.png') }}">
   <script src="{{ url_for('static', filename='js/htmx.min.js') }}" defer></script>
@@ -19,50 +19,52 @@
   <title>{{ (title or default_title)|striptags }}</title>
 </head>
 
-<body class="{% block bodyclass %}grid{% endblock %}" hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
-  {% include 'components/header.html.j2' %}
-  {% include 'components/nav.html.j2' %}
-  <main class="">
-    <header class="">
-      {% if (heading or title) not in [None, default_title] and (heading or title) %}
-      <h2 class="">
-        {{ (heading or title)|safe }}
-      </h2>
-      {% if subtitle %}
-      <h3 class="">
-        {{ subtitle|safe }}
-      </h3>
+<body class="" hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
+  <div id="app" class="container {% block bodyclass %}grid{% endblock %}">
+    {% include 'components/header.html.j2' %}
+    {% include 'components/nav.html.j2' %}
+    <main class="">
+      <header class="">
+        {% if (heading or title) not in [None, default_title] and (heading or title) %}
+        <h2 class="">
+          {{ (heading or title)|safe }}
+        </h2>
+        {% if subtitle %}
+        <h3 class="">
+          {{ subtitle|safe }}
+        </h3>
+        {% endif %}
+        {% endif %}
+      </header>
+      {% block flashes %}
+      {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+      <ul class="flashes list ma0 pa0">
+        {% for category, message in messages %}
+        {% set bg = 'bg-washed-green' %}
+        {% if category == 'error' %}
+        {% set bg = 'bg-washed-red' %}
+        {% elif category == 'info' %}
+        {% set bg = 'bg-lightest-blue' %}
+        {% endif %}
+        <li class="pa2 {{bg}} ph3 ph5-ns b">{{ message }}</li>
+        {% endfor %}
+      </ul>
       {% endif %}
-      {% endif %}
-    </header>
-    {% block flashes %}
-    {% with messages = get_flashed_messages(with_categories=true) %}
-    {% if messages %}
-    <ul class="flashes list ma0 pa0">
-      {% for category, message in messages %}
-      {% set bg = 'bg-washed-green' %}
-      {% if category == 'error' %}
-      {% set bg = 'bg-washed-red' %}
-      {% elif category == 'info' %}
-      {% set bg = 'bg-lightest-blue' %}
-      {% endif %}
-      <li class="pa2 {{bg}} ph3 ph5-ns b">{{ message }}</li>
-      {% endfor %}
-    </ul>
-    {% endif %}
-    {% endwith %}
-    {% endblock %}
-    <section id="content" class="">
-      {% block content %}
-      {{ lipsum(10) }}
+      {% endwith %}
       {% endblock %}
-    </section>
-  </main>
-  <aside>
-    {% block sidebar %}
-    {% endblock %}
-  </aside>
-  {% include 'components/footer.html.j2' %}
+      <section id="content" class="">
+        {% block content %}
+        {{ lipsum(10) }}
+        {% endblock %}
+      </section>
+    </main>
+    <aside>
+      {% block sidebar %}
+      {% endblock %}
+    </aside>
+    {% include 'components/footer.html.j2' %}
+  </div>
   {% block bodyscripts %}
   {% endblock %}
 </body>

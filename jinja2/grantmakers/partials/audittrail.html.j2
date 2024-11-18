@@ -1,0 +1,27 @@
+{% from 'components/values.html.j2' import display_date %}
+<table class="table striped" id="funder-audit-trail" hx-swap-oob="true">
+    <thead>
+        <tr>
+            <th>Time</th>
+            <th>User</th>
+            <th>Action</th>
+            <th>Description</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for log_entry in object.log_entries() %}
+        <tr>
+            <td>{{ display_date(log_entry.action_time, "%d %b %Y %H:%M", as_date=false) }}</td>
+            <td>{{ log_entry.user|user_name }}</td>
+            <td>
+                {{ log_entry.action_flag|logentry_action_flag }}
+            </td>
+            <td>{{ log_entry.get_change_message() }}</td>
+        </tr>
+        {% else %}
+        <tr>
+            <td colspan="4">No audit trail entries found</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>

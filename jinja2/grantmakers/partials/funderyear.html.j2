@@ -249,3 +249,4 @@
     {{ funder_year_row(funder_year_py)}}
 </tr>
 {% endif %}
+{% if request.htmx %}{% include 'grantmakers/partials/audittrail.html.j2'%}{% endif %}

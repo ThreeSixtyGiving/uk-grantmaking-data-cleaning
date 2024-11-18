@@ -1,5 +1,7 @@
 from dateutil import parser
+from django.contrib.admin.models import CHANGE, LogEntry
 from django.contrib.auth.decorators import login_required
+from django.contrib.contenttypes.models import ContentType
 from django.core.paginator import Paginator
 from django.http import (
     Http404,
@@ -13,6 +15,7 @@ from django.utils.text import slugify
 
 from ukgrantmaking.filters.grantmakers import GrantmakerFilter
 from ukgrantmaking.models import CleaningStatus, FinancialYear, Funder, FunderTag
+from ukgrantmaking.models.funder_utils import RecordStatus
 from ukgrantmaking.models.funder_year import FunderYear
 
 
@@ -86,8 +89,24 @@ def htmx_edit_note(request, org_id, note_id=None):
             note = funder.notes.get(id=note_id)
             note.note = note_content
             note.save()
+            LogEntry.objects.log_action(
+                user_id=request.user.id,
+                content_type_id=ContentType.objects.get_for_model(funder).pk,
+                object_id=funder.pk,
+                object_repr=funder.name,
+                action_flag=CHANGE,
+                change_message=f"Updated note {note.id}",
+            )
         else:
-            funder.notes.create(note=note_content, added_by=request.user)
+            note = funder.notes.create(note=note_content, added_by=request.user)
+            LogEntry.objects.log_action(
+                user_id=request.user.id,
+                content_type_id=ContentType.objects.get_for_model(funder).pk,
+                object_id=funder.pk,
+                object_repr=funder.name,
+                action_flag=CHANGE,
+                change_message=f"Added note {note.id}",
+            )
     return render(request, "grantmakers/partials/notes.html.j2", {"object": funder})
 
 
@@ -107,6 +126,14 @@ def htmx_tags_edit(request, org_id):
             )
             new_tags.append(new_tag)
         funder.tags.set(new_tags)
+        LogEntry.objects.log_action(
+            user_id=request.user.id,
+            content_type_id=ContentType.objects.get_for_model(funder).pk,
+            object_id=funder.pk,
+            object_repr=funder.name,
+            action_flag=CHANGE,
+            change_message="Updated tags",
+        )
         context["edit"] = False
     return render(
         request,
@@ -123,26 +150,55 @@ def htmx_edit_funder(request, org_id):
         return HttpResponseNotAllowed(["POST"], "This view only accepts POST requests")
     funder = get_object_or_404(Funder, org_id=org_id)
     action = request.POST.get("action")
+    change_message = None
     if action == "exclude":
         funder.included = False
+        change_message = "Marked as excluded"
     elif action == "include":
         funder.included = True
+        change_message = "Marked as included"
     elif action == "doesnt_make_grants_to_individuals":
         funder.makes_grants_to_individuals = False
+        change_message = "Marked as not making grants to individuals"
     elif action == "makes_grants_to_individuals":
         funder.makes_grants_to_individuals = True
+        change_message = "Marked as making grants to individuals"
     elif action == "marked_as_checked":
         if funder.latest_year:
+            funder.latest_year.checked = RecordStatus.CHECKED
             funder.latest_year.checked_on = timezone.now()
             funder.latest_year.checked_by = request.user
             funder.latest_year.save()
+            change_message = (
+                f"Marked as checked for {funder.latest_year.financial_year.fy}"
+            )
+    elif action == "marked_as_unchecked":
+        if funder.latest_year:
+            funder.latest_year.checked = RecordStatus.UNCHECKED
+            funder.latest_year.checked_on = timezone.now()
+            funder.latest_year.checked_by = request.user
+            funder.latest_year.save()
+            change_message = (
+                f"Marked as unchecked for {funder.latest_year.financial_year.fy}"
+            )
     elif action == "update_segment":
         funder.segment = request.POST.get("segment")
+        change_message = f"Updated segment to {funder.segment}"
     elif action == "change_name":
         new_name = request.POST.get("name")
         if not new_name:
             new_name = None
         funder.name_manual = new_name
+        change_message = f"Updated name to {new_name}"
+    if change_message:
+        LogEntry.objects.log_action(
+            user_id=request.user.id,
+            content_type_id=ContentType.objects.get_for_model(funder).pk,
+            object_id=funder.pk,
+            object_repr=funder.name,
+            action_flag=CHANGE,
+            change_message=change_message,
+        )
     funder.save()
 
     template = "grantmakers/partials/funderstatus.html.j2"
@@ -152,6 +208,35 @@ def htmx_edit_funder(request, org_id):
     return render(
         request, template, {"object": Funder.objects.get(org_id=funder.org_id)}
     )
+
+
+def edit_funderyear(funder_year, request, suffix="cy"):
+    if request.POST.get(f"fye-{suffix}"):
+        funder_year.financial_year_end = parser.parse(request.POST.get(f"fye-{suffix}"))
+    funder = funder_year.financial_year.funder
+    for field in funder_year.editable_fields():
+        value = request.POST.get(f"{field['name']}-{suffix}")
+        if value is not None and value != "":
+            value = value.replace(",", "")
+            setattr(funder_year, field["manual"].name, value)
+        else:
+            setattr(funder_year, field["manual"].name, None)
+    funder_year.financial_year.checked_on = timezone.now()
+    funder_year.financial_year.checked_by = request.user
+    if "note" in request.POST:
+        funder_year.notes = request.POST.get("note")
+    funder_year.save()
+    funder_year.financial_year.save()
+    LogEntry.objects.log_action(
+        user_id=request.user.id,
+        content_type_id=ContentType.objects.get_for_model(funder).pk,
+        object_id=funder.pk,
+        object_repr=f"{funder.name} {funder_year.financial_year_end}",
+        action_flag=CHANGE,
+        change_message=f"Edited funder year {funder_year.financial_year_end}",
+    )
+    funder_year.refresh_from_db()
+    return funder_year
 
 
 @login_required
@@ -178,6 +263,14 @@ def htmx_edit_funderyear(request, org_id, funderyear_id=None):
 
         if request.method == "DELETE":
             funder_year.delete()
+            LogEntry.objects.log_action(
+                user_id=request.user.id,
+                content_type_id=ContentType.objects.get_for_model(funder).pk,
+                object_id=funder.pk,
+                object_repr=f"{funder.name} {funder_year.financial_year_end}",
+                action_flag=CHANGE,
+                change_message=f"Deleted funder year {funder_year.financial_year_end}",
+            )
             return HttpResponse("")
     else:
         funder_financial_year = funder.financial_years.filter(
@@ -187,6 +280,14 @@ def htmx_edit_funderyear(request, org_id, funderyear_id=None):
             funder_year = funder_financial_year.financial_years.create(
                 financial_year_end=funder_financial_year.financial_year.grants_end_date
             )
+            LogEntry.objects.log_action(
+                user_id=request.user.id,
+                content_type_id=ContentType.objects.get_for_model(funder).pk,
+                object_id=funder.pk,
+                object_repr=f"{funder.name} {funder_year.financial_year_end}",
+                action_flag=CHANGE,
+                change_message=f"Deleted funder year {funder_year.financial_year_end}",
+            )
 
     context = {
         "object": funder,
@@ -195,22 +296,7 @@ def htmx_edit_funderyear(request, org_id, funderyear_id=None):
         "edit": True,
     }
     if request.method == "POST":
-        funder_year.financial_year_end = parser.parse(request.POST.get("fye-cy"))
-        for field in funder_year.editable_fields():
-            value = request.POST.get(f"{field['name']}-cy")
-            if value is not None and value != "":
-                value = value.replace(",", "")
-                setattr(funder_year, field["manual"].name, value)
-            else:
-                setattr(funder_year, field["manual"].name, None)
-        funder_year.checked_on = timezone.now()
-        funder_year.checked_by = request.user
-        if "note" in request.POST:
-            funder_year.notes = request.POST.get("note")
-        funder_year.save()
-        context["funder_year"] = FunderYear.objects.filter(
-            financial_year__funder=funder, id=funder_year.id
-        ).first()
+        context["funder_year"] = edit_funderyear(funder_year, request, suffix="cy")
 
         if request.POST.get("py-id"):
             context["funder_year_py"] = FunderYear.objects.filter(
@@ -218,23 +304,9 @@ def htmx_edit_funderyear(request, org_id, funderyear_id=None):
             ).first()
 
         if context["funder_year_py"]:
-            if "fye-py" in request.POST:
-                context["funder_year_py"].financial_year_end = parser.parse(
-                    request.POST.get("fye-py")
-                )
-            for field in funder_year.editable_fields():
-                value = request.POST.get(f"{field['name']}-py")
-                if value is not None and value != "":
-                    value = value.replace(",", "")
-                    setattr(context["funder_year_py"], field["manual"].name, value)
-                else:
-                    setattr(context["funder_year_py"], field["manual"].name, None)
-            context["funder_year_py"].checked_on = timezone.now()
-            context["funder_year_py"].checked_by = request.user
-            context["funder_year_py"].save()
-            context["funder_year_py"] = FunderYear.objects.filter(
-                financial_year__funder=funder, id=context["funder_year_py"].id
-            ).first()
+            context["funder_year_py"] = edit_funderyear(
+                context["funder_year_py"], request, suffix="py"
+            )
         context["edit"] = False
     return render(
         request,

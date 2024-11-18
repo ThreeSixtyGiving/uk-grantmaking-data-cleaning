@@ -35,8 +35,8 @@
     </li>
     <li class="{% if object.latest_year and object.latest_year.checked %}positive{% else %}negative{% endif %}">
         <header>Checked</header>
-        <span>{{ object.checked or '' }}</span>
-        {% if not object.checked %}
+        <span>{{ object.latest_year.checked or '' }}</span>
+        {% if not object.latest_year.checked %}
         <footer>
             <a href="#" hx-target="#funder-status" hx-swap="outerHTML" class="button"
                 hx-post="{{ url_for('grantmakers:change_status', org_id=object.org_id) }}"
@@ -64,3 +64,4 @@
         </footer>
     </li>
 </ul>
+{% if request.htmx %}{% include 'grantmakers/partials/audittrail.html.j2'%}{% endif %}

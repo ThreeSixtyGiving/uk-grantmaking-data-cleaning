@@ -1,4 +1,6 @@
 import pytest
+from django.contrib.admin.models import ADDITION, CHANGE, DELETION, LogEntry
+from django.contrib.contenttypes.models import ContentType
 
 from ukgrantmaking.models.cleaningstatus import CleaningStatus, CleaningStatusQuery
 from ukgrantmaking.models.financial_years import FinancialYear
@@ -47,6 +49,27 @@ def funder(make_funder):
 
 
 @pytest.fixture
+def funder_with_py(make_funder):
+    funder = make_funder(2)
+
+    fy, _ = FinancialYear.objects.get_or_create(
+        fy="2021-22",
+        defaults={
+            "current": False,
+        },
+    )
+    ffy = funder.financial_years.create(
+        financial_year=fy,
+    )
+    ffy.financial_years.create(
+        financial_year_end=fy.grants_end_date,
+    )
+    funder.save()
+
+    return funder
+
+
+@pytest.fixture
 def task():
     return CleaningStatus.objects.create(
         type=CleaningStatus.CleaningStatusType.GRANTMAKER,
@@ -72,3 +95,25 @@ def complex_task(make_funder):
     make_funder(2)
 
     return task
+
+
+@pytest.fixture
+def check_log_entry(admin_user):
+    def _check_log_entry(obj, action="Changed"):
+        action = {
+            "added": ADDITION,
+            "changed": CHANGE,
+            "deleted": DELETION,
+        }.get(action.lower(), action)
+        assert action in [ADDITION, CHANGE, DELETION]
+        results = LogEntry.objects.filter(
+            content_type=ContentType.objects.get_for_model(obj),
+            action_flag=action,
+            user=admin_user,
+            object_id=obj.pk,
+        ).all()
+        if results:
+            return results
+        return None
+
+    return _check_log_entry

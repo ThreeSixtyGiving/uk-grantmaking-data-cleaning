@@ -4,6 +4,7 @@ from datetime import date, datetime
 from decimal import Decimal
 
 import titlecase
+from django.contrib.admin.models import ADDITION, CHANGE, DELETION
 from django.contrib.humanize.templatetags.humanize import naturalday, naturaltime
 from django.http import HttpRequest
 from django.shortcuts import resolve_url
@@ -195,8 +196,22 @@ def parse_datetime(d, f: str = "%Y-%m-%d", output_format=None) -> date:
     return d
 
 
-def dateformat_filter(d, f="%Y-%m-%d", o=None):
-    return parse_datetime(d, f, o)
+def dateformat_filter(d, f="%Y-%m-%d", o=None, as_date=True):
+    if as_date:
+        return parse_datetime(d, f, o)
+    if isinstance(d, (datetime, date)):
+        return d.strftime(o)
+    return datetime.strptime(d, f).strftime(o)
+
+
+def logentry_action_flag(action_flag):
+    if action_flag == ADDITION:
+        return "add"
+    if action_flag == CHANGE:
+        return "change"
+    if action_flag == DELETION:
+        return "delete"
+    return "unknown"
 
 
 def clean_url(url: str) -> str:
@@ -272,6 +287,7 @@ def environment(**options):
             "markdownify": markdownify,
             "format_number": format_number,
             "user_name": user_name,
+            "logentry_action_flag": logentry_action_flag,
         }
     )
     return env

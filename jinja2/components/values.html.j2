@@ -2,14 +2,15 @@
 {% if value is none %}{{ missing_value }}{% else %}{{ caller() }}{% endif %}
 {% endmacro %}
 
-{% macro display_date(value, date_format="%d %b %Y", missing_value="-") %}
-{% call none_wrapper(value, missing_value) %}<time datetime="{{ value }}">{{ value|dateformat(o=date_format) }}</time>
+{% macro display_date(value, date_format="%d %b %Y", missing_value="-", as_date=true) %}
+{% call none_wrapper(value, missing_value) %}<time
+    datetime="{{ value }}">{{ value|dateformat(o=date_format, as_date=as_date) }}</time>
 {% endcall %}
 {% endmacro %}
 
 {% macro display_number(value, missing_value="-" ,format_str=none) %}
-{% call none_wrapper(value, missing_value) %}<data
-    value="{{ value }}">{{ value|format_number(format_str) }}</data>{% endcall %}
+{% call none_wrapper(value, missing_value) %}<data value="{{ value }}"
+    class="number">{{ value|format_number(format_str) }}</data>{% endcall %}
 {% endmacro %}
 
 {% macro display_text(value, missing_value="-") %}
@@ -35,8 +36,8 @@
 
 {% macro display_boolean(value, missing_value="-") %}
 {% call none_wrapper(value, missing_value) %}
-{% if value %}<i class="primary inherit">check_circle</i>
-{% else %}<i class="error inherit">cancel</i>
+{% if value %}<i class="positive inherit material-symbols-outlined">check_circle</i>
+{% else %}<i class="negative inherit material-symbols-outlined">cancel</i>
 {% endif %}
 {% endcall %}
 {% endmacro %}

@@ -10,7 +10,7 @@
 <table class="table">
     <tbody>
         <tr>
-            <th class="tr">Tags</th>
+            <th class="tr" style="width: 200px;">Tags</th>
             <td>
                 {% include 'grantmakers/partials/tags.html.j2' %}
             </td>
@@ -80,6 +80,8 @@
 </table>
 
 
+{% set grants_made = object.grants.order_by("-award_date").all()[0:25] %}
+{% if grants_made %}
 <h3>Grants made</h3>
 
 <table class="table striped">
@@ -93,7 +95,7 @@
         </tr>
     </thead>
     <tbody>
-        {% for grant in object.grants.order_by("-award_date").all()[0:25] %}
+        {% for grant in grants_made %}
         <tr>
             <td>{{ grant.recipient }}</td>
             <td>{{ grant.recipient_type }}</td>
@@ -103,4 +105,9 @@
         </tr>
         {% endfor %}
 </table>
+{% endif %}
+
+<h3>Audit trail</h3>
+
+{% include 'grantmakers/partials/audittrail.html.j2'%}
 {% endblock %}

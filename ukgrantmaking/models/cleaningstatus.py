@@ -56,11 +56,11 @@ FIELD_CHOICES = {
         "checked": "Checked",
         "financial_year__funder__org_id": "Funder ID",
         "financial_year__funder__name": "Funder Name",
+        "financial_year__funder__status": "Funder status",
         "financial_year__tags": "Tags",
         "financial_year__segment": "Segment",
         "financial_year__included": "Included",
         "financial_year__makes_grants_to_individuals": "Makes grants to individuals",
-        "financial_year__segment_checked": "Segment checked",
         "financial_year__checked": "Checked",
         "financial_year__checked_on": "Checked on",
         "financial_year__checked_by": "Checked by",
@@ -175,7 +175,7 @@ class CleaningStatus(models.Model):
                     "name": "Checked segment",
                     "total": total,
                     "value": self.run(
-                        qs.filter(financial_year__segment_checked="Checked")
+                        qs.filter(financial_year__funder__status="Checked")
                     ).count(),
                 }
             ),

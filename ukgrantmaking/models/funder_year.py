@@ -34,14 +34,37 @@ class FunderFinancialYear(models.Model):
         db_index=True,
     )
 
-    segment_checked = models.CharField(
-        max_length=50,
-        choices=RecordStatus.choices,
-        null=True,
-        blank=True,
-        db_index=True,
-        default=RecordStatus.UNCHECKED,
+    # fields generated from financial years
+    income = models.BigIntegerField(null=True, blank=True, editable=False)
+    income_investment = models.BigIntegerField(null=True, blank=True, editable=False)
+    spending = models.BigIntegerField(null=True, blank=True, editable=False)
+    spending_investment = models.BigIntegerField(null=True, blank=True, editable=False)
+    spending_charitable = models.BigIntegerField(null=True, blank=True, editable=False)
+    spending_grant_making = models.BigIntegerField(
+        null=True, blank=True, editable=False
     )
+    spending_grant_making_individuals = models.BigIntegerField(
+        null=True, blank=True, editable=False
+    )
+    spending_grant_making_institutions_charitable = models.BigIntegerField(
+        null=True, blank=True, editable=False
+    )
+    spending_grant_making_institutions_noncharitable = models.BigIntegerField(
+        null=True, blank=True, editable=False
+    )
+    spending_grant_making_institutions_unknown = models.BigIntegerField(
+        null=True, blank=True, editable=False
+    )
+    spending_grant_making_institutions = models.BigIntegerField(
+        null=True, blank=True, editable=False
+    )
+    total_net_assets = models.BigIntegerField(null=True, blank=True, editable=False)
+    funds = models.BigIntegerField(null=True, blank=True, editable=False)
+    funds_endowment = models.BigIntegerField(null=True, blank=True, editable=False)
+    funds_restricted = models.BigIntegerField(null=True, blank=True, editable=False)
+    funds_unrestricted = models.BigIntegerField(null=True, blank=True, editable=False)
+    employees = models.BigIntegerField(null=True, blank=True, editable=False)
+
     checked = models.CharField(
         max_length=50,
         choices=RecordStatus.choices,
@@ -63,11 +86,55 @@ class FunderFinancialYear(models.Model):
     )
     date_updated = models.DateTimeField(auto_now=True, null=True, blank=True)
 
+    def update_fields(self):
+        summed_fields = [
+            "income",
+            "income_investment",
+            "spending",
+            "spending_investment",
+            "spending_charitable",
+            "spending_grant_making",
+            "spending_grant_making_individuals",
+            "spending_grant_making_institutions_charitable",
+            "spending_grant_making_institutions_noncharitable",
+            "spending_grant_making_institutions_unknown",
+            "spending_grant_making_institutions",
+        ]
+        latest_fields = [
+            "total_net_assets",
+            "funds",
+            "funds_endowment",
+            "funds_restricted",
+            "funds_unrestricted",
+            "employees",
+        ]
+        fys = list(
+            self.financial_years.order_by("-financial_year_end").values(
+                *(summed_fields + latest_fields)
+            )
+        )
+        if fys:
+            for field in summed_fields:
+                setattr(
+                    self, field, sum([fy[field] for fy in fys if fy[field] is not None])
+                )
+            for field in latest_fields:
+                setattr(self, field, fys[0][field])
+        else:
+            for field in summed_fields:
+                setattr(self, field, None)
+            for field in latest_fields:
+                setattr(self, field, None)
+
     def save(self, *args, **kwargs):
         if self.financial_year.current:
             self.segment = self.funder.segment
             self.included = self.funder.included
             self.makes_grants_to_individuals = self.funder.makes_grants_to_individuals
+
+        if self.pk:
+            self.update_fields()
+
         super().save(*args, **kwargs)
 
 

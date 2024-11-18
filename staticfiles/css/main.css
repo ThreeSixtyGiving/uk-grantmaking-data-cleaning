@@ -68,9 +68,10 @@ body {
     color: var(--color-black);
 }
 
-body.grid {
+#app.container {
     display: grid;
     min-height: 100vh;
+    width: 100%;
     grid-template-columns: 1fr;
     grid-template-rows: min-content min-content 1fr min-content;
     grid-template-areas: "nav"
@@ -259,7 +260,7 @@ body.grid {
 }
 
 @media (min-width: 768px) {
-    body.grid {
+    #app.container {
         grid-template-columns: var(--grid-width) 1fr;
         grid-template-rows: var(--grid-height) 1fr min-content;
         grid-template-areas: "nav main"
@@ -285,6 +286,33 @@ body.grid {
 
             >aside {
                 padding-left: 0;
+            }
+        }
+    }
+}
+
+.table-wrapper.sticky {
+    max-width: calc(100vw - calc(calc(var(--grid-width) * 1) + 1.5rem));
+    overflow-y: scroll;
+
+    &.aside {
+        max-width: calc(100vw - calc(calc(var(--grid-width) * 2) + 1.5rem));
+    }
+
+    >table.table {
+        >tbody>tr>td:first-of-type {
+            position: sticky;
+            left: 0;
+            z-index: 1;
+        }
+
+        &.striped {
+            >tbody>tr:nth-child(odd)>td:first-of-type {
+                background-color: var(--color-green-lighter);
+            }
+
+            >tbody>tr:nth-child(even)>td:first-of-type {
+                background-color: var(--color-white);
             }
         }
     }
@@ -318,6 +346,18 @@ table.table {
                     background-color: var(--color-white);
                 }
             }
+        }
+
+        &.small-width {
+            min-width: 20ch;
+        }
+
+        &.medium-width {
+            min-width: 32ch;
+        }
+
+        &.big-width {
+            min-width: 40ch;
         }
 
         &.tl {
@@ -708,4 +748,26 @@ textarea.funder-year-edit {
             border: 1px solid var(--color-purple);
         }
     }
+}
+
+/* material symbols */
+.material-symbols-outlined {
+    font-variation-settings:
+        'FILL'0,
+        'wght'400,
+        'GRAD'0,
+        'opsz'24
+}
+
+.negative {
+    color: var(--color-negative);
+}
+
+.positive {
+    color: var(--color-positive);
+}
+
+data.number {
+    font-variant-numeric: tabular-nums;
+    font-family: 'Outfit', 'Courier New', Courier, monospace;
 }

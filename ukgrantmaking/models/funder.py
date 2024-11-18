@@ -1,11 +1,13 @@
 from django.conf import settings
+from django.contrib.admin.models import LogEntry
+from django.contrib.contenttypes.models import ContentType
 from django.db import models
 from django.db.models.functions import Coalesce, Left, Length, Right, StrIndex
 from django.utils.text import slugify
 from markdownx.models import MarkdownxField
 
 from ukgrantmaking.models.financial_years import FinancialYear
-from ukgrantmaking.models.funder_utils import FunderSegment
+from ukgrantmaking.models.funder_utils import FunderSegment, RecordStatus
 from ukgrantmaking.models.funder_year import FunderFinancialYear, FunderYear
 
 
@@ -78,6 +80,13 @@ class Funder(models.Model):
         null=True,
         blank=True,
         related_name="predecessors",
+    )
+
+    status = models.CharField(
+        max_length=50,
+        choices=RecordStatus.choices,
+        default=RecordStatus.UNCHECKED,
+        db_index=True,
     )
 
     date_of_registration = models.DateField(null=True, blank=True)
@@ -205,6 +214,12 @@ class Funder(models.Model):
                 return "Checked"
         return False
 
+    def log_entries(self):
+        return LogEntry.objects.filter(
+            content_type=ContentType.objects.get_for_model(self),
+            object_id=self.pk,
+        ).order_by("-action_time")
+
     def save(self, *args, **kwargs):
         current_fy = FinancialYear.objects.current()
         latest_fy = (
@@ -233,7 +248,13 @@ class Funder(models.Model):
             ):
                 self.makes_grants_to_individuals = True
         else:
-            self.latest_year = None
+            self.latest_year = FunderFinancialYear.objects.filter(
+                funder=self, financial_year=current_fy
+            ).first()
+            if not self.latest_year:
+                self.latest_year = FunderFinancialYear.objects.create(
+                    funder=self, financial_year=current_fy
+                )
             self.latest_grantmaking = None
 
         # # transfer financial years to successor
