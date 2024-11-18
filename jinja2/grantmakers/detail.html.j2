@@ -1,8 +1,13 @@
 {% extends 'base.html.j2' %}
 {% from 'components/values.html.j2' import display_date, display_number, display_longtext, display_list, display_text, none_wrapper, display_boolean, display_url %}
 
-{% block content %}
+{% set title = object.name + ' | ' + default_title %}
+
+{% block header %}
 {% include 'grantmakers/partials/funderheader.html.j2' %}
+{% endblock header %}
+
+{% block content %}
 {% include 'grantmakers/partials/funderstatus.html.j2' %}
 
 <h3>Details</h3>
@@ -21,6 +26,13 @@
                 {% if object.website %}
                 <a href="{{ object.website|working_url }}" target="_blank">{{ object.website|clean_url }}</a>
                 {% endif %}
+            </td>
+        </tr>
+        <tr>
+            <th class="tr">Find that Charity</th>
+            <td>
+                {% set ftc_url = 'https://findthatcharity.uk/orgid/{}'.format(object.org_id) %}
+                <a href="{{ ftc_url|working_url }}" target="_blank">{{ ftc_url|clean_url }}</a>
             </td>
         </tr>
         <tr>

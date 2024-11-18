@@ -16,7 +16,7 @@
   {{ django_htmx_script() }}
   {% block headscripts %}
   {% endblock %}
-  <title>{{ (title or default_title)|striptags }}</title>
+  <title>{% if title %}{{ title|striptags }} | {% endif %}{{ default_title|striptags }}</title>
 </head>
 
 <body class="" hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
@@ -24,6 +24,7 @@
     {% include 'components/header.html.j2' %}
     {% include 'components/nav.html.j2' %}
     <main class="">
+      {% block header %}
       <header class="">
         {% if (heading or title) not in [None, default_title] and (heading or title) %}
         <h2 class="">
@@ -36,6 +37,7 @@
         {% endif %}
         {% endif %}
       </header>
+      {% endblock %}
       {% block flashes %}
       {% with messages = get_flashed_messages(with_categories=true) %}
       {% if messages %}

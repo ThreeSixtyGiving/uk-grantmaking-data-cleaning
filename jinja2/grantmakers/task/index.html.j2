@@ -3,8 +3,9 @@
 {% from 'components/pagination.html.j2' import pagination, results_header %}
 {% from 'components/meter.html.j2' import meter %}
 
+{% set title = 'Grantmakers | Cleaning Tasks' %}
+
 {% block content %}
-<h2>Cleaning Tasks</h2>
 
 {% if object_list %}
 <table class="table striped">

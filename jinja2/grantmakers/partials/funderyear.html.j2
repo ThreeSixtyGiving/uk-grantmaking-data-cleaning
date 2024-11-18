@@ -78,7 +78,7 @@
             </tr>
             <tr>
                 <td class="tr">Grants to institutions</td>
-                {{ funder_year_value_cell(funder_year, "spending_grant_making_institutions") }}
+                {# {{ funder_year_value_cell(funder_year, "spending_grant_making_institutions") }}
             </tr>
             <tr>
                 <td class="tr"> - charitable institutions</td>
@@ -89,7 +89,7 @@
                 {{ funder_year_value_cell(funder_year, "spending_grant_making_institutions_noncharitable") }}
             </tr>
             <tr>
-                <td class="tr"> - unknown institutions</td>
+                <td class="tr"> - unknown institutions</td> #}
                 {{ funder_year_value_cell(funder_year, "spending_grant_making_institutions_unknown") }}
             </tr>
         </tbody>
@@ -140,115 +140,119 @@
 {% endmacro %}
 
 
-<tr class="border" id="funder-year-{% if funder_year %}{{ funder_year.id }}{% else %}new{% endif %}">
+{% macro funder_year_row_edit(funder_year) %}
+<td>
+    {% if funder_year %}
+    <strong>{{ funder_year.financial_year.financial_year_id }}</strong><br>
+    <small>{{ display_date(funder_year.financial_year_start) }} to
+        {{ display_date(funder_year.financial_year_end) }}</small>
+    {% if funder_year.account_url %}
+    <br><a href="{{ funder_year.account_url }}" target="_blank">Accounts PDF</a>
+    {% endif %}
+    {% endif %}
+</td>
+<td colspan="4">
+    <table class="table">
+        <thead>
+            <tr>
+                <th class="tr" rowspan="2">Field</th>
+                <th class="tc" colspan="2">Current year</th>
+                {% if funder_year_py %}
+                <th class="tc" colspan="2">Previous year</th>
+                {% endif %}
+            </tr>
+            <tr>
+                <th class="tr">Registered</th>
+                <th class="tr">Overwrite</th>
+                {% if funder_year_py %}
+                <th class="tr">Registered</th>
+                <th class="tr">Overwrite</th>
+                {% endif %}
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td class="tr"><strong>Financial year end</strong></td>
+                <td class="tr"></td>
+                <td class="tr">
+                    <input type="date" name="fye-cy" class="funder-year-edit"
+                        value="{{ funder_year.financial_year_end or '' }}" />
+                </td>
+                {% if funder_year_py %}
+                <td class="tr"></td>
+                <td class="tr">
+                    <input type="hidden" name="py-id" class="funder-year-edit" value="{{ funder_year_py.id or '' }}" />
+                    <input type="date" name="fye-py" class="funder-year-edit"
+                        value="{{ funder_year_py.financial_year_end or '' }}" />
+                </td>
+                {% endif %}
+            </tr>
+            {% for field in funder_year.editable_fields() %}
+            <tr>
+                <td class="tr"><strong>{{ field.label|to_titlecase }}</strong></td>
+                <td class="tr">
+                    {% if field['360Giving'] %}
+                    {{ display_number(funder_year[field['360Giving'].name], format_str="[360Giving] " + field.format_str) }}<br>
+                    {% if field.registered %}
+                    {{ display_number(funder_year[field.registered.name], format_str="[Registered] " + field.format_str) }}<br>
+                    {% endif %}
+                    {% elif field.registered %}
+                    {{ display_number(funder_year[field.registered.name], format_str=field.format_str) }}
+                    {% endif %}
+                </td>
+                <td class="tr">
+                    <input x-mask:dynamic="$money($input, '.', ',', 0)" type="text" name="{{ field.name }}-cy"
+                        class="funder-year-edit" placeholder="-" value="{{ funder_year[field.manual.name] or '' }}" />
+                </td>
+                {% if funder_year_py %}
+                <td class="tr">
+                    {% if field['360Giving'] %}
+                    {{ display_number(funder_year_py[field['360Giving'].name], format_str="[360Giving] " + field.format_str) }}<br>
+                    {% if field.registered %}
+                    {{ display_number(funder_year_py[field.registered.name], format_str="[Registered] " + field.format_str) }}<br>
+                    {% endif %}
+                    {% elif field.registered %}
+                    {{ display_number(funder_year_py[field.registered.name], format_str=field.format_str) }}
+                    {% endif %}
+                </td>
+                <td class="tr">
+                    <input x-mask:dynamic="$money($input, '.', ',', 0)" type="text" name="{{ field.name }}-py"
+                        class="funder-year-edit" placeholder="-"
+                        value="{{ funder_year_py[field.manual.name] or '' }}" />
+                </td>
+                {% endif %}
+            </tr>
+            {% endfor %}
+            <tr>
+                <td class="tr">Note</td>
+                <td colspan="{% if funder_year_py %}3{% else %}2{% endif%}">
+                    <textarea name="note" class="funder-year-edit" rows="7">{{ funder_year.notes or '' }}</textarea>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+    {% if funder_year %}
+    <a href="#" class="button"
+        hx-post="{{ url_for('grantmakers:edit_funderyear', org_id=object.org_id, funderyear_id=funder_year.id) }}"
+        hx-trigger="click" hx-target="#funder-year-{{ funder_year.id }}" hx-swap="outerHTML"
+        hx-include=".funder-year-edit">Save</a>
+    {% else %}
+    <a href="#" class="button" hx-post="{{ url_for('grantmakers:edit_funderyear', org_id=object.org_id) }}"
+        hx-trigger="click" hx-target="#funder-year-new" hx-swap="outerHTML" hx-include=".funder-year-edit">Save</a>
+    {% endif %}
+    <a href="#" class="button red"
+        hx-post="{{ url_for('grantmakers:edit_funderyear', org_id=object.org_id, funderyear_id=funder_year.id) }}"
+        hx-trigger="click" hx-target="#funder-year-{{ funder_year.id }}" hx-swap="outerHTML"
+        hx-vals='{ "action": "cancel" }'>Cancel</a>
+</td>
+<td></td>
+{% endmacro %}
+
+
+<tr class="funder-year border {% if funder_year.financial_year.financial_year.current %}current{% endif %}"
+    id="funder-year-{% if funder_year %}{{ funder_year.id }}{% else %}new{% endif %}">
     {% if edit %}
-    <td>
-        {% if funder_year %}
-        <strong>{{ funder_year.financial_year.financial_year_id }}</strong><br>
-        <small>{{ display_date(funder_year.financial_year_start) }} to
-            {{ display_date(funder_year.financial_year_end) }}</small>
-        {% if funder_year.account_url %}
-        <br><a href="{{ funder_year.account_url }}" target="_blank">Accounts PDF</a>
-        {% endif %}
-        {% endif %}
-    </td>
-    <td colspan="4">
-        <table class="table">
-            <thead>
-                <tr>
-                    <th class="tr" rowspan="2">Field</th>
-                    <th class="tc" colspan="2">Current year</th>
-                    {% if funder_year_py %}
-                    <th class="tc" colspan="2">Previous year</th>
-                    {% endif %}
-                </tr>
-                <tr>
-                    <th class="tr">Registered</th>
-                    <th class="tr">Overwrite</th>
-                    {% if funder_year_py %}
-                    <th class="tr">Registered</th>
-                    <th class="tr">Overwrite</th>
-                    {% endif %}
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td class="tr"><strong>Financial year end</strong></td>
-                    <td class="tr"></td>
-                    <td class="tr">
-                        <input type="date" name="fye-cy" class="funder-year-edit"
-                            value="{{ funder_year.financial_year_end or '' }}" />
-                    </td>
-                    {% if funder_year_py %}
-                    <td class="tr"></td>
-                    <td class="tr">
-                        <input type="hidden" name="py-id" class="funder-year-edit"
-                            value="{{ funder_year_py.id or '' }}" />
-                        <input type="date" name="fye-py" class="funder-year-edit"
-                            value="{{ funder_year_py.financial_year_end or '' }}" />
-                    </td>
-                    {% endif %}
-                </tr>
-                {% for field in funder_year.editable_fields() %}
-                <tr>
-                    <td class="tr"><strong>{{ field.label|to_titlecase }}</strong></td>
-                    <td class="tr">
-                        {% if field['360Giving'] %}
-                        {{ display_number(funder_year[field['360Giving'].name], format_str="[360Giving] " + field.format_str) }}<br>
-                        {% if field.registered %}
-                        {{ display_number(funder_year[field.registered.name], format_str="[Registered] " + field.format_str) }}<br>
-                        {% endif %}
-                        {% elif field.registered %}
-                        {{ display_number(funder_year[field.registered.name], format_str=field.format_str) }}
-                        {% endif %}
-                    </td>
-                    <td class="tr">
-                        <input x-mask:dynamic="$money($input, '.', ',', 0)" type="text" name="{{ field.name }}-cy"
-                            class="funder-year-edit" placeholder="-"
-                            value="{{ funder_year[field.manual.name] or '' }}" />
-                    </td>
-                    {% if funder_year_py %}
-                    <td class="tr">
-                        {% if field['360Giving'] %}
-                        {{ display_number(funder_year_py[field['360Giving'].name], format_str="[360Giving] " + field.format_str) }}<br>
-                        {% if field.registered %}
-                        {{ display_number(funder_year_py[field.registered.name], format_str="[Registered] " + field.format_str) }}<br>
-                        {% endif %}
-                        {% elif field.registered %}
-                        {{ display_number(funder_year_py[field.registered.name], format_str=field.format_str) }}
-                        {% endif %}
-                    </td>
-                    <td class="tr">
-                        <input x-mask:dynamic="$money($input, '.', ',', 0)" type="text" name="{{ field.name }}-py"
-                            class="funder-year-edit" placeholder="-"
-                            value="{{ funder_year_py[field.manual.name] or '' }}" />
-                    </td>
-                    {% endif %}
-                </tr>
-                {% endfor %}
-                <tr>
-                    <td class="tr">Note</td>
-                    <td colspan="{% if funder_year_py %}3{% else %}2{% endif%}">
-                        <textarea name="note" class="funder-year-edit" rows="7">{{ funder_year.notes or '' }}</textarea>
-                    </td>
-                </tr>
-            </tbody>
-        </table>
-        {% if funder_year %}
-        <a href="#" class="button"
-            hx-post="{{ url_for('grantmakers:edit_funderyear', org_id=object.org_id, funderyear_id=funder_year.id) }}"
-            hx-trigger="click" hx-target="#funder-year-{{ funder_year.id }}" hx-swap="outerHTML"
-            hx-include=".funder-year-edit">Save</a>
-        {% else %}
-        <a href="#" class="button" hx-post="{{ url_for('grantmakers:edit_funderyear', org_id=object.org_id) }}"
-            hx-trigger="click" hx-target="#funder-year-new" hx-swap="outerHTML" hx-include=".funder-year-edit">Save</a>
-        {% endif %}
-        <a href="#" class="button red"
-            hx-post="{{ url_for('grantmakers:edit_funderyear', org_id=object.org_id, funderyear_id=funder_year.id) }}"
-            hx-trigger="click" hx-target="#funder-year-{{ funder_year.id }}" hx-swap="outerHTML"
-            hx-vals='{ "action": "cancel" }'>Cancel</a>
-    </td>
-    <td></td>
+    {{ funder_year_row_edit(funder_year)}}
     {% else %}
     {{ funder_year_row(funder_year)}}
     {% endif %}

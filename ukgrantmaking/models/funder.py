@@ -94,9 +94,6 @@ class Funder(models.Model):
     active = models.BooleanField(null=True, blank=True)
     activities = models.TextField(null=True, blank=True)
     website = models.URLField(null=True, blank=True)
-    latest_grantmaking = models.DecimalField(
-        max_digits=16, decimal_places=2, null=True, blank=True, db_index=True
-    )
     latest_year = models.ForeignKey(
         FunderFinancialYear,
         on_delete=models.SET_NULL,
@@ -200,7 +197,7 @@ class Funder(models.Model):
     )
 
     class Meta:
-        ordering = ["-latest_grantmaking"]
+        ordering = ["-latest_year__spending_grant_making"]
 
     def __str__(self):
         return f"{self.name} ({self.org_id})"
@@ -231,16 +228,6 @@ class Funder(models.Model):
         )
         if latest_fy:
             self.latest_year = latest_fy.financial_year
-            if latest_fy.spending_grant_making is not None:
-                self.latest_grantmaking = latest_fy.spending_grant_making
-            elif latest_fy.spending_grant_making_institutions:
-                self.latest_grantmaking = latest_fy.spending_grant_making_institutions
-            elif latest_fy.spending_charitable:
-                self.latest_grantmaking = latest_fy.spending_charitable
-            elif latest_fy.spending:
-                self.latest_grantmaking = latest_fy.spending
-            else:
-                self.latest_grantmaking = None
 
             if (
                 latest_fy.spending_grant_making_individuals
@@ -255,7 +242,6 @@ class Funder(models.Model):
                 self.latest_year = FunderFinancialYear.objects.create(
                     funder=self, financial_year=current_fy
                 )
-            self.latest_grantmaking = None
 
         # # transfer financial years to successor
         # @TODO work out the logic for this

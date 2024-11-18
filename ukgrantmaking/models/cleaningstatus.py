@@ -153,9 +153,9 @@ class CleaningStatus(models.Model):
             qs = query.get_filter(qs)
         if self.sort_by:
             if self.sort_order == self.SortOrder.DESC:
-                qs = qs.order_by(f"-{self.sort_by}")
+                qs = qs.order_by(models.F(self.sort_by).desc(nulls_last=True))
             else:
-                qs = qs.order_by(self.sort_by)
+                qs = qs.order_by(models.F(self.sort_by).asc(nulls_last=True))
         return qs[: self.n]
 
     def get_status(self, qs):
@@ -170,15 +170,15 @@ class CleaningStatus(models.Model):
                     ).count(),
                 }
             ),
-            Meter(
-                **{
-                    "name": "Checked segment",
-                    "total": total,
-                    "value": self.run(
-                        qs.filter(financial_year__funder__status="Checked")
-                    ).count(),
-                }
-            ),
+            # Meter(
+            #     **{
+            #         "name": "Checked segment",
+            #         "total": total,
+            #         "value": self.run(
+            #             qs.filter(financial_year__funder__status="Checked")
+            #         ).count(),
+            #     }
+            # ),
         ]
 
 

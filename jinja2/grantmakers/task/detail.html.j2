@@ -4,8 +4,9 @@
 {% from 'components/meter.html.j2' import meter %}
 {% from 'grantmakers/partials/fundertable.html.j2' import fundertable, wrap_table %}
 
+{% set title = object.name + ' | Cleaning Tasks' %}
+
 {% block content %}
-<h2>{{ object.name }}</h2>
 {% if object.description %}
 <p>{{ object.description }}</p>
 {% endif %}
@@ -24,7 +25,7 @@
 {% if page_obj.object_list %}
 {% call wrap_table(class_="sticky") %}
 {% for object in page_obj.object_list %}
-<tr>
+<tr class="{% if object.financial_year.checked == 'Checked' %}positive{% endif %}">
     <td><a class="b"
             href="{{ url_for('grantmakers:detail', org_id=object.financial_year.funder.org_id) }}">{{ object.financial_year.funder.name }}</a>
     <td><a
@@ -38,11 +39,13 @@
         <ul class="tags">{% for tag in object.financial_year.tags.values_list("tag", flat=true) %}<li>{{ tag }}</li>
             {% endfor %}</ul>
     </td>
-    <td>
-        {{ object.financial_year.funder.status }}{% if object.financial_year.checked == "Checked" %}
-        {{ object.financial_year.checked_by|user_name }}
-        {% if object.financial_year.checked_on %}{{ object.financial_year.checked_on|naturaltime }}{% endif %}
-        {% endif %}
+    <td class="tc">
+        <div class="flex-row">
+            {{ display_boolean(object.financial_year.checked == "Checked") }}
+            {% if object.financial_year.checked_by %}
+            {{ object.financial_year.checked_by|user_name }}
+            {% endif %}
+        </div>
     </td>
     <td class="tr">{{ display_number(object.income, format_str="£{:,.0f}") }}</td>
     <td class="tr">{{ display_number(object.income_investment, format_str="£{:,.0f}") }}</td>

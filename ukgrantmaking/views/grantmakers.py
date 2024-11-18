@@ -126,6 +126,7 @@ def htmx_tags_edit(request, org_id):
             )
             new_tags.append(new_tag)
         funder.tags.set(new_tags)
+        funder.save()
         LogEntry.objects.log_action(
             user_id=request.user.id,
             content_type_id=ContentType.objects.get_for_model(funder).pk,

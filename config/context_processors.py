@@ -12,6 +12,7 @@ class SidebarItem:
     view: Optional[str] = None
     count: Optional[int] = None
     children: Optional[list["SidebarItem"]] = None
+    query: Optional[str] = None
 
     @property
     def classes(self):
@@ -25,7 +26,10 @@ class SidebarItem:
     @property
     def url(self):
         if self.view:
-            return reverse(self.view)
+            url = reverse(self.view)
+            if self.query:
+                url += f"?{self.query}"
+            return url
         return "#"
 
 
@@ -42,8 +46,12 @@ def sidebar(request):
                 SidebarItem(
                     title="Grantmakers",
                     view="grantmakers:index",
+                    query="included=true&o=-latest_year__spending_grant_making",
                     children=[
-                        SidebarItem(title="Tasks", view="grantmakers:task_index"),
+                        SidebarItem(
+                            title="Tasks",
+                            view="grantmakers:task_index",
+                        ),
                     ],
                 ),
                 SidebarItem(

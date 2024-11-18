@@ -102,6 +102,7 @@ def test_htmx_edit_tags(
     if existing_tags:
         for tag in existing_tags:
             funder.tags.create(tag=tag)
+        funder.save()
     response = client_logged_in.post(
         f"/grantmakers/funder/{funder.org_id}/tags",
         {"tags": new_tags},
@@ -116,10 +117,12 @@ def test_htmx_edit_tags(
     for tag in new_tags:
         assert tag in response.content.decode("utf-8")
         assert funder.tags.filter(tag=tag).exists()
+        assert funder.latest_year.tags.filter(tag=tag).exists()
     for tag in existing_tags:
         if tag not in new_tags:
             assert tag not in response.content.decode("utf-8")
             assert not funder.tags.filter(tag=tag).exists()
+            assert not funder.latest_year.tags.filter(tag=tag).exists()
 
     assert check_log_entry(funder) is not None
 

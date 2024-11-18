@@ -169,7 +169,6 @@ class FunderAdmin(CSVUploadModelAdmin):
         "name_registered",
         "date_of_registration",
         "activities",
-        "latest_grantmaking",
         "ftc_link",
     )
     autocomplete_fields = ("successor",)
@@ -188,7 +187,6 @@ class FunderAdmin(CSVUploadModelAdmin):
                     "makes_grants_to_individuals",
                     "date_of_registration",
                     "activities",
-                    "latest_grantmaking",
                 ]
             },
         ),
@@ -196,8 +194,8 @@ class FunderAdmin(CSVUploadModelAdmin):
 
     @admin.display(description="Latest grantmaking")
     def size(self, obj):
-        if obj.latest_grantmaking:
-            return "{:,.0f}".format(obj.latest_grantmaking)
+        if obj.latest_year:
+            return "{:,.0f}".format(obj.latest_year.spending_grant_making)
 
     @admin.display(description="Tags")
     def tag_list(self, obj):

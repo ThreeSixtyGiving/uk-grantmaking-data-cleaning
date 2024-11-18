@@ -2,7 +2,7 @@
 
 {% macro wrap_table(class_="sticky aside") %}
 <div class="table-wrapper {{ class_ }}">
-    <table class="table striped">
+    <table class="table bordered">
         <thead>
             <tr>
                 <th class="medium-width">Name</th>
@@ -11,7 +11,7 @@
                 <th class="tc">Included</th>
                 <th class="tc">Makes grants to individuals</th>
                 <th class="big-width">Tags</th>
-                <th>Checked</th>
+                <th class="tc small-width">Checked</th>
                 <th class="tr small-width">Income</th>
                 <th class="tr small-width">Income investment</th>
                 <th class="tr small-width">Spending</th>
@@ -42,7 +42,7 @@
 {% macro fundertable(object_list) %}
 {% call wrap_table() %}
 {% for object in object_list %}
-<tr>
+<tr class="{% if object.latest_year.checked == 'Checked' %}positive{% endif %}">
     <td><a class="b" href="{{ url_for('grantmakers:detail', org_id=object.org_id) }}">{{ object.name }}</a>
     <td><a href="{{ url_for('grantmakers:detail', org_id=object.org_id) }}">{{ object.org_id }}</a></td>
     </td>
@@ -53,14 +53,13 @@
         <ul class="tags">{% for tag in object.tags.values_list("tag", flat=true) %}<li>{{ tag }}</li>
             {% endfor %}</ul>
     </td>
-    <td>
-        {% if object.latest_year %}
-        {% if object.latest_year.checked_by %}
-        {{ object.latest_year.checked_by }}
-        {% elif object.latest_year.checked %}
-        Checked
-        {% endif %}
-        {% endif %}
+    <td class="tc">
+        <div class="flex-row">
+            {{ display_boolean(object.latest_year.checked == "Checked") }}
+            {% if object.latest_year.checked_by %}
+            {{ object.latest_year.checked_by|user_name }}
+            {% endif %}
+        </div>
     </td>
     {% if object.latest_year %}
     <td class="tr">{{ display_number(object.latest_year.income, format_str="£{:,.0f}") }}</td>

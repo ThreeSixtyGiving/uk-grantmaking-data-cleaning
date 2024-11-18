@@ -2,11 +2,11 @@
 {% from 'components/pagination.html.j2' import pagination, results_header %}
 {% from 'grantmakers/partials/fundertable.html.j2' import fundertable %}
 
+{% set title = 'Grantmakers' %}
+
 {% block bodyclass %}{{ super() }} aside{% endblock %}
 
 {% block content %}
-<h2>Grantmakers</h2>
-
 <p class="">{{ results_header(page_obj) }}</p>
 
 {% if page_obj.object_list %}

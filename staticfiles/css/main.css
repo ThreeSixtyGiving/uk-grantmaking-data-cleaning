@@ -1,6 +1,8 @@
 :root {
     --color-purple: #42268c;
     --color-purple-light: #715ca9;
+    --color-purple-lighter: #a485f5;
+    --color-purple-lightest: #ECE6FD;
     --color-green: #247b85;
     --color-green-light: #ccf1f5;
     --color-green-lighter: #e6eeef;
@@ -215,6 +217,11 @@ body {
 
     >main {
         grid-area: main;
+
+        >header {
+            margin-top: 0.5rem;
+            margin-bottom: 1.5rem;
+        }
     }
 
     >main, >aside {
@@ -304,15 +311,21 @@ body {
             position: sticky;
             left: 0;
             z-index: 1;
+            background-color: var(--background-color-full);
+            text-wrap: balance;
+
+            a {
+                color: inherit;
+            }
         }
 
         &.striped {
             >tbody>tr:nth-child(odd)>td:first-of-type {
-                background-color: var(--color-green-lighter);
+                --background-color-full: var(--base-background-color);
             }
 
             >tbody>tr:nth-child(even)>td:first-of-type {
-                background-color: var(--color-white);
+                --background-color-full: var(--striped-background-color);
             }
         }
     }
@@ -323,12 +336,22 @@ table.table {
     border-collapse: collapse;
     width: 100%;
     margin-bottom: 1.75rem;
+    --base-background-color: var(--color-white);
+    --striped-background-color: var(--color-green-lighter);
+    --background-color: var(--base-background-color);
+    --background-color-full: var(--background-color);
     /* font-size: 0.95rem; */
 
     th, td {
         padding: 0.5rem;
         vertical-align: top;
         text-align: left;
+        background-color: var(--background-color);
+        color: var(--color-black);
+
+        a:not([class]) {
+            color: inherit;
+        }
 
         &:has(table) {
             padding: 0;
@@ -336,14 +359,15 @@ table.table {
 
         table.table {
             margin-bottom: 0;
+            --background-color: var(--background-color);
 
             &.striped {
                 tbody tr:nth-child(even) {
-                    background-color: var(--color-green-lighter);
+                    --background-color: var(--base-background-color);
                 }
 
                 tbody tr:nth-child(odd) {
-                    background-color: var(--color-white);
+                    --background-color: var(--striped-background-color);
                 }
             }
         }
@@ -353,7 +377,7 @@ table.table {
         }
 
         &.medium-width {
-            min-width: 32ch;
+            min-width: 26ch;
         }
 
         &.big-width {
@@ -379,17 +403,46 @@ table.table {
     }
 
     &.striped {
-        >tbody>tr:nth-child(odd) {
-            background-color: var(--color-green-lighter);
+        >tbody>tr:nth-child(even) {
+            --background-color: var(--base-background-color);
         }
 
-        >tbody>tr:nth-child(even) {
-            background-color: var(--color-white);
+        >tbody>tr:nth-child(odd) {
+            --background-color: var(--striped-background-color);
+        }
+    }
+
+    &.bordered {
+        >tbody>tr>td {
+            border-top: 1px solid var(--striped-background-color);
         }
     }
 
     tbody tr.border>td {
-        border-top: 3px solid var(--color-green);
+        border-top: 3px solid var(--striped-background-color);
+    }
+
+    tbody tr.positive>td {
+        --background-color: rgba(from var(--color-positive) r g b / 0.4);
+        --background-color-full: rgba(from var(--color-positive) r g b / 0.8);
+    }
+
+    tbody tr.negative>td {
+        --background-color: var(--color-negative);
+        color: var(--color-white);
+
+        a {
+            color: var(--color-white);
+        }
+    }
+}
+
+tr.funder-year.current {
+    --base-background-color: var(--color-purple-lightest);
+    --striped-background-color: var(--color-purple-lightest);
+
+    >td:first-of-type {
+        border-left: 3px solid var(--color-purple);
     }
 }
 
@@ -583,6 +636,7 @@ ul.tags {
     &.red {
         background-color: var(--color-red-dark);
         filter: drop-shadow(0 0 0.25rem var(--color-red-dark));
+        color: var(--color-red-light);
 
         &:hover {
             color: var(--color-red);

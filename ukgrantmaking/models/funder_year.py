@@ -86,6 +86,9 @@ class FunderFinancialYear(models.Model):
     )
     date_updated = models.DateTimeField(auto_now=True, null=True, blank=True)
 
+    class Meta:
+        unique_together = [["funder", "financial_year"]]
+
     def update_fields(self):
         summed_fields = [
             "income",
@@ -133,6 +136,8 @@ class FunderFinancialYear(models.Model):
             self.makes_grants_to_individuals = self.funder.makes_grants_to_individuals
 
         if self.pk:
+            if self.financial_year.current:
+                self.tags.set(self.funder.tags.all())
             self.update_fields()
 
         super().save(*args, **kwargs)
@@ -527,8 +532,8 @@ class FunderYear(models.Model):
             "spending_investment",
             "spending_grant_making_individuals",
             # "spending_grant_making_institutions",
-            "spending_grant_making_institutions_charitable",
-            "spending_grant_making_institutions_noncharitable",
+            # "spending_grant_making_institutions_charitable",
+            # "spending_grant_making_institutions_noncharitable",
             "spending_grant_making_institutions_unknown",
             # "total_net_assets",
             # "funds",
@@ -537,11 +542,16 @@ class FunderYear(models.Model):
             "funds_unrestricted",
             "employees",
         ]
+        field_labels = {
+            "spending_grant_making_institutions_unknown": "Grant making to institutions"
+        }
         field_return = []
         for field in fields:
             field_obj = {
                 "name": field,
-                "label": self._meta.get_field(field).verbose_name,
+                "label": field_labels.get(
+                    field, self._meta.get_field(field).verbose_name
+                ),
                 "registered": None,
                 "360Giving": None,
                 "manual": None,

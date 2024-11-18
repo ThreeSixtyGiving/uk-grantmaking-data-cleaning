@@ -31,10 +31,10 @@ def make_funder(financial_year):
             org_id=f"GB-CHC-{n:08}",
             name_registered=f"Test Funder {n}",
         )
-        ffy = funder.financial_years.create(
+        ffy, _ = funder.financial_years.get_or_create(
             financial_year=financial_year,
         )
-        ffy.financial_years.create(
+        ffy.financial_years.get_or_create(
             financial_year_end=financial_year.grants_end_date,
         )
         funder.save()
@@ -58,7 +58,7 @@ def funder_with_py(make_funder):
             "current": False,
         },
     )
-    ffy = funder.financial_years.create(
+    ffy, _ = funder.financial_years.get_or_create(
         financial_year=fy,
     )
     ffy.financial_years.create(
