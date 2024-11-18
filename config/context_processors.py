@@ -52,6 +52,10 @@ def sidebar(request):
                             title="Tasks",
                             view="grantmakers:task_index",
                         ),
+                        SidebarItem(
+                            title="Admin",
+                            view="admin:ukgrantmaking_funder_changelist",
+                        ),
                     ],
                 ),
                 SidebarItem(

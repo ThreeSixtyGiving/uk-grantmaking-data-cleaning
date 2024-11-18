@@ -148,7 +148,16 @@ SQL_QUERIES = {
     """,
 }
 
-# @TODO Ensure that funders with a successor don't have new data added
+
+def format_query(query):
+    return query.format(
+        ukgrantmaking_funder=Funder._meta.db_table,
+        ukgrantmaking_funderfinancialyear=FunderFinancialYear._meta.db_table,
+        ukgrantmaking_financialyear=FinancialYear._meta.db_table,
+        ukgrantmaking_funderyear=FunderYear._meta.db_table,
+        ukgrantmaking_funderfinancialyear_tags=FunderFinancialYear.tags.through._meta.db_table,
+        ukgrantmaking_funder_tags=Funder.tags.through._meta.db_table,
+    )
 
 
 @click.command()
@@ -156,15 +165,6 @@ def financial_year():
     with transaction.atomic(), connection.cursor() as cursor:
         for query_name, query in SQL_QUERIES.items():
             logger.info(f"[Query] Started:  {query_name}")
-            cursor.execute(
-                query.format(
-                    ukgrantmaking_funder=Funder._meta.db_table,
-                    ukgrantmaking_funderfinancialyear=FunderFinancialYear._meta.db_table,
-                    ukgrantmaking_financialyear=FinancialYear._meta.db_table,
-                    ukgrantmaking_funderyear=FunderYear._meta.db_table,
-                    ukgrantmaking_funderfinancialyear_tags=FunderFinancialYear.tags.through._meta.db_table,
-                    ukgrantmaking_funder_tags=Funder.tags.through._meta.db_table,
-                )
-            )
+            cursor.execute(format_query(query))
             logger.info(f"[Query] Completed: {query_name}")
             logger.info(f"[Query] Rows affected: {cursor.rowcount:,.0f}")

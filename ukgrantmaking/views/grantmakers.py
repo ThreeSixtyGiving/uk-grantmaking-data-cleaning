@@ -23,7 +23,12 @@ from ukgrantmaking.models.funder_year import FunderYear
 
 @login_required
 def index(request):
-    filters = GrantmakerFilter(request.GET, queryset=Funder.objects.all())
+    filters = GrantmakerFilter(
+        request.GET,
+        queryset=Funder.objects.all()
+        .select_related("latest_year", "latest_year__checked_by")
+        .prefetch_related("tags"),
+    )
     paginator = Paginator(filters.qs, 25)
     page_number = request.GET.get("page")
     page_obj = paginator.get_page(page_number)
@@ -40,6 +45,8 @@ def task_index(request):
     )
     base_qs = FunderYear.objects.filter(
         funder_financial_year__financial_year=current_fy
+    ).select_related(
+        "funder_financial_year__funder", "funder_financial_year__financial_year"
     )
     statuses = {task.id: task.get_status(base_qs) for task in cleaning_tasks}
     return render(
@@ -60,6 +67,8 @@ def task_detail(request, task_id):
         raise Http404("Task not found")
     base_qs = FunderYear.objects.filter(
         funder_financial_year__financial_year=current_fy
+    ).select_related(
+        "funder_financial_year__funder", "funder_financial_year__financial_year"
     )
     qs = cleaning_task.run(base_qs)
     status = cleaning_task.get_status(base_qs)

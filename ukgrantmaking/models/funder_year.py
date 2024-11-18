@@ -89,6 +89,9 @@ class FunderFinancialYear(models.Model):
     class Meta:
         unique_together = [["funder", "financial_year"]]
 
+    def __str__(self):
+        return f"{self.funder.name} ({self.financial_year.fy})"
+
     def update_fields(self):
         summed_fields = [
             "income",

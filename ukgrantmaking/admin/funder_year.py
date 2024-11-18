@@ -2,18 +2,18 @@ from django.contrib import admin
 from django.utils.html import format_html
 
 from ukgrantmaking.admin.csv_upload import CSVUploadModelAdmin
-from ukgrantmaking.models import (
-    FunderNote,
-    FunderYear,
-)
+from ukgrantmaking.models import FunderYear
 
 
 class FunderYearInline(admin.StackedInline):
     model = FunderYear
+    fk_name = "funder_financial_year"
     extra = 0
     readonly_fields = (
         "income",
+        "income_investment",
         "spending",
+        "spending_investment",
         "spending_charitable",
         "spending_grant_making",
         "spending_grant_making_individuals",
@@ -42,7 +42,6 @@ class FunderYearInline(admin.StackedInline):
                     "extrapretty",
                 ),
                 "fields": [
-                    "funder_financial_year__funder",
                     (
                         "financial_year_end",
                         "financial_year_start",
@@ -115,117 +114,6 @@ class FunderYearInline(admin.StackedInline):
         return ""
 
 
-class FunderNoteInline(admin.TabularInline):
-    model = FunderNote
-    extra = 0
-    fields = (
-        "note",
-        "date_added",
-        "added_by",
-    )
-    readonly_fields = ("date_added",)
-    show_change_link = False
-    can_delete = False
-
-    def has_change_permission(self, request, obj):
-        return False
-
-
-class FunderAdmin(CSVUploadModelAdmin):
-    list_display = (
-        "org_id",
-        "name",
-        "segment",
-        "included",
-        "makes_grants_to_individuals",
-        "size",
-        "tag_list",
-        "checked_by",
-        "checked",
-    )
-    search_fields = ("name", "org_id")
-    list_filter = (
-        "included",
-        "segment",
-        ("segment", admin.EmptyFieldListFilter),
-        "tags",
-        "makes_grants_to_individuals",
-        "org_id_schema",
-        # "latest_year__checked",
-        ("latest_year", admin.EmptyFieldListFilter),
-    )
-    show_facets = admin.ShowFacets.NEVER
-    list_editable = (
-        "included",
-        "segment",
-        "makes_grants_to_individuals",
-    )
-    filter_horizontal = ("tags",)
-    inlines = (
-        # FunderYearInline,
-        FunderNoteInline,
-    )
-    readonly_fields = (
-        "name_registered",
-        "date_of_registration",
-        "activities",
-        "ftc_link",
-    )
-    autocomplete_fields = ("successor",)
-    fieldsets = (
-        (
-            None,
-            {
-                "fields": [
-                    "org_id",
-                    ("charity_number", "ftc_link"),
-                    ("name_registered", "name_manual"),
-                    "successor",
-                    "segment",
-                    "tags",
-                    "included",
-                    "makes_grants_to_individuals",
-                    "date_of_registration",
-                    "activities",
-                ]
-            },
-        ),
-    )
-
-    @admin.display(description="Latest grantmaking")
-    def size(self, obj):
-        if obj.latest_year:
-            return "{:,.0f}".format(obj.latest_year.spending_grant_making)
-
-    @admin.display(description="Tags")
-    def tag_list(self, obj):
-        return "; ".join([tag.tag for tag in obj.tags.all()])
-
-    @admin.display(description="Checked by")
-    def checked_by(self, obj):
-        return obj.latest_year.checked_by if obj.latest_year else None
-
-    @admin.display(description="Checked", boolean=True)
-    def checked(self, obj):
-        return obj.latest_year.checked if obj.latest_year else None
-
-    @admin.display(description="")
-    def ftc_link(self, obj):
-        return format_html(
-            '<a href="https://findthatcharity.uk/orgid/{}" target="_blank">Find that Charity</a>',
-            obj.org_id,
-        )
-
-
-class FunderTagAdmin(admin.ModelAdmin):
-    list_display = ("tag", "funder_count", "description", "parent")
-    list_editable = ("parent",)
-    ordering = ("parent", "tag")
-
-    def funder_count(self, obj):
-        return obj.funders.count()
-
-
 class FunderYearAdmin(CSVUploadModelAdmin):
     list_display = (
         "funder__org_id",
@@ -276,20 +164,23 @@ class FunderYearAdmin(CSVUploadModelAdmin):
         "checked",
         "date_added",
         "date_updated",
-        # "financial_year",
+        # "funder_financial_year",
+        # "original_funder_financial_year",
     )
+    autocomplete_fields = ("funder_financial_year", "original_funder_financial_year")
     # raw_id_fields = ("funder",)
     fieldsets = (
         (
             None,
             {
                 "fields": [
-                    "funder",
+                    "funder_financial_year",
                     (
                         "financial_year_end",
                         "financial_year_start",
                         # "financial_year",
                     ),
+                    "original_funder_financial_year",
                 ]
             },
         ),

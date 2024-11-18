@@ -4,7 +4,7 @@ from django.contrib.contenttypes.models import ContentType
 
 from ukgrantmaking.models.cleaningstatus import CleaningStatus, CleaningStatusQuery
 from ukgrantmaking.models.financial_years import FinancialYear
-from ukgrantmaking.models.funder import Funder
+from ukgrantmaking.models.funder import Funder, FunderTag
 
 
 @pytest.fixture
@@ -25,7 +25,18 @@ def financial_year():
 
 
 @pytest.fixture
-def make_funder(financial_year):
+def tag():
+    tag, _ = FunderTag.objects.get_or_create(
+        slug="example-tag",
+        defaults={
+            "tag": "Example Tag",
+        },
+    )
+    return tag
+
+
+@pytest.fixture
+def make_funder(financial_year, tag):
     def _make_funder(n=1):
         funder = Funder.objects.create(
             org_id=f"GB-CHC-{n:08}",
@@ -38,6 +49,8 @@ def make_funder(financial_year):
             financial_year_end=financial_year.grants_end_date,
         )
         funder.save()
+
+        funder.tags.set([tag])
         return funder
 
     return _make_funder

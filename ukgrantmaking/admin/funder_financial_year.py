@@ -1,0 +1,57 @@
+from django.contrib import admin
+
+from ukgrantmaking.admin.csv_upload import CSVUploadModelAdmin
+from ukgrantmaking.admin.funder_year import FunderYearInline
+
+
+class FunderFinancialYearAdmin(CSVUploadModelAdmin):
+    list_display = (
+        "funder__org_id",
+        "funder__name",
+        "fy",
+        "segment",
+        "included",
+        "income",
+        "spending",
+        "spending_charitable",
+        "checked",
+    )
+    readonly_fields = (
+        "tags",
+        "segment",
+        "included",
+        "makes_grants_to_individuals",
+        "income",
+        "income_investment",
+        "spending",
+        "spending_investment",
+        "spending_charitable",
+        "spending_grant_making",
+        "spending_grant_making_individuals",
+        "spending_grant_making_institutions_charitable",
+        "spending_grant_making_institutions_noncharitable",
+        "spending_grant_making_institutions_unknown",
+        "spending_grant_making_institutions",
+        "total_net_assets",
+        "funds",
+        "funds_endowment",
+        "funds_restricted",
+        "funds_unrestricted",
+        "employees",
+    )
+    search_fields = ("funder__name",)
+    filter_horizontal = ("tags",)
+
+    @admin.display(description="Financial Year")
+    def fy(self, obj):
+        return obj.financial_year.fy
+
+    @admin.display(description="Funder ID")
+    def funder__org_id(self, obj):
+        return obj.funder.org_id
+
+    @admin.display(description="Funder Name")
+    def funder__name(self, obj):
+        return obj.funder.name
+
+    inlines = (FunderYearInline,)

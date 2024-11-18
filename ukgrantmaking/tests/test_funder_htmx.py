@@ -68,6 +68,7 @@ def test_htmx_edit_note(client_logged_in, funder, admin_user, check_log_entry):
 
 
 def test_htmx_get_tags(client_logged_in, funder, check_log_entry):
+    funder.tags.set([])
     funder.tags.create(tag="Tag 1")
     funder.tags.create(tag="Tag X")
     response = client_logged_in.get(
@@ -99,6 +100,7 @@ def test_htmx_get_tags(client_logged_in, funder, check_log_entry):
 def test_htmx_edit_tags(
     client_logged_in, funder, existing_tags, new_tags, check_log_entry
 ):
+    funder.tags.set([])
     if existing_tags:
         for tag in existing_tags:
             funder.tags.create(tag=tag)

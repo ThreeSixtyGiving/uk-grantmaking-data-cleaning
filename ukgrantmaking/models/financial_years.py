@@ -80,6 +80,9 @@ class FinancialYear(models.Model):
     def last_year(self):
         return self.first_year + 1
 
+    def __str__(self):
+        return f"FY {self.fy}"
+
     def save(self, *args, **kwargs):
         if not self.funders_start_date:
             self.funders_start_date = f"{self.first_year}-05-01"
