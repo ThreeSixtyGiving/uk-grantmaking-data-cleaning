@@ -43,6 +43,11 @@ urlpatterns = [
         name="grantmakers",
     ),
     path(
+        "docs/",
+        include("ukgrantmaking.urls.docs", namespace="docs"),
+        name="docs",
+    ),
+    path(
         "table-creator/",
         table_creator_view,
         name="table_creator",

@@ -1,0 +1,13 @@
+{% extends 'base.html.j2' %}
+
+{% set title = object.title + ' | Help' %}
+
+{% block content %}
+
+{% if object %}
+<div class="md">
+    {{ object.content|safe }}
+</div>
+{% endif %}
+
+{% endblock %}

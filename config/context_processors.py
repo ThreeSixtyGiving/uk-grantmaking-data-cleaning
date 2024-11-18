@@ -61,6 +61,7 @@ def sidebar(request):
                 SidebarItem(
                     title="Grants", view="admin:ukgrantmaking_grant_changelist"
                 ),
+                SidebarItem(title="Help", view="docs:index"),
             ]
         )
         options["sidebar_settings"].extend(
