@@ -18,6 +18,11 @@ from ukgrantmaking.models import (
     FunderYear,
 )
 
+# Update financial year record:
+# - Make sure every funder has got a financial year record for the current financial year
+# - Calculate the latest year for the funder
+# - Calculate the latest financial data for the financial year record
+
 
 @click.command()
 @click.option("--financial-year", type=FinancialYears, default=DEFAULT_FINANCIAL_YEAR)

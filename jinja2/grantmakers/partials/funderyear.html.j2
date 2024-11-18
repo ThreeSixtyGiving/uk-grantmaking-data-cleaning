@@ -1,6 +1,7 @@
 {% from 'components/values.html.j2' import display_date, display_number, display_longtext, display_list, display_text, none_wrapper, display_boolean, display_url %}
 {% macro funder_year_value_cell(funder_year, field, format_str="£{:,.0f}") %}
-<td class="tr {% if funder_year[field + '_manual'] is not none %}underline{% endif %}">
+<td
+    class="tr {% if funder_year[field + '_manual'] and funder_year[field + '_manual'] is not none %}underline{% endif %}">
     {{ display_number(funder_year[field], format_str=format_str) }}
 </td>
 {% endmacro %}
@@ -86,6 +87,10 @@
             <tr>
                 <td class="tr"> - noncharitable institutions</td>
                 {{ funder_year_value_cell(funder_year, "spending_grant_making_institutions_noncharitable") }}
+            </tr>
+            <tr>
+                <td class="tr"> - unknown institutions</td>
+                {{ funder_year_value_cell(funder_year, "spending_grant_making_institutions_unknown") }}
             </tr>
         </tbody>
     </table>
@@ -238,6 +243,10 @@
         <a href="#" class="button" hx-post="{{ url_for('grantmakers:edit_funderyear', org_id=object.org_id) }}"
             hx-trigger="click" hx-target="#funder-year-new" hx-swap="outerHTML" hx-include=".funder-year-edit">Save</a>
         {% endif %}
+        <a href="#" class="button red"
+            hx-post="{{ url_for('grantmakers:edit_funderyear', org_id=object.org_id, funderyear_id=funder_year.id) }}"
+            hx-trigger="click" hx-target="#funder-year-{{ funder_year.id }}" hx-swap="outerHTML"
+            hx-vals='{ "action": "cancel" }'>Cancel</a>
     </td>
     <td></td>
     {% else %}
@@ -249,4 +258,4 @@
     {{ funder_year_row(funder_year_py)}}
 </tr>
 {% endif %}
-{% if request.htmx %}{% include 'grantmakers/partials/audittrail.html.j2'%}{% endif %}
+{# {% if request.htmx %}{% include 'grantmakers/partials/audittrail.html.j2'%}{% endif %} #}

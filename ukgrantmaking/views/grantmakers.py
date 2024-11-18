@@ -296,18 +296,21 @@ def htmx_edit_funderyear(request, org_id, funderyear_id=None):
         "edit": True,
     }
     if request.method == "POST":
-        context["funder_year"] = edit_funderyear(funder_year, request, suffix="cy")
+        if request.POST.get("action") == "cancel":
+            context["edit"] = False
+        else:
+            context["funder_year"] = edit_funderyear(funder_year, request, suffix="cy")
 
-        if request.POST.get("py-id"):
-            context["funder_year_py"] = FunderYear.objects.filter(
-                financial_year__funder=funder, id=request.POST.get("py-id")
-            ).first()
+            if request.POST.get("py-id"):
+                context["funder_year_py"] = FunderYear.objects.filter(
+                    financial_year__funder=funder, id=request.POST.get("py-id")
+                ).first()
 
-        if context["funder_year_py"]:
-            context["funder_year_py"] = edit_funderyear(
-                context["funder_year_py"], request, suffix="py"
-            )
-        context["edit"] = False
+            if context["funder_year_py"]:
+                context["funder_year_py"] = edit_funderyear(
+                    context["funder_year_py"], request, suffix="py"
+                )
+            context["edit"] = False
     return render(
         request,
         "grantmakers/partials/funderyear.html.j2",
