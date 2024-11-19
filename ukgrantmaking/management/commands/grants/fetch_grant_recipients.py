@@ -96,22 +96,30 @@ def grant_recipients(db_con):
             all_recipients.index.isin(existing_recipients)
         ]
 
-        to_update = []
         logger.info("Updating existing recipients")
         with click.progressbar(
             existing_recipient_records.itertuples(),
             length=len(existing_recipient_records),
             label="Updating recipient records",
         ) as bar:
-            for recipient in bar:
-                to_update.append(
-                    GrantRecipient(
+
+            def iterate_existing_recipient():
+                for recipient in bar:
+                    yield dict(
                         recipient_id=recipient.Index,
                         type=recipient.recipient_type,
                         name_registered=recipient.recipient_organisation_name,
                     )
-                )
-        GrantRecipient.objects.bulk_update(to_create, ["type", "name_registered"])
+
+            do_batched_update(
+                GrantRecipient,
+                iterate_existing_recipient(),
+                unique_fields=["recipient_id"],
+                update_fields=[
+                    "type",
+                    "name_registered",
+                ],
+            )
         logger.info(f"Updated {len(to_create):,.0f} existing recipients")
 
         # get list of org IDs

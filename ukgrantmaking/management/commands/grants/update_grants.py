@@ -12,7 +12,7 @@ from ukgrantmaking.models import (
 )
 from ukgrantmaking.models.financial_years import FinancialYear, FinancialYearStatus
 from ukgrantmaking.models.funder import Funder
-from ukgrantmaking.models.funder_year import FunderYear
+from ukgrantmaking.models.funder_year import FunderFinancialYear, FunderYear
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -134,9 +134,13 @@ def grants():
                         .annotate(grants_amount=Sum("amount_awarded_GBP"))
                     )
                     if grants_amount_by_recipient:
+                        funder_financial_year = (
+                            FunderFinancialYear.objects.get_or_create(
+                                funder=funder, financial_year=year
+                            )[0]
+                        )
                         funder_year = FunderYear(
-                            funder=funder,
-                            financial_year=year,
+                            funder_financial_year=funder_financial_year,
                             financial_year_start=year.grants_end_date,
                             financial_year_end=year.grants_start_date,
                         )

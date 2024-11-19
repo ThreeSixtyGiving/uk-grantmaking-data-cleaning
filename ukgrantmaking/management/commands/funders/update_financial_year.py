@@ -36,6 +36,19 @@ SQL_QUERIES = {
             OR f.active IS NULL
         ) ON CONFLICT (financial_year_id, funder_id) DO NOTHING
     """,
+    "Set the latest year to the correct year": """
+    WITH current_fy AS (
+        SELECT *
+        FROM {ukgrantmaking_financialyear}
+        WHERE "current" = TRUE
+    )
+    UPDATE {ukgrantmaking_funder}
+    SET latest_year_id = ffy.id 
+    FROM {ukgrantmaking_funderfinancialyear} ffy
+        INNER JOIN current_fy
+            ON ffy.financial_year_id = current_fy.fy
+    WHERE ffy.funder_id = {ukgrantmaking_funder}.org_id
+    """,
     "Recalculate aggregate values for funder financial years": """
     WITH fy AS (
         SELECT

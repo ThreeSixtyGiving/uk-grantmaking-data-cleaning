@@ -292,9 +292,9 @@ class Funder(models.Model):
                             },
                         )
                     )
+                    funder_year.save()
                     if created:
                         funder_year.funder_financial_year.save()
-                    funder_year.save()
 
         # transfer financial years from predecessors
         if self.predecessors.exists():

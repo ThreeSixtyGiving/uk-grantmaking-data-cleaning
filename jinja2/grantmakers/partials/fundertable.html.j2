@@ -89,7 +89,7 @@
     <td class="tr">{{ display_number(object.latest_year.funds_endowment, format_str="£{:,.0f}") }}</td>
     <td class="tr">{{ display_number(object.latest_year.funds_restricted, format_str="£{:,.0f}") }}</td>
     <td class="tr">{{ display_number(object.latest_year.funds_unrestricted, format_str="£{:,.0f}") }}</td>
-    <td class="tr">{{ display_number(object.latest_year.employees, format_str="£{:,.0f}") }}</td>
+    <td class="tr">{{ display_number(object.latest_year.employees, format_str="{:,.0f}") }}</td>
     {% else %}
     <td class="tr"></td>
     <td class="tr"></td>

@@ -220,6 +220,7 @@ def recipient_type(db_con, company_batch_size):
                 elif org_type in (
                     "registered-society",
                     "registered-society-non-jurisdictional",
+                    "industrial-and-provident-society",
                 ):
                     recipient_type = Grant.RecipientType.MUTUAL
                 elif org_type in (
