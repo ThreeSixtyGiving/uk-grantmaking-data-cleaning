@@ -4,6 +4,8 @@ aiofiles==23.2.1
     # via datasette
 anyio==4.3.0
     # via httpx
+appdirs==1.4.4
+    # via pyppeteer
 asgi-csrf==0.9
     # via datasette
 asgiref==3.8.1
@@ -11,21 +13,34 @@ asgiref==3.8.1
     #   datasette
     #   django
     #   django-htmx
+attrs==24.2.0
+    # via
+    #   cattrs
+    #   requests-cache
+beautifulsoup4==4.12.3
+    # via bs4
 boto3==1.34.100
     # via -r requirements.in
 botocore==1.34.100
     # via
     #   boto3
     #   s3transfer
+bs4==0.0.2
+    # via requests-html
 cachetools==5.3.3
     # via datasette-auth-existing-cookies
 caradoc==0.1.0
     # via -r requirements.in
+cattrs==24.1.2
+    # via requests-cache
 certifi==2024.2.2
     # via
+    #   charity-django
     #   httpcore
     #   httpx
     #   requests
+charity-django @ git+https://github.com/kanedata/charity-django.git@0b9138d5f1b70be5a84d46433ad2af1d6ff92e76
+    # via -r requirements.in
 charset-normalizer==3.3.2
     # via requests
 click==8.1.7
@@ -40,15 +55,21 @@ colorama==0.4.6
     # via
     #   click
     #   pytest
+    #   tqdm
+cssselect==1.2.0
+    # via pyquery
 datasette==0.64.6
     # via -r requirements.in
 datasette-auth-existing-cookies==1.0a1
     # via -r requirements.in
 dj-database-url==2.1.0
-    # via -r requirements.in
+    # via
+    #   -r requirements.in
+    #   charity-django
 django==5.0.6
     # via
     #   -r requirements.in
+    #   charity-django
     #   dj-database-url
     #   django-debug-toolbar
     #   django-filter
@@ -72,7 +93,12 @@ et-xmlfile==1.1.0
 exceptiongroup==1.2.2
     # via
     #   anyio
+    #   cattrs
     #   pytest
+fake-useragent==1.5.1
+    # via requests-html
+faker==33.0.0
+    # via charity-django
 greenlet==3.0.3
     # via sqlalchemy
 gunicorn==22.0.0
@@ -95,7 +121,9 @@ idna==3.7
     #   httpx
     #   requests
 inflect==7.2.1
-    # via -r requirements.in
+    # via
+    #   -r requirements.in
+    #   charity-django
 iniconfig==2.0.0
     # via pytest
 itsdangerous==2.2.0
@@ -112,6 +140,12 @@ jmespath==1.0.1
     # via
     #   boto3
     #   botocore
+lxml==5.3.0
+    # via
+    #   lxml-html-clean
+    #   pyquery
+lxml-html-clean==0.4.1
+    # via charity-django
 markdown==3.7
     # via django-markdownx
 markupsafe==2.1.5
@@ -126,6 +160,7 @@ openpyxl==3.1.2
     # via
     #   -r requirements.in
     #   caradoc
+    #   charity-django
 packaging==24.0
     # via
     #   gunicorn
@@ -134,18 +169,30 @@ pandas==2.2.2
     # via
     #   -r requirements.in
     #   caradoc
+parse==1.20.2
+    # via requests-html
 pillow==11.0.0
     # via django-markdownx
 pint==0.23
     # via datasette
 pip==24.0
     # via datasette
+platformdirs==4.3.6
+    # via requests-cache
 pluggy==1.5.0
     # via
     #   datasette
     #   pytest
 psycopg2-binary==2.9.9
-    # via -r requirements.in
+    # via
+    #   -r requirements.in
+    #   charity-django
+pyee==12.1.1
+    # via pyppeteer
+pyppeteer==0.0.25
+    # via requests-html
+pyquery==2.0.1
+    # via requests-html
 pytest==8.3.3
     # via pytest-django
 pytest-django==4.9.0
@@ -153,6 +200,8 @@ pytest-django==4.9.0
 python-dateutil==2.9.0.post0
     # via
     #   botocore
+    #   charity-django
+    #   faker
     #   pandas
 python-dotenv==1.0.1
     # via -r requirements.in
@@ -163,7 +212,15 @@ pytz==2024.1
 pyyaml==6.0.1
     # via datasette
 requests==2.31.0
-    # via -r requirements.in
+    # via
+    #   -r requirements.in
+    #   charity-django
+    #   requests-cache
+    #   requests-html
+requests-cache==1.2.1
+    # via charity-django
+requests-html==0.10.0
+    # via charity-django
 ruff==0.4.3
     # via -r requirements.in
 s3transfer==0.10.1
@@ -171,11 +228,15 @@ s3transfer==0.10.1
 setuptools==69.5.1
     # via datasette
 six==1.16.0
-    # via python-dateutil
+    # via
+    #   python-dateutil
+    #   url-normalize
 sniffio==1.3.1
     # via
     #   anyio
     #   httpx
+soupsieve==2.6
+    # via beautifulsoup4
 sqlalchemy==2.0.30
     # via -r requirements.in
 sqlparse==0.5.0
@@ -183,19 +244,28 @@ sqlparse==0.5.0
     #   django
     #   django-debug-toolbar
 titlecase==2.4.1
-    # via -r requirements.in
+    # via
+    #   -r requirements.in
+    #   charity-django
 tomli==2.1.0
     # via pytest
+tqdm==4.67.0
+    # via
+    #   charity-django
+    #   pyppeteer
 typeguard==4.2.1
     # via inflect
 typing-extensions==4.11.0
     # via
     #   anyio
     #   asgiref
+    #   cattrs
     #   dj-database-url
+    #   faker
     #   inflect
     #   janus
     #   pint
+    #   pyee
     #   sqlalchemy
     #   typeguard
     #   uvicorn
@@ -203,14 +273,22 @@ tzdata==2024.1
     # via
     #   django
     #   pandas
+url-normalize==1.4.3
+    # via requests-cache
 urllib3==2.2.1
     # via
     #   botocore
+    #   pyppeteer
     #   requests
+    #   requests-cache
 uvicorn==0.29.0
     # via
     #   -r requirements.in
     #   datasette
+w3lib==2.2.1
+    # via requests-html
+websockets==14.1
+    # via pyppeteer
 whitenoise==6.6.0
     # via -r requirements.in
 xlsxwriter==3.2.0

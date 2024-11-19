@@ -1,8 +1,8 @@
+import logging
 from collections import defaultdict
 from datetime import timedelta
 
 import djclick as click
-from django.core.management import call_command
 from django.db import transaction
 from django.db.models import F, Sum
 
@@ -14,45 +14,48 @@ from ukgrantmaking.models.financial_years import FinancialYear, FinancialYearSta
 from ukgrantmaking.models.funder import Funder
 from ukgrantmaking.models.funder_year import FunderYear
 
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+
 
 @click.command()
 def grants():
-    call_command("update", "financial-year")
     with transaction.atomic():
-        click.secho("Updating amount awarded in GBP", fg="green")
+        logger.info("Updating amount awarded not in GBP")
         currencies = {
             (currency.currency, currency.date): currency.rate
             for currency in CurrencyConverter.objects.filter(rate__isnull=False)
         }
+        currency_results = defaultdict(lambda: 0)
         for currency, rate in currencies.items():
             result = Grant.objects.filter(
                 currency=currency[0],
                 award_date=currency[1],
             ).update(amount_awarded_GBP=F("amount_awarded") * rate)
-            click.secho(
-                f"{result} grants updated [{currency[0]} - {currency[1]:%Y-%m-%d} - {rate}]",
-                fg="green",
-            )
+            currency_results[currency[0]] += result
 
-        click.secho("Match funders to funder records", fg="green")
+        for key, value in currency_results.items():
+            logger.info(f"   - {key}: {value:,.0f} grants updated")
+
+        logger.info("Match funders to funder records")
         funder_ids = Funder.objects.values_list("org_id", flat=True)
         result = Grant.objects.filter(
             funder_id__isnull=True,
             funding_organisation_id__in=funder_ids,
         ).update(funder_id=F("funding_organisation_id"))
-        click.secho(f"{result} grants updated with funder ID", fg="green")
+        logger.info(f"{result} grants updated with funder ID")
 
         missing_funder_ids = Grant.objects.filter(funder_id__isnull=True).count()
-        click.secho(f"{missing_funder_ids} grants missing funder ID", fg="red")
+        logger.warning(f"{missing_funder_ids} grants missing funder ID")
         for funder in (
             Grant.objects.filter(funder_id__isnull=True)
             .values_list("funding_organisation_id", "funding_organisation_name")
             .distinct()
         ):
-            click.secho(f"   {funder[0]} - {funder[1]}", fg="red")
+            logger.warning(f"   {funder[0]} - {funder[1]}")
 
         # update funder years
-        click.secho("Updating funder years", fg="green")
+        logger.info("Updating funder years")
         funders = (
             Grant.objects.filter(funder_id__isnull=False)
             .values_list("funder_id", flat=True)
@@ -67,7 +70,7 @@ def grants():
             try:
                 funder = Funder.objects.get(org_id=funder_id)
             except Funder.DoesNotExist:
-                click.secho(f"Funder {funder_id} not found", fg="red")
+                logger.info(f"Funder {funder_id} not found")
                 continue
             for year in financial_years:
                 funder_years = FunderYear.objects.filter(
@@ -85,7 +88,7 @@ def grants():
                             )
                         grants_amount_by_recipient = (
                             Grant.objects.filter(
-                                funder_id=funder_year.funder_id,
+                                funder_id=funder.org_id,
                                 award_date__lte=funder_year.financial_year_end,
                                 award_date__gte=financial_year_start,
                                 inclusion__in=[
@@ -99,7 +102,7 @@ def grants():
                         for grant_amount in grants_amount_by_recipient:
                             changed = False
                             if grant_amount["recipient_type"] == "Organisation":
-                                funder_year.spending_grant_making_institutions_360Giving = grant_amount[
+                                funder_year.spending_grant_making_institutions_unknown_360Giving = grant_amount[
                                     "grants_amount"
                                 ]
                                 changed = True
@@ -109,9 +112,8 @@ def grants():
                                 ]
                                 changed = True
                             if changed:
-                                click.secho(
-                                    f"Updating {funder_year.funder} {funder_year.financial_year_end}",
-                                    fg="green",
+                                logger.info(
+                                    f"Updating {funder.name} [{funder.org_id}] {funder_year.financial_year_end}",
                                 )
                                 results["Funder years updated"] += 1
                                 bulk_update.append(funder_year)
@@ -138,14 +140,13 @@ def grants():
                             financial_year_start=year.grants_end_date,
                             financial_year_end=year.grants_start_date,
                         )
-                        click.secho(
+                        logger.info(
                             f"Creating {funder_year.funder} {funder_year.financial_year_end}",
-                            fg="green",
                         )
                         for grant_amount in grants_amount_by_recipient:
                             changed = False
                             if grant_amount["recipient_type"] == "Organisation":
-                                funder_year.spending_grant_making_institutions_360Giving = grant_amount[
+                                funder_year.spending_grant_making_institutions_unknown_360Giving = grant_amount[
                                     "grants_amount"
                                 ]
                                 changed = True
@@ -161,11 +162,11 @@ def grants():
         updated = FunderYear.objects.bulk_update(
             bulk_update,
             [
-                "spending_grant_making_institutions_360Giving",
+                "spending_grant_making_institutions_unknown_360Giving",
                 "spending_grant_making_individuals_360Giving",
             ],
         )
 
         for key, value in results.items():
-            click.secho(f"{value}: {key}", fg="green")
-        click.secho(f"Updated {updated} funder years", fg="green")
+            logger.info(f"{value}: {key}")
+        logger.info(f"Updated {updated} funder years")

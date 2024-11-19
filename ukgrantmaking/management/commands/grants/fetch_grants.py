@@ -1,18 +1,24 @@
+import logging
 from collections import defaultdict
 
 import djclick as click
 import numpy as np
 import pandas as pd
 from django.db import transaction
+from django.db.models import Q
 
 from ukgrantmaking.models import CurrencyConverter, Grant
+from ukgrantmaking.models.financial_years import FinancialYear
+from ukgrantmaking.utils import do_batched_update
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
 
 
 @click.command()
 @click.argument("db_con", envvar="TSG_DATASTORE_URL")
-@click.option("--start-date", default="2022-04-01")
-@click.option("--end-date", default="2023-03-31")
-def grants(db_con, start_date, end_date):
+def grants(db_con):
+    current_fy = FinancialYear.objects.current()
     datastore_query = """
         with g as materialized (select * from view_latest_grant),
         location_source AS (
@@ -67,14 +73,17 @@ def grants(db_con, start_date, end_date):
     """
 
     # get updated names and date of registration from FTC
-    click.secho("Fetching grants from datastore", fg="green")
+    logger.info("Fetching grants from datastore")
     df = pd.read_sql(
         datastore_query,
-        params={"start_date": start_date, "end_date": end_date},
+        params={
+            "start_date": current_fy.grants_start_date,
+            "end_date": current_fy.grants_end_date,
+        },
         con=db_con,
         index_col="grant_id",
     )
-    click.secho("Found {} grants".format(len(df)), fg="green")
+    logger.info(f"Found {len(df):,.0f} grants")
 
     # To clean the data we need to make sure that the values are in the right format.
 
@@ -120,8 +129,8 @@ def grants(db_con, start_date, end_date):
         "uk_constituency": "",
         "ward": "",
         "recipient_org": "",
-        "award_date_after": start_date,
-        "award_date_before": end_date,
+        "award_date_after": current_fy.grants_start_date,
+        "award_date_before": current_fy.grants_end_date,
         "amount_awarded_min": "",
         "amount_awarded_max": "",
         "search": "",
@@ -130,9 +139,9 @@ def grants(db_con, start_date, end_date):
         "https://nationallottery.dcms.gov.uk/api/v1/grants/csv-export/?"
         + "&".join([f"{k}={v}" for k, v in nl_api_vars.items()])
     )
-    click.secho("Fetching grants from National Lottery", fg="green")
+    logger.info("Fetching grants from National Lottery")
     nl = pd.read_csv(nl_api_url, parse_dates=["Award Date"])
-    click.secho("Found {} National Lottery grants".format(len(nl)), fg="green")
+    logger.info(f"Found {len(nl):,.0f} National Lottery grants")
 
     nl_column_rename = {
         "Identifier": "grant_id",
@@ -228,11 +237,8 @@ def grants(db_con, start_date, end_date):
     # set any grants which appear in both datasets to exclude
     nl.loc[nl.index.isin(merged["grant_id_nl"]), "exclude"] = True
 
-    click.secho(
-        "Excluding {} grants from National Lottery dataset".format(
-            len(nl[nl["exclude"]])
-        ),
-        fg="green",
+    logger.info(
+        f"Excluding {len(nl[nl['exclude']]):,.0f} grants from National Lottery dataset"
     )
 
     # Merge the National Lottery dataset into the main dataset.
@@ -242,6 +248,19 @@ def grants(db_con, start_date, end_date):
             nl[~nl["exclude"]].drop(columns=["exclude"]),
         ]
     )
+
+    # drop any duplicate by grant_id (the index)
+    # @TODO: could redo the grant_id so that it's a unique identifier
+    duplicated = df[df.index.duplicated(keep=False)]
+    logger.info(f"Dropping {len(duplicated):,.0f} duplicate grants based on grant_id")
+    for funder_id, funder_name, count in (
+        duplicated.groupby(["funding_organization_id", "funding_organization_name"])
+        .size()
+        .reset_index()
+        .values
+    ):
+        logger.info(f"   {funder_id}: {funder_name}: {count:,.0f} duplicates")
+    df = df[~df.index.duplicated(keep="first")]
 
     # Start with the `amount_awarded` column, which should be an integer.
     df["amount_awarded"] = df["amount_awarded"].astype(float)
@@ -255,9 +274,18 @@ def grants(db_con, start_date, end_date):
         df["currency"] == "GBP", "amount_awarded"
     ]
 
-    results = defaultdict(lambda: 0)
+    # Add in financial year
+    # get all financial years
+    for financial_year in FinancialYear.objects.all():
+        df.loc[
+            (df["award_date"] >= financial_year.grants_start_date)
+            & (df["award_date"] <= financial_year.grants_end_date),
+            "financial_year",
+        ] = financial_year.fy
 
     with transaction.atomic():
+        logger.info("Saving currencies to database")
+        currency_result = defaultdict(int)
         for currency, awarddate in (
             df[~df["currency"].eq("GBP")]
             .groupby(["currency", "award_date"])
@@ -270,19 +298,23 @@ def grants(db_con, start_date, end_date):
                 defaults={"rate": 1},
             )
             if created:
-                results["CurrencyConverter created"] += 1
+                currency_result["CurrencyConverter created"] += 1
             else:
-                results["CurrencyConverter found"] += 1
+                currency_result["CurrencyConverter found"] += 1
+        for key, value in currency_result.items():
+            logger.info(f"{key}: {value:,.0f}")
 
+        logger.info(f"Saving {len(df):,.0f} grants to database")
         with click.progressbar(
             df.replace({np.nan: None}).itertuples(),
             length=len(df),
             label="Saving Grant records",
         ) as bar:
-            for grant in bar:
-                grant_obj, created = Grant.objects.update_or_create(
-                    grant_id=grant.Index,
-                    defaults=dict(
+
+            def iterate_grants():
+                for grant in bar:
+                    yield dict(
+                        grant_id=grant.Index,
                         title=grant.title,
                         description=grant.description,
                         currency=grant.currency,
@@ -307,7 +339,7 @@ def grants(db_con, start_date, end_date):
                         recipient_individual_primary_grant_reason=grant.recipient_individual_primary_grant_reason,
                         recipient_individual_secondary_grant_reason=grant.recipient_individual_secondary_grant_reason,
                         recipient_individual_grant_purpose=grant.recipient_individual_grant_purpose,
-                        recipient_type=grant.recipient_type,
+                        recipient_type_registered=grant.recipient_type,
                         funding_organisation_id=grant.funding_organization_id,
                         funding_organisation_name=grant.funding_organization_name,
                         funding_organisation_type=grant.funding_organization_type,
@@ -317,27 +349,78 @@ def grants(db_con, start_date, end_date):
                         publisher_prefix=grant.publisher_prefix,
                         publisher_name=grant.publisher_name,
                         license=grant.license,
-                    ),
-                )
-                if grant_obj.inclusion == Grant.InclusionStatus.UNSURE:
-                    if grant_obj.funding_organisation_type not in (
-                        Grant.FunderType.CENTRAL_GOVERNMENT,
-                        Grant.FunderType.DEVOLVED_GOVERNMENT,
-                    ):
-                        grant_obj.inclusion = Grant.InclusionStatus.INCLUDED
-                        grant_obj.save()
-                    elif grant_obj.recipient_organisation_id and (
-                        grant_obj.recipient_organisation_id.startswith("GB-CHC-")
-                        | grant_obj.recipient_organisation_id.startswith("GB-SC-")
-                        | grant_obj.recipient_organisation_id.startswith("GB-NIC-")
-                    ):
-                        grant_obj.inclusion = Grant.InclusionStatus.INCLUDED
-                        grant_obj.save()
+                        financial_year_id=grant.financial_year,
+                    )
 
-                if created:
-                    results["Grant created"] += 1
-                else:
-                    results["Grant updated"] += 1
+            do_batched_update(
+                Grant,
+                iterate_grants(),
+                unique_fields=[
+                    "grant_id",
+                ],
+                update_fields=[
+                    "title",
+                    "description",
+                    "currency",
+                    "amount_awarded",
+                    "amount_awarded_GBP",
+                    "award_date",
+                    "planned_dates_duration",
+                    "planned_dates_startDate",
+                    "planned_dates_endDate",
+                    "recipient_organisation_id",
+                    "recipient_organisation_name",
+                    "recipient_individual_id",
+                    "recipient_individual_name",
+                    "recipient_individual_primary_grant_reason",
+                    "recipient_individual_secondary_grant_reason",
+                    "recipient_individual_grant_purpose",
+                    "recipient_type_registered",
+                    "funding_organisation_id",
+                    "funding_organisation_name",
+                    "funding_organisation_type",
+                    "regrant_type_registered",
+                    "location_scope",
+                    "grant_programme_title",
+                    "publisher_prefix",
+                    "publisher_name",
+                    "license",
+                    "financial_year_id",
+                ],
+            )
+        logger.info(f"Saved {len(df):,.0f} grants to database")
 
-    for key, value in results.items():
-        click.secho("{}: {}".format(key, value), fg="green")
+        # update grant inclusions
+        logger.info("Updating grant inclusions")
+        logger.info(
+            "All grants not in central or devolved government are included by default"
+        )
+        updated = (
+            Grant.objects.filter(
+                inclusion=Grant.InclusionStatus.UNSURE,
+            )
+            .exclude(
+                funding_organisation_type__in=[
+                    Grant.FunderType.CENTRAL_GOVERNMENT,
+                    Grant.FunderType.DEVOLVED_GOVERNMENT,
+                ]
+            )
+            .update(inclusion=Grant.InclusionStatus.INCLUDED)
+        )
+        logger.info(f"{updated:,.0f} grants updated to included")
+
+        logger.info(
+            "All grants with a recipient organisation ID starting with GB-CHC-, GB-SC- or GB-NIC- are included by default"
+        )
+        updated = (
+            Grant.objects.filter(
+                inclusion=Grant.InclusionStatus.UNSURE,
+            )
+            .filter(
+                Q(recipient_organisation_id__startswith="GB-CHC-")
+                | Q(recipient_organisation_id__startswith="GB-SC-")
+                | Q(recipient_organisation_id__startswith="GB-NIC-")
+            )
+            .update(inclusion=Grant.InclusionStatus.INCLUDED)
+        )
+        logger.info(f"{updated:,.0f} grants updated to included")

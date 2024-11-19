@@ -645,3 +645,9 @@ class GrantRecipientYear(models.Model):
         output_field=models.BigIntegerField(),
         db_persist=True,
     )
+
+    def __str__(self):
+        return f"{self.recipient}:  {self.financial_year_end}"
+
+    class Meta:
+        unique_together = [["recipient", "financial_year_end"]]

@@ -24,3 +24,4 @@ datasette-auth-existing-cookies>=1.0a1
 django-markdownx
 django-filter
 pytest-django
+git+https://github.com/kanedata/charity-django.git@v0.19.2

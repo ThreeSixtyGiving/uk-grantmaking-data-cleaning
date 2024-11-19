@@ -2,6 +2,18 @@ from django.contrib import admin
 
 from ukgrantmaking.admin.csv_upload import CSVUploadModelAdmin
 from ukgrantmaking.admin.funder_year import FunderYearInline
+from ukgrantmaking.models.funder_year import FunderFinancialYear
+
+
+class FunderFinancialYearInline(admin.StackedInline):
+    model = FunderFinancialYear
+    fields = ("financial_year",)
+    readonly_fields = ("financial_year",)
+    show_change_link = True
+    can_delete = False
+    max_num = None
+    extra = 0
+    ordering = ("-financial_year_id",)
 
 
 class FunderFinancialYearAdmin(CSVUploadModelAdmin):

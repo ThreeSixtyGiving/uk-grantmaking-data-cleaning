@@ -54,6 +54,7 @@ INSTALLED_APPS = [
     "django.contrib.humanize",
     "django_htmx",
     "debug_toolbar",
+    "charity_django.utils",
     "ukgrantmaking",
     "markdownx",
     "django_filters",

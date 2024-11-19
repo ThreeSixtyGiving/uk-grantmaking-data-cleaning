@@ -2,6 +2,7 @@ from django.contrib import admin
 from django.utils.html import format_html
 
 from ukgrantmaking.admin.csv_upload import CSVUploadModelAdmin
+from ukgrantmaking.admin.funder_financial_year import FunderFinancialYearInline
 from ukgrantmaking.models import FunderNote
 from ukgrantmaking.models.funder_utils import RecordStatus
 
@@ -62,7 +63,7 @@ class FunderAdmin(CSVUploadModelAdmin):
     )
     filter_horizontal = ("tags",)
     inlines = (
-        # FunderYearInline,
+        FunderFinancialYearInline,
         FunderNoteInline,
     )
     readonly_fields = (

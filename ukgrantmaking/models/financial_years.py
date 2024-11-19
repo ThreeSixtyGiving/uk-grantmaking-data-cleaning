@@ -39,7 +39,7 @@ DEFAULT_BREAK_MONTH = 5
 
 
 class FinancialYearManager(models.Manager):
-    def current(self):
+    def current(self) -> "FinancialYear":
         return self.get_queryset().get(current=True)
 
 

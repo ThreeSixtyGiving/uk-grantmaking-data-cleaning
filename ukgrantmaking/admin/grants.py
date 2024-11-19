@@ -5,6 +5,7 @@ from django.utils.html import format_html
 
 from ukgrantmaking.admin.csv_upload import CSVUploadModelAdmin
 from ukgrantmaking.models import Grant
+from ukgrantmaking.models.grant import GrantRecipientYear
 
 
 class CurrencyConverterAdmin(admin.ModelAdmin):
@@ -132,6 +133,7 @@ class GrantAdmin(CSVUploadModelAdmin):
     list_filter = (
         "inclusion",
         "currency",
+        "financial_year_id",
         AwardDateYearFilter,
         GrantAmountListFilter,
         "recipient_type",
@@ -268,6 +270,31 @@ class GrantAdmin(CSVUploadModelAdmin):
     amount_text.admin_order_field = "amount_awarded"
 
 
+class GrantRecipientYearAdminInline(admin.TabularInline):
+    model = GrantRecipientYear
+    extra = 0
+    can_delete = False
+    fields = (
+        "financial_year",
+        "financial_year_end",
+        "financial_year_start",
+        "income_registered",
+        "income_manual",
+        "spending_registered",
+        "spending_manual",
+        "employees_registered",
+        "employees_manual",
+    )
+    readonly_fields = (
+        "income_registered",
+        "income",
+        "spending_registered",
+        "spending",
+        "employees_registered",
+        "employees",
+    )
+
+
 class GrantRecipientAdmin(CSVUploadModelAdmin):
     list_display = (
         "recipient_id",
@@ -277,7 +304,49 @@ class GrantRecipientAdmin(CSVUploadModelAdmin):
     search_fields = ("name", "recipient_id")
     list_filter = ("type", "org_id_schema")
     list_editable = ("type",)
+    inlines = (GrantRecipientYearAdminInline,)
 
 
 class GrantRecipientYearAdmin(CSVUploadModelAdmin):
-    pass
+    list_display = (
+        "recipient",
+        "financial_year",
+        "financial_year_end",
+        "financial_year_start",
+        "income",
+        "spending",
+        "employees",
+    )
+    readonly_fields = (
+        "income_registered",
+        "income",
+        "spending_registered",
+        "spending",
+        "employees_registered",
+        "employees",
+    )
+    fieldsets = (
+        (
+            None,
+            {
+                "fields": [
+                    "recipient",
+                    (
+                        "financial_year_end",
+                        "financial_year_start",
+                        "financial_year",
+                    ),
+                ]
+            },
+        ),
+        (
+            "Financial",
+            {
+                "fields": [
+                    ("income_registered", "income_manual"),
+                    ("spending_registered", "spending_manual"),
+                    ("employees_registered", "employees_manual"),
+                ]
+            },
+        ),
+    )

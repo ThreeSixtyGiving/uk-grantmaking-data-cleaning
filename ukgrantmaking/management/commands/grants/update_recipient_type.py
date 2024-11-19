@@ -1,4 +1,4 @@
-from itertools import islice
+import logging
 
 import djclick as click
 import pandas as pd
@@ -6,18 +6,10 @@ from django.db import transaction
 from django.db.models import Count, Q
 
 from ukgrantmaking.models import Grant
+from ukgrantmaking.utils import batched
 
-
-def batched(iterable, n):
-    "Batch data into lists of length n. The last batch may be shorter."
-    # https://stackoverflow.com/a/8290490/715621
-    # batched('ABCDEFG', 3) --> ABC DEF G
-    it = iter(iterable)
-    while True:
-        batch = list(islice(it, n))
-        if not batch:
-            return
-        yield batch
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
 
 
 @click.command()
@@ -25,16 +17,16 @@ def batched(iterable, n):
 @click.option("--company-batch-size", default=1_000)
 def recipient_type(db_con, company_batch_size):
     with transaction.atomic():
-        click.secho("Update recipient types", fg="green")
+        logging.info("Update recipient types")
 
-        click.secho("Updating individuals", fg="green")
+        logging.info("Updating individuals")
         updated = Grant.objects.filter(
-            recipient_type=Grant.RecipientType.INDIVIDUAL,
+            recipient_type_registered=Grant.RecipientType.INDIVIDUAL,
             recipient_type_manual__isnull=True,
         ).update(
             recipient_type_manual=Grant.RecipientType.INDIVIDUAL,
         )
-        click.secho(f"{updated} grants updated to individual", fg="green")
+        logging.info(f"{updated} grants updated to individual")
 
         filters = [
             (
@@ -130,17 +122,17 @@ def recipient_type(db_con, company_batch_size):
             ),
         ]
         for recipient_type, filter in filters:
-            click.secho(f"Finding {recipient_type}", fg="green")
+            logging.info(f"Finding {recipient_type}")
             updated = Grant.objects.filter(
-                Q(recipient_type=Grant.RecipientType.ORGANISATION)
+                Q(recipient_type_registered=Grant.RecipientType.ORGANISATION)
                 & Q(recipient_type_manual__isnull=True)
                 & filter
             ).update(
                 recipient_type_manual=recipient_type,
             )
-            click.secho(f"{updated} grants updated to {recipient_type}", fg="green")
+            logging.info(f"{updated:,.0f} grants updated to {recipient_type}")
 
-        click.secho("Sort out company numbers", fg="green")
+        logging.info("Sort out company numbers")
         all_company_numbers = (
             Grant.objects.filter(
                 recipient_organisation_id__startswith="GB-COH-",
@@ -149,13 +141,11 @@ def recipient_type(db_con, company_batch_size):
             .values_list("recipient_organisation_id", flat=True)
             .distinct()
         )
-        click.secho(f"{len(all_company_numbers)} company numbers to check", fg="green")
+        logging.info(f"{len(all_company_numbers)} company numbers to check")
 
         # process company numbers in batches
         for company_numbers in batched(all_company_numbers, company_batch_size):
-            click.secho(
-                f"Processing {len(company_numbers)} company numbers", fg="green"
-            )
+            logging.info(f"Processing {len(company_numbers)} company numbers")
 
             charitable_companies = pd.read_sql(
                 """
@@ -180,7 +170,7 @@ def recipient_type(db_con, company_batch_size):
                 if org_type == "registered-charity":
                     recipient_type = Grant.RecipientType.CHARITY
                 else:
-                    click.secho(f"Unknown org type {org_type}", fg="red")
+                    logging.warning(f"Unknown org type {org_type}")
                     continue
 
                 updated = Grant.objects.filter(
@@ -192,9 +182,7 @@ def recipient_type(db_con, company_batch_size):
                 ).update(
                     recipient_type_manual=recipient_type,
                 )
-                click.secho(
-                    f"{updated} grants to charitable companies found", fg="green"
-                )
+                logging.info(f"{updated} grants to charitable companies found")
 
             all_companies = pd.read_sql(
                 """
@@ -246,7 +234,7 @@ def recipient_type(db_con, company_batch_size):
                 ):
                     recipient_type = Grant.RecipientType.PRIVATE_COMPANY
                 else:
-                    click.secho(f"Unknown org type {org_type}", fg="red")
+                    logging.warning(f"Unknown org type {org_type}")
                     continue
 
                 updated = Grant.objects.filter(
@@ -258,18 +246,17 @@ def recipient_type(db_con, company_batch_size):
                 ).update(
                     recipient_type_manual=recipient_type,
                 )
-                click.secho(
-                    f"{updated} grants to nonprofit companies found as {recipient_type}",
-                    fg="green",
+                logging.info(
+                    f"{updated:,.0f} grants to nonprofit companies found as {recipient_type}",
                 )
 
         progress = Grant.objects.values("recipient_type_manual").annotate(
             count=Count("grant_id")
         )
         for p in progress:
-            click.secho(f"{p['recipient_type_manual']}: {p['count']}", fg="green")
+            logging.info(f"{p['recipient_type_manual']}: {p['count']}")
 
-        click.secho("Update government exclusion list", fg="green")
+        logging.info("Update government exclusion list")
         exclusions = [
             (
                 Grant.InclusionStatus.LOCAL_AUTHORITY_GRANT,
@@ -321,7 +308,7 @@ def recipient_type(db_con, company_batch_size):
             ).update(
                 inclusion=inclusion,
             )
-            click.secho(f"{updated} grants updated to {inclusion}", fg="green")
+            logging.info(f"{updated} grants updated to {inclusion}")
 
         progress = (
             Grant.objects.filter(
@@ -331,4 +318,4 @@ def recipient_type(db_con, company_batch_size):
             .annotate(count=Count("grant_id"))
         )
         for p in progress:
-            click.secho(f"{p['inclusion']}: {p['count']}", fg="green")
+            logging.info(f"{p['inclusion']}: {p['count']}")
