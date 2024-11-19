@@ -550,8 +550,17 @@ ul.tags {
             &:has(select) {
                 padding: 0;
 
-                >a {
+                >a:last-child,
+                >select:last-child {
                     border-radius: 0 0 0.5rem 0.5rem;
+                }
+
+                >a:not(:last-child),
+                >select:not(:last-child) {
+                    border-bottom: 1px solid var(--color-green-light);
+                }
+
+                >a {
                     display: block;
                     padding-left: 1rem;
                     padding-right: 1rem;
@@ -565,7 +574,6 @@ ul.tags {
                     background-color: var(--color-green);
                     color: var(--color-white);
                     border: 0;
-                    border-radius: 0 0 0.5rem 0.5rem;
                     display: block;
                     padding-left: 1rem;
                     padding-right: 1rem;

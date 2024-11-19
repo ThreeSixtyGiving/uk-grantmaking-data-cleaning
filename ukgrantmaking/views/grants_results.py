@@ -664,7 +664,7 @@ def financial_year_grants_view(request, fy, filetype="html"):
         if (
             v
             in [
-                FunderCategory.GRANTMAKER,
+                FunderCategory.TRUSTS_FOUNDATIONS,
                 FunderCategory.OTHER,
                 FunderCategory.CHARITY,
             ]

@@ -18,7 +18,7 @@ class FunderFinancialYear(models.Model):
     segment = models.CharField(
         max_length=50,
         choices=FunderSegment.choices,
-        default=FunderSegment.GENERAL_GRANTMAKER,
+        default=FunderSegment.GENERAL_FOUNDATION,
         null=True,
         blank=True,
         db_index=True,

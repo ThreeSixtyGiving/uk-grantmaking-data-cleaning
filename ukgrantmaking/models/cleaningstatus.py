@@ -128,7 +128,10 @@ class CleaningStatus(models.Model):
         choices=CleaningStatusType.choices,
         default=CleaningStatusType.GRANTMAKER,
     )
-    n = models.IntegerField(default=50)
+    n = models.IntegerField(
+        default=50,
+        help_text="Number of records to return. Set to 0 to return all records.",
+    )
     sort_by = models.CharField(
         max_length=50,
         choices=FIELD_CHOICES,
@@ -150,15 +153,22 @@ class CleaningStatus(models.Model):
         verbose_name_plural = "Cleaning checks"
         ordering = ["name"]
 
-    def run(self, qs):
+    def run(self, qs, exclude_cleaned=False):
         for query in self.cleaningstatusquery_set.filter(active=True):
             qs = query.get_filter(qs)
+
+        if exclude_cleaned:
+            if self.type == self.CleaningStatusType.GRANTMAKER:
+                qs = qs.exclude(funder_financial_year__checked="Checked")
+
         if self.sort_by:
             if self.sort_order == self.SortOrder.DESC:
                 qs = qs.order_by(models.F(self.sort_by).desc(nulls_last=True))
             else:
                 qs = qs.order_by(models.F(self.sort_by).asc(nulls_last=True))
-        return qs[: self.n]
+        if self.n > 0:
+            return qs[: self.n]
+        return qs
 
     def get_status(self, qs):
         total = self.run(qs).count()

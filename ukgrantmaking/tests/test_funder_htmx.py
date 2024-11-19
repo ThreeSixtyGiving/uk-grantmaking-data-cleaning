@@ -170,13 +170,20 @@ def test_htmx_change_status_bool(
 
 
 @pytest.mark.parametrize(
-    "initial_status", [RecordStatus.CHECKED, RecordStatus.UNCHECKED]
+    "initial_status",
+    [
+        RecordStatus.CHECKED,
+        RecordStatus.UNCHECKED,
+        RecordStatus.FOR_REVIEW,
+        RecordStatus.NEW,
+    ],
 )
 @pytest.mark.parametrize(
     "action,new_status",
     [
         ("marked_as_checked", RecordStatus.CHECKED),
         ("marked_as_unchecked", RecordStatus.UNCHECKED),
+        ("mark_for_review", RecordStatus.FOR_REVIEW),
     ],
 )
 def test_htmx_change_status_checked(

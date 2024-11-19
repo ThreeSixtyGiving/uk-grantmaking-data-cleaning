@@ -306,7 +306,7 @@ def financial_year(request, fy, filetype="html"):
                 "notes",
             ],
             effective_date=effective_date,
-            segment=FunderSegment.GENERAL_GRANTMAKER,
+            segment=FunderSegment.GENERAL_FOUNDATION,
             included=True,
             n=1_000_000,
         ),
@@ -380,7 +380,7 @@ def financial_year(request, fy, filetype="html"):
             segment__in=[
                 segment
                 for segment, category in FUNDER_CATEGORIES.items()
-                if category in [FunderCategory.GRANTMAKER]
+                if category in [FunderCategory.TRUSTS_FOUNDATIONS]
             ],
         ),
         "Top 300",

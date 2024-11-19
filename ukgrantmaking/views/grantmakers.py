@@ -70,7 +70,10 @@ def task_detail(request, task_id):
     ).select_related(
         "funder_financial_year__funder", "funder_financial_year__financial_year"
     )
-    qs = cleaning_task.run(base_qs)
+
+    exclude_cleaned = "exclude_cleaned" in request.GET
+
+    qs = cleaning_task.run(base_qs, exclude_cleaned=exclude_cleaned)
     status = cleaning_task.get_status(base_qs)
     paginator = Paginator(qs, 25)
     page_number = request.GET.get("page")
@@ -196,6 +199,15 @@ def htmx_edit_funder(request, org_id):
             funder.latest_year.save()
             change_message = (
                 f"Marked as unchecked for {funder.latest_year.financial_year.fy}"
+            )
+    elif action == "mark_for_review":
+        if funder.latest_year:
+            funder.latest_year.checked = RecordStatus.FOR_REVIEW
+            funder.latest_year.checked_on = timezone.now()
+            funder.latest_year.checked_by = request.user
+            funder.latest_year.save()
+            change_message = (
+                f"Marked for review for {funder.latest_year.financial_year.fy}"
             )
     elif action == "update_segment":
         old_segment = funder.segment
