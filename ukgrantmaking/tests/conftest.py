@@ -3,7 +3,7 @@ from django.contrib.admin.models import ADDITION, CHANGE, DELETION, LogEntry
 from django.contrib.contenttypes.models import ContentType
 
 from ukgrantmaking.models.cleaningstatus import CleaningStatus, CleaningStatusQuery
-from ukgrantmaking.models.financial_years import FinancialYear
+from ukgrantmaking.models.financial_years import FinancialYear, FinancialYearStatus
 from ukgrantmaking.models.funder import Funder, FunderTag
 
 
@@ -15,10 +15,11 @@ def client_logged_in(admin_user, client):
 
 @pytest.fixture
 def financial_year():
-    fy, _ = FinancialYear.objects.get_or_create(
+    fy, _ = FinancialYear.objects.update_or_create(
         fy="2022-23",
         defaults={
             "current": True,
+            "status": FinancialYearStatus.OPEN,
         },
     )
     return fy
@@ -65,10 +66,11 @@ def funder(make_funder):
 def funder_with_py(make_funder):
     funder = make_funder(2)
 
-    fy, _ = FinancialYear.objects.get_or_create(
+    fy, _ = FinancialYear.objects.update_or_create(
         fy="2021-22",
         defaults={
             "current": False,
+            "status": FinancialYearStatus.CLOSED,
         },
     )
     funder_financial_year, _ = funder.funder_financial_years.get_or_create(

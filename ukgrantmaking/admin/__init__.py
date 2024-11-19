@@ -24,7 +24,7 @@ from ukgrantmaking.models import (
     GrantRecipient,
     GrantRecipientYear,
 )
-from ukgrantmaking.models.funder_year import FunderFinancialYear
+from ukgrantmaking.models.funder_financial_year import FunderFinancialYear
 
 
 class UKGrantmakingAdminSite(admin.AdminSite):

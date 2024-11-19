@@ -11,7 +11,8 @@ from ukgrantmaking.management.commands.funders.update_financial_year import (
 )
 from ukgrantmaking.models.financial_years import FinancialYear
 from ukgrantmaking.models.funder import Funder
-from ukgrantmaking.models.funder_year import FunderFinancialYear, FunderYear
+from ukgrantmaking.models.funder_financial_year import FunderFinancialYear
+from ukgrantmaking.models.funder_year import FunderYear
 from ukgrantmaking.utils import do_batched_update
 from ukgrantmaking.utils.text import to_titlecase
 

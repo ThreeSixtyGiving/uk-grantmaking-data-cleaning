@@ -5,8 +5,16 @@
 {% block content %}
 
 {% if object %}
-<div class="md">
-    {{ object.content|safe }}
+<div class="md-grid">
+    {% if object.toc %}
+    <div class="toc-wrapper">
+        {{ object.toc|safe }}
+    </div>
+    {% endif %}
+
+    <div class="md">
+        {{ object.content|safe }}
+    </div>
 </div>
 {% endif %}
 

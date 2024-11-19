@@ -6,9 +6,10 @@ from django.db.models.functions import Coalesce, Left, Length, Right, StrIndex
 from django.utils.text import slugify
 from markdownx.models import MarkdownxField
 
-from ukgrantmaking.models.financial_years import FinancialYear
+from ukgrantmaking.models.financial_years import FinancialYear, FinancialYearStatus
+from ukgrantmaking.models.funder_financial_year import FunderFinancialYear
 from ukgrantmaking.models.funder_utils import FunderSegment, RecordStatus
-from ukgrantmaking.models.funder_year import FunderFinancialYear, FunderYear
+from ukgrantmaking.models.funder_year import FunderYear
 
 
 class FunderTag(models.Model):
@@ -247,9 +248,9 @@ class Funder(models.Model):
             object_id=self.pk,
         ).order_by("-action_time")
 
-    def save(self, *args, **kwargs):
+    def get_latest_funder_financial_year(self) -> FunderFinancialYear:
         current_fy = FinancialYear.objects.current()
-        latest_fy = (
+        latest_funder_year = (
             FunderYear.objects.filter(
                 funder_financial_year__funder=self,
                 funder_financial_year__financial_year=current_fy,
@@ -257,23 +258,30 @@ class Funder(models.Model):
             .order_by("-financial_year_end")
             .first()
         )
-        if latest_fy:
-            self.latest_year = latest_fy.funder_financial_year
+        if latest_funder_year:
+            return latest_funder_year.funder_financial_year
 
-            if (
-                latest_fy.spending_grant_making_individuals
-                and latest_fy.spending_grant_making_individuals > 0
-            ):
-                self.makes_grants_to_individuals = True
-        else:
-            self.latest_year = FunderFinancialYear.objects.filter(
-                funder=self, financial_year=current_fy
-            ).first()
-            if not self.latest_year:
-                self.latest_year = FunderFinancialYear.objects.create(
-                    funder=self, financial_year=current_fy
-                )
+        new_funder_financial_year, created = FunderFinancialYear.objects.get_or_create(
+            funder=self, financial_year=current_fy
+        )
+        return new_funder_financial_year
 
+    def update_funder_financial_year(self):
+        self.latest_year = self.get_latest_funder_financial_year()
+        self.latest_year.update_fields()
+        self.latest_year.save()
+
+        current_fy = FinancialYear.objects.current()
+        if current_fy.status == FinancialYearStatus.OPEN:
+            self.latest_year.segment = self.segment
+            self.latest_year.included = self.included
+            self.latest_year.makes_grants_to_individuals = (
+                self.makes_grants_to_individuals
+            )
+            self.latest_year.save()
+            self.latest_year.tags.set(self.tags.all())
+
+    def transfer_funder_financial_years_to_successor(self):
         # transfer financial years to successor
         if self.successor:
             for funder_financial_year in self.funder_financial_years.all():
@@ -293,14 +301,17 @@ class Funder(models.Model):
                         )
                     )
                     funder_year.save()
-                    if created:
-                        funder_year.funder_financial_year.save()
+
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+
+        # update the funder financial year with the latest values
+        self.update_funder_financial_year()
+
+        # transfer financial years to successor
+        self.transfer_funder_financial_years_to_successor()
 
         # transfer financial years from predecessors
         if self.predecessors.exists():
             for predecessor in self.predecessors.all():
                 predecessor.save()
-
-        super().save(*args, **kwargs)
-        if self.latest_year:
-            self.latest_year.save()

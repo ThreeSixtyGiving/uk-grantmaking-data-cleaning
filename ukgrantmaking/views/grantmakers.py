@@ -262,7 +262,6 @@ def edit_funderyear(funder_year: FunderYear, request, suffix: str = "cy"):
         funder_year.funder_financial_year.checked_on = timezone.now()
         funder_year.funder_financial_year.checked_by = request.user
         funder_year.save()
-        funder_year.funder_financial_year.save()
 
         LogEntry.objects.log_action(
             user_id=request.user.id,

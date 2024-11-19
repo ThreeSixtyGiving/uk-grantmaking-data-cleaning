@@ -2,7 +2,7 @@ from django.contrib import admin
 
 from ukgrantmaking.admin.csv_upload import CSVUploadModelAdmin
 from ukgrantmaking.admin.funder_year import FunderYearInline
-from ukgrantmaking.models.funder_year import FunderFinancialYear
+from ukgrantmaking.models.funder_financial_year import FunderFinancialYear
 
 
 class FunderFinancialYearInline(admin.StackedInline):

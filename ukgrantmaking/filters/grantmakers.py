@@ -57,6 +57,7 @@ class GrantmakerFilter(django_filters.FilterSet):
         # tuple-mapping retains order
         fields=(
             ("name", "name"),
+            ("latest_year__scaling", "latest_year__scaling"),
             ("latest_year__income", "latest_year__income"),
             ("latest_year__spending", "latest_year__spending"),
             (
@@ -78,6 +79,7 @@ class GrantmakerFilter(django_filters.FilterSet):
         # labels do not need to retain order
         field_labels={
             "name": "Organisation name",
+            "latest_year__scaling": "Grantmaker size",
             "latest_year__income": "Income",
             "latest_year__spending": "Spending",
             "latest_year__spending_grant_making": "Grantmaking",

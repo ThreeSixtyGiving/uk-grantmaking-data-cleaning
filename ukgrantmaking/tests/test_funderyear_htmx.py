@@ -90,6 +90,8 @@ def test_edit_funderyear_cy(
     assert fy.spending_investment_manual == expected_value_cy
     assert fy.spending_investment == expected_value_cy
 
+    assert fy.funder_financial_year.spending_investment == expected_value_cy
+
     logs = check_log_entry(funder)
 
     if expected_value_cy == initial_value_cy:
@@ -153,11 +155,13 @@ def test_edit_funderyear_py(
     assert fy.spending_investment_registered is None
     assert fy.spending_investment_manual == expected_value_cy
     assert fy.spending_investment == expected_value_cy
+    assert fy.funder_financial_year.spending_investment == expected_value_cy
 
     fy_py.refresh_from_db()
     assert fy_py.spending_investment_registered is None
     assert fy_py.spending_investment_manual == expected_value_py
     assert fy_py.spending_investment == expected_value_py
+    assert fy_py.funder_financial_year.spending_investment == expected_value_py
 
     log_entries = check_log_entry(funder_with_py)
     found_fy = False

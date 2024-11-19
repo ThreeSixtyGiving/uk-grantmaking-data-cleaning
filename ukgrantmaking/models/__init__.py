@@ -13,6 +13,7 @@ from ukgrantmaking.models.funder import (
     FunderNote,
     FunderTag,
 )
+from ukgrantmaking.models.funder_financial_year import FunderFinancialYear
 from ukgrantmaking.models.funder_utils import (
     FUNDER_CATEGORIES,
     FunderCategory,
@@ -30,6 +31,7 @@ __all__ = [
     "FinancialYears",
     "Funder",
     "FunderYear",
+    "FunderFinancialYear",
     "FunderTag",
     "FunderNote",
     "FUNDER_CATEGORIES",

@@ -5,7 +5,8 @@ from django.db import connection, transaction
 
 from ukgrantmaking.models.financial_years import FinancialYear
 from ukgrantmaking.models.funder import Funder
-from ukgrantmaking.models.funder_year import FunderFinancialYear, FunderYear
+from ukgrantmaking.models.funder_financial_year import FunderFinancialYear
+from ukgrantmaking.models.funder_year import FunderYear
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)

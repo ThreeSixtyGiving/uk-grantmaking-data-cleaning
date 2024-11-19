@@ -57,6 +57,7 @@ FIELD_CHOICES = {
         "funder_financial_year__funder__org_id": "Funder ID",
         "funder_financial_year__funder__name": "Funder Name",
         "funder_financial_year__funder__status": "Funder status",
+        "funder_financial_year__scaling": "Grantmaker size",
         "funder_financial_year__tags": "Tags",
         "funder_financial_year__segment": "Segment",
         "funder_financial_year__included": "Included",
@@ -130,7 +131,7 @@ class CleaningStatus(models.Model):
     sort_by = models.CharField(
         max_length=50,
         choices=FIELD_CHOICES,
-        default="spending_grant_making",
+        default="funder_financial_year__scaling",
     )
     sort_order = models.CharField(
         max_length=1,
@@ -160,26 +161,28 @@ class CleaningStatus(models.Model):
 
     def get_status(self, qs):
         total = self.run(qs).count()
-        return [
-            Meter(
-                **{
-                    "name": "Checked",
-                    "total": total,
-                    "value": self.run(
-                        qs.filter(funder_financial_year__checked="Checked")
-                    ).count(),
-                }
-            ),
-            # Meter(
-            #     **{
-            #         "name": "Checked segment",
-            #         "total": total,
-            #         "value": self.run(
-            #             qs.filter(funder_financial_year__funder__status="Checked")
-            #         ).count(),
-            #     }
-            # ),
-        ]
+        if self.type == self.CleaningStatusType.GRANTMAKER:
+            return [
+                Meter(
+                    **{
+                        "name": "Checked",
+                        "total": total,
+                        "value": self.run(
+                            qs.filter(funder_financial_year__checked="Checked")
+                        ).count(),
+                    }
+                ),
+                # Meter(
+                #     **{
+                #         "name": "Checked segment",
+                #         "total": total,
+                #         "value": self.run(
+                #             qs.filter(funder_financial_year__funder__status="Checked")
+                #         ).count(),
+                #     }
+                # ),
+            ]
+        raise NotImplementedError(f"Type {self.type} not implemented")
 
 
 class CleaningStatusQuery(models.Model):
@@ -221,5 +224,17 @@ class CleaningStatusQuery(models.Model):
             return qs.filter(**{self.field: self.value})
         if self.comparison == self.Comparison.NOT_EQUAL:
             return qs.filter(**{self.field: self.value})
+        if self.comparison == self.Comparison.GREATER_THAN:
+            return qs.filter(**{f"{self.field}__gt": self.value})
+        if self.comparison == self.Comparison.LESS_THAN:
+            return qs.filter(**{f"{self.field}__lt": self.value})
+        if self.comparison == self.Comparison.GREATER_THAN_OR_EQUAL:
+            return qs.filter(**{f"{self.field}__gte": self.value})
+        if self.comparison == self.Comparison.LESS_THAN_OR_EQUAL:
+            return qs.filter(**{f"{self.field}__lte": self.value})
+        if self.comparison == self.Comparison.STARTS_WITH:
+            return qs.filter(**{f"{self.field}__startswith": self.value})
+        if self.comparison == self.Comparison.ENDS_WITH:
+            return qs.filter(**{f"{self.field}__endswith": self.value})
 
         raise NotImplementedError(f"Comparison {self.comparison} not implemented")

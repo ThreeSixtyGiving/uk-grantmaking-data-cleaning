@@ -58,18 +58,18 @@
     <td class="tr">
         {{ display_number(object.spending_grant_making_individuals, format_str="£{:,.0f}") }}
     </td>
-    <td class="tr">
+    {# <td class="tr">
         {{ display_number(object.spending_grant_making_institutions_charitable, format_str="£{:,.0f}") }}
     </td>
     <td class="tr">
         {{ display_number(object.spending_grant_making_institutions_noncharitable, format_str="£{:,.0f}") }}
-    </td>
+    </td> #}
     <td class="tr">
         {{ display_number(object.spending_grant_making_institutions_unknown, format_str="£{:,.0f}") }}
     </td>
-    <td class="tr">
+    {# <td class="tr">
         {{ display_number(object.spending_grant_making_institutions, format_str="£{:,.0f}") }}
-    </td>
+    </td> #}
     <td class="tr">{{ display_number(object.total_net_assets, format_str="£{:,.0f}") }}</td>
     <td class="tr">{{ display_number(object.funds, format_str="£{:,.0f}") }}</td>
     <td class="tr">{{ display_number(object.funds_endowment, format_str="£{:,.0f}") }}</td>

@@ -4,6 +4,7 @@ from typing import Optional
 from django.urls import reverse
 
 from ukgrantmaking.models.financial_years import FinancialYear
+from ukgrantmaking.views.docs import get_docs
 
 
 @dataclass
@@ -15,6 +16,7 @@ class SidebarItem:
     count: Optional[int] = None
     children: Optional[list["SidebarItem"]] = None
     query: Optional[str] = None
+    url_args: Optional[list] = None
 
     @property
     def classes(self):
@@ -28,7 +30,10 @@ class SidebarItem:
     @property
     def url(self):
         if self.view:
-            url = reverse(self.view)
+            if self.url_args:
+                url = reverse(self.view, args=self.url_args)
+            else:
+                url = reverse(self.view)
             if self.query:
                 url += f"?{self.query}"
             return url
@@ -43,12 +48,13 @@ def sidebar(request):
         "sidebar_settings": [],
     }
     if request.user.is_authenticated:
+        docs = get_docs()
         options["sidebar"].extend(
             [
                 SidebarItem(
                     title="Grantmakers",
                     view="grantmakers:index",
-                    query="included=true&o=-latest_year__spending_grant_making",
+                    query="included=true&o=-latest_year__scaling",
                     children=[
                         SidebarItem(
                             title="Tasks",
@@ -63,7 +69,18 @@ def sidebar(request):
                 SidebarItem(
                     title="Grants", view="admin:ukgrantmaking_grant_changelist"
                 ),
-                SidebarItem(title="Help", view="docs:index"),
+                SidebarItem(
+                    title="Help",
+                    view="docs:index",
+                    children=[
+                        SidebarItem(
+                            title=doc.title,
+                            view="docs:detail",
+                            url_args=[doc.doc_path],
+                        )
+                        for doc in docs
+                    ],
+                ),
             ]
         )
         options["sidebar_settings"].extend(
