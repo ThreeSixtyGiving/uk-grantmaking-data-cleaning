@@ -3,6 +3,7 @@ from django.contrib.admin.models import LogEntry
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
 from django.db.models.functions import Coalesce, Left, Length, Right, StrIndex
+from django.urls import reverse
 from django.utils.text import slugify
 from markdownx.models import MarkdownxField
 
@@ -301,6 +302,9 @@ class Funder(models.Model):
                         )
                     )
                     funder_year.save()
+
+    def get_absolute_url(self):
+        return reverse("grantmakers:detail", kwargs={"org_id": self.pk})
 
     def save(self, *args, **kwargs):
         super().save(*args, **kwargs)

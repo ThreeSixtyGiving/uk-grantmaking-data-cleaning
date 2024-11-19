@@ -120,7 +120,7 @@
         {% include 'grantmakers/partials/funderyear.html.j2' %}
         {% endfor %}
         {% else %}
-        <tr id="funder-year-new">
+        {#<tr id="funder-year-new">
             <td colspan="6">
                 <a class="button" hx-target="#funder-year-new" hx-swap="outerHTML"
                     hx-get="{{ url_for('grantmakers:add_funderyear', org_id=object.org_id) }}"
@@ -128,7 +128,7 @@
                     Add new financial year
                 </a>
             </td>
-        </tr>
+        </tr>#}
         {% for funder_year in object.funder_years() %}
         {% include 'grantmakers/partials/funderyear.html.j2' %}
         {% endfor %}

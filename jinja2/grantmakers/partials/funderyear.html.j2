@@ -143,17 +143,17 @@
 
 <td>
     <div class="flex-column">
-        {{ display_date(funder_year.checked_on) }}
-        {% if funder_year.checked_by %}
-        <p>{{ funder_year.checked_by }}</p>
+        {{ display_date(funder_year.funder_financial_year.checked_on) }}
+        {% if funder_year.funder_financial_year.checked_by %}
+        <p>{{ funder_year.funder_financial_year.checked_by }}</p>
         {% endif %}
         <a href="#" class="button"
             hx-get="{{ url_for('grantmakers:edit_funderyear', org_id=object.org_id, funderyear_id=funder_year.id) }}"
             hx-trigger="click" hx-target="#funder-year-{{ funder_year.id }}" hx-swap="outerHTML">Edit</a>
-        <a href="#" class="button red"
+        {#<a href="#" class="button red"
             hx-delete="{{ url_for('grantmakers:edit_funderyear', org_id=object.org_id, funderyear_id=funder_year.id) }}"
             hx-confirm="Are you sure you wish to delete this row?" hx-trigger="click"
-            hx-target="#funder-year-{{ funder_year.id }}" hx-swap="outerHTML" hx-include=".funder-year-edit">Delete</a>
+            hx-target="#funder-year-{{ funder_year.id }}" hx-swap="outerHTML" hx-include=".funder-year-edit">Delete</a>#}
     </div>
 </td>
 {% endmacro %}

@@ -11,6 +11,8 @@
 <p>{{ object.description }}</p>
 {% endif %}
 
+<a href="{{ url_for('admin:ukgrantmaking_cleaningstatus_change', args=object.id) }}" class="">Edit</a>
+
 {% if status %}
 <div class="progress-grid">
     {% for status_value in status %}

@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 
 from django.db import models
+from django.urls import reverse
 
 LOW_THRESHOLD = 0.2
 HIGH_THRESHOLD = 0.8
@@ -183,6 +184,9 @@ class CleaningStatus(models.Model):
                 # ),
             ]
         raise NotImplementedError(f"Type {self.type} not implemented")
+
+    def get_absolute_url(self):
+        return reverse("grantmakers:task_detail", kwargs={"task_id": self.pk})
 
 
 class CleaningStatusQuery(models.Model):

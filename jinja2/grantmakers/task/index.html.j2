@@ -12,6 +12,7 @@
     <thead>
         <tr>
             <th>Name</th>
+            <th>Edit</th>
             <th>Status</th>
         </tr>
     </thead>
@@ -23,6 +24,9 @@
                 {% if object.description %}
                 <p>{{ object.description }}</p>
                 {% endif %}
+            </td>
+            <td>
+                <a href="{{ url_for('admin:ukgrantmaking_cleaningstatus_change', args=object.id) }}">Edit</a>
             </td>
             <td>
                 {% if statuses[object.id] %}
