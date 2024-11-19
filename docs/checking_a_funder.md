@@ -59,11 +59,13 @@ Use the "Add note" box to add a note about this funder. This should record any d
 
 For more details see ["Checking a Funder Year"](checking_a_funder_year)
 
-## Mark as checked
+## Mark as checked / mark for review
 
 Once you are happy that you have checked and edited a funder, you can mark as checked.
 
 ![Screenshot of the mark as checked box](images/funder-mark-as-checked.png)
+
+If you want to flag the record for review by someone else then you can also mark for review.
 
 ## Audit trail
 
