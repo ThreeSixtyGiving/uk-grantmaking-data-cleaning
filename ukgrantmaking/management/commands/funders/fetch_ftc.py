@@ -50,13 +50,30 @@ def ftc(db_con, do_funders, do_financial):
                 length=len(org_records),
                 label="Updating organisation data",
             ) as bar:
-                for org_record in bar:
-                    funder = Funder.objects.get(org_id=org_record.org_id)
-                    funder.name_registered = to_titlecase(org_record.name)
-                    funder.date_of_registration = org_record.dateRegistered
-                    funder.date_of_removal = org_record.dateRemoved
-                    funder.active = org_record.active
-                    funder.save()
+
+                def iterate_organisations():
+                    for org_record in bar:
+                        yield dict(
+                            org_id=org_record.org_id,
+                            name_registered=to_titlecase(org_record.name),
+                            date_of_registration=org_record.dateRegistered,
+                            date_of_removal=org_record.dateRemoved,
+                            active=org_record.active,
+                        )
+
+                do_batched_update(
+                    Funder,
+                    iterate_organisations(),
+                    unique_fields=[
+                        "org_id",
+                    ],
+                    update_fields=[
+                        "name_registered",
+                        "date_of_registration",
+                        "date_of_removal",
+                        "active",
+                    ],
+                )
 
         if not do_financial:
             return
@@ -193,7 +210,7 @@ def ftc(db_con, do_funders, do_financial):
 
             do_batched_update(
                 FunderYear,
-                iterate_fy,
+                iterate_fy(),
                 unique_fields=[
                     "financial_year_id",
                     "financial_year_end",
