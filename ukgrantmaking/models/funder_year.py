@@ -524,7 +524,13 @@ class FunderYear(models.Model):
     )
 
     class Meta:
-        # unique_together = [["financial_year", "financial_year_end"]]
+        unique_together = [
+            [
+                "funder_financial_year",
+                "financial_year_end",
+                "original_funder_financial_year",
+            ]
+        ]
         ordering = ["funder_financial_year", "-financial_year_end"]
 
     def __str__(self):

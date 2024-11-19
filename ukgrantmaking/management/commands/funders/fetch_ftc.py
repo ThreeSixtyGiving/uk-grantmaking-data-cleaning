@@ -74,6 +74,7 @@ def ftc(db_con, do_funders, do_financial):
                         "active",
                     ],
                 )
+            logger.info(f"Updated {len(org_records):,.0f} organisations in DB")
 
         if not do_financial:
             return
@@ -145,7 +146,7 @@ def ftc(db_con, do_funders, do_financial):
         logger.info(f"Fetched {len(finance_records):,.0f} financial records from FTC")
 
         # replace org IDs with successor IDs
-        finance_records["original_org_id"] = finance_records["org_id"]
+        finance_records["org_id_original"] = finance_records["org_id"]
         finance_records["org_id"] = finance_records["org_id"].replace(successor_lookups)
 
         finance_records["fy"] = None
@@ -191,7 +192,7 @@ def ftc(db_con, do_funders, do_financial):
             def iterate_fy():
                 for financial_record in bar:
                     yield dict(
-                        financial_year_id=financial_record.funder_financial_year_id,
+                        funder_financial_year_id=financial_record.funder_financial_year_id,
                         financial_year_end=financial_record.financial_year_end,
                         financial_year_start=financial_record.financial_year_start,
                         income_registered=financial_record.income,
@@ -206,14 +207,16 @@ def ftc(db_con, do_funders, do_financial):
                         funds_restricted_registered=financial_record.funds_restricted,
                         funds_unrestricted_registered=financial_record.funds_unrestricted,
                         employees_registered=financial_record.employees,
+                        original_funder_financial_year_id=financial_record.original_funder_financial_year_id,
                     )
 
             do_batched_update(
                 FunderYear,
                 iterate_fy(),
                 unique_fields=[
-                    "financial_year_id",
+                    "funder_financial_year_id",
                     "financial_year_end",
+                    "original_funder_financial_year_id",
                 ],
                 update_fields=[
                     "financial_year_start",
@@ -230,4 +233,7 @@ def ftc(db_con, do_funders, do_financial):
                     "funds_unrestricted_registered",
                     "employees_registered",
                 ],
+            )
+            logger.info(
+                f"Created or updated {len(finance_records):,.0f} organisation financial records in DB"
             )
