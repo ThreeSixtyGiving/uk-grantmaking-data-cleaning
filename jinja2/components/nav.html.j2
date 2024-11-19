@@ -1,5 +1,11 @@
 {% macro display_sidebar_item(sidebar_item) %}
-<li>
+<li x-data='{{ { "open": (sidebar_item.collapsible == false) or sidebar_item.active }|tojson }}'
+    class="{{ sidebar_item.classes }}">
+    {% if sidebar_item.children and sidebar_item.collapsible %}
+    <button @click="open = !open" class="sidebar-item-toggle">
+        <span x-text="open ? '▼' : '▶'"></span>
+    </button>
+    {% endif %}
     {% if sidebar_item.view == "logout" %}
     <form action="{{ url_for('logout') }}" method="post">
         {{ csrf_input }}
@@ -9,7 +15,7 @@
     <a href="{{ sidebar_item.url }}" class="sidebar-item">{{ sidebar_item.title }}</a>
     {% endif %}
     {% if sidebar_item.children %}
-    <ul>
+    <ul x-show="open">
         {% for child in sidebar_item.children %}
         {{ display_sidebar_item(child) }}
         {% endfor %}

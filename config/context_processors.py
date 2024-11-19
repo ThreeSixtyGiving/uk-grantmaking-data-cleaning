@@ -16,7 +16,8 @@ class SidebarItem:
     count: Optional[int] = None
     children: Optional[list["SidebarItem"]] = None
     query: Optional[str] = None
-    url_args: Optional[list] = None
+    url_kwargs: Optional[dict] = None
+    collapsible: bool = False
 
     @property
     def classes(self):
@@ -30,14 +31,27 @@ class SidebarItem:
     @property
     def url(self):
         if self.view:
-            if self.url_args:
-                url = reverse(self.view, args=self.url_args)
+            if self.url_kwargs:
+                url = reverse(self.view, kwargs=self.url_kwargs)
             else:
                 url = reverse(self.view)
             if self.query:
                 url += f"?{self.query}"
             return url
         return "#"
+
+    def set_active(self, resolver_match):
+        if self.view == resolver_match.view_name:
+            if resolver_match.kwargs:
+                if self.url_kwargs == resolver_match.kwargs:
+                    self.active = True
+            else:
+                self.active = True
+        if self.children:
+            for child in self.children or []:
+                child.set_active(resolver_match)
+                if child.active:
+                    self.active = True
 
 
 def sidebar(request):
@@ -72,11 +86,12 @@ def sidebar(request):
                 SidebarItem(
                     title="Help",
                     view="docs:index",
+                    collapsible=True,
                     children=[
                         SidebarItem(
                             title=doc.title,
                             view="docs:detail",
-                            url_args=[doc.doc_path],
+                            url_kwargs={"doc_path": doc.doc_path},
                         )
                         for doc in docs
                     ],
@@ -93,12 +108,10 @@ def sidebar(request):
         options["sidebar_settings"].append(SidebarItem(title="Login", view=("login")))
 
     for item in options["sidebar"]:
-        if request.resolver_match.url_name == item.view:
-            item.active = True
+        item.set_active(request.resolver_match)
 
     for item in options["sidebar_settings"]:
-        if request.resolver_match.url_name == item.view:
-            item.active = True
+        item.set_active(request.resolver_match)
 
     return options
 

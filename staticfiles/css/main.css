@@ -133,6 +133,15 @@ body {
 
                 }
 
+                >.sidebar-item-toggle {
+                    float: right;
+                    border: 0;
+                    margin: 0.5rem;
+                    background-color: var(--color-green);
+                    color: var(--color-white);
+                }
+
+                &.active,
                 &:hover {
                     >a {
                         color: var(--color-green);
