@@ -106,6 +106,7 @@ def task_detail(request, task_id, filetype=None):
             "object": cleaning_task,
             "current_fy": current_fy,
             "status": status,
+            "exclude_cleaned": exclude_cleaned,
         },
     )
 

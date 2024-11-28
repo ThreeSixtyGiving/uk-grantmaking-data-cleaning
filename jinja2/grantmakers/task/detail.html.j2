@@ -37,6 +37,12 @@
 </div>
 
 <div class="flex-row">
+    {% if exclude_cleaned %}
+    <a href="{{ url_for('grantmakers:task_detail', args=object.id) }}" class="">Show all records</a>
+    {% else %}
+    <a href="{{ url_for('grantmakers:task_detail', args=object.id) }}?exclude_cleaned" class="">Exclude cleaned
+        records</a>
+    {% endif %}
     <a href="{{ url_for('admin:ukgrantmaking_cleaningstatus_change', args=object.id) }}" class="">Edit</a>
     <a href="{{ object.get_csv_url() }}" class="">Download CSV</a>
 </div>
