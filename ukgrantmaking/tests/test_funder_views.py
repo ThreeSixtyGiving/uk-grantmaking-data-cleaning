@@ -57,16 +57,23 @@ def test_task_not_exist(client_logged_in):
 
 
 def test_task_with_task(client_logged_in, task):
-    response = client_logged_in.get(f"/grantmakers/tasks/{task.id}/")
+    response = client_logged_in.get(f"/grantmakers/tasks/{task.id}")
     assert response.status_code == 200
     assert task.name in response.content.decode("utf-8")
 
 
 def test_task_with_complex_task(client_logged_in, complex_task):
-    response = client_logged_in.get(f"/grantmakers/tasks/{complex_task.id}/")
+    response = client_logged_in.get(f"/grantmakers/tasks/{complex_task.id}")
     assert response.status_code == 200
     assert complex_task.name in response.content.decode("utf-8")
     assert "<span>0 / 1</span>" in response.content.decode("utf-8")
+
+
+def test_task_csv(client_logged_in, complex_task):
+    response = client_logged_in.get(f"/grantmakers/tasks/{complex_task.id}.csv")
+    assert response.status_code == 200
+    lines = response.content.decode("utf-8").strip().split("\n")
+    assert len(lines) == 2
 
 
 def test_funder_not_exist(client_logged_in):
