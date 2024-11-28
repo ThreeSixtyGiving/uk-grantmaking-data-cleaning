@@ -4,7 +4,6 @@ import pandas as pd
 from caradoc import FinancialYear
 from django.db import models
 
-from ukgrantmaking.models.funder_utils import FUNDER_CATEGORIES
 from ukgrantmaking.models.grant import Grant, GrantRecipientYear
 
 DEFAULT_COLUMNS = [
@@ -162,6 +161,7 @@ def get_all_grants(current_fy: FinancialYear):
         "regrant_type",
         "inclusion",
         "funder__segment",
+        "funder__category",
         "recipient__org_id_schema",
         "recipient__how",
         "recipient__what",
@@ -215,6 +215,7 @@ def get_all_grants(current_fy: FinancialYear):
         )
         .assign(
             funder__segment=lambda x: x["funder__segment"].fillna("Unknown"),
+            category=lambda x: x["funder__category"].fillna("Unknown"),
             amount_awarded_GBP=lambda x: x["amount_awarded_GBP"].astype(float),
             annual_amount=lambda x: x["annual_amount"].astype(float),
             recipient__org_id_schema=lambda x: (
@@ -262,9 +263,6 @@ def get_all_grants(current_fy: FinancialYear):
                 .apply(
                     lambda x: tuple(Grant.GrantToIndividualsPurpose(y).label for y in x)
                 )
-            ),
-            category=lambda x: (
-                x["funder__segment"].map(FUNDER_CATEGORIES).fillna("Unknown").apply(str)
             ),
             amount_awarded_GBP_band=lambda x: pd.cut(
                 x["amount_awarded_GBP"],

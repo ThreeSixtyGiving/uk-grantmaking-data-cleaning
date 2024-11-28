@@ -9,7 +9,11 @@ from markdownx.models import MarkdownxField
 
 from ukgrantmaking.models.financial_years import FinancialYear, FinancialYearStatus
 from ukgrantmaking.models.funder_financial_year import FunderFinancialYear
-from ukgrantmaking.models.funder_utils import FunderSegment, RecordStatus
+from ukgrantmaking.models.funder_utils import (
+    FUNDER_CATEGORIES,
+    FunderSegment,
+    RecordStatus,
+)
 from ukgrantmaking.models.funder_year import FunderYear
 
 
@@ -66,6 +70,17 @@ class Funder(models.Model):
         null=True,
         blank=True,
         db_index=True,
+    )
+    category = models.GeneratedField(
+        expression=models.Case(
+            *[
+                models.When(segment=segment.value, then=models.Value(category))
+                for segment, category in FUNDER_CATEGORIES.items()
+            ],
+            output_field=models.CharField(max_length=255),
+        ),
+        output_field=models.CharField(max_length=255),
+        db_persist=True,
     )
     included = models.BooleanField(
         default=True,

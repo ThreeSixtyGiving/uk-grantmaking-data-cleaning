@@ -139,6 +139,7 @@ class GrantAdmin(CSVUploadModelAdmin):
         "recipient_type_manual",
         ("recipient_type_manual", admin.EmptyFieldListFilter),
         "funder__segment",
+        "funder__category",
         "funding_organisation_type",
         "funding_organisation_name",
     )

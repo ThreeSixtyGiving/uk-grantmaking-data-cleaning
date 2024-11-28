@@ -37,6 +37,7 @@ class FunderAdmin(CSVUploadModelAdmin):
         "org_id",
         "name",
         "segment",
+        "category",
         "included",
         "makes_grants_to_individuals",
         "size",
@@ -48,6 +49,7 @@ class FunderAdmin(CSVUploadModelAdmin):
     list_filter = (
         "included",
         "segment",
+        "category",
         ("segment", admin.EmptyFieldListFilter),
         "tags",
         "makes_grants_to_individuals",

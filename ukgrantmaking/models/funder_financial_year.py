@@ -3,7 +3,11 @@ from django.db import models
 from django.db.models.functions import Coalesce
 from markdownx.models import MarkdownxField
 
-from ukgrantmaking.models.funder_utils import FunderSegment, RecordStatus
+from ukgrantmaking.models.funder_utils import (
+    FUNDER_CATEGORIES,
+    FunderSegment,
+    RecordStatus,
+)
 
 
 class FunderFinancialYear(models.Model):
@@ -22,6 +26,17 @@ class FunderFinancialYear(models.Model):
         null=True,
         blank=True,
         db_index=True,
+    )
+    category = models.GeneratedField(
+        expression=models.Case(
+            *[
+                models.When(segment=segment.value, then=models.Value(category))
+                for segment, category in FUNDER_CATEGORIES.items()
+            ],
+            output_field=models.CharField(max_length=255),
+        ),
+        output_field=models.CharField(max_length=255),
+        db_persist=True,
     )
     included = models.BooleanField(
         default=True,

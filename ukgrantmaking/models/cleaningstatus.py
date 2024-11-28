@@ -149,6 +149,7 @@ FIELD_DEFINITIONS = [
         list[str],
     ),
     ("funder_financial_year__segment", "Segment", CleaningStatusType.GRANTMAKER, str),
+    ("funder_financial_year__category", "Category", CleaningStatusType.GRANTMAKER, str),
     (
         "funder_financial_year__included",
         "Included",

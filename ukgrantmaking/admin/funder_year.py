@@ -121,6 +121,7 @@ class FunderYearAdmin(CSVUploadModelAdmin):
         "fy",
         "financial_year_end",
         "funder__segment",
+        "funder__category",
         "funder__included",
         "income",
         "spending",
@@ -134,6 +135,7 @@ class FunderYearAdmin(CSVUploadModelAdmin):
         "funder_financial_year__included",
         "funder_financial_year__financial_year__fy",
         "funder_financial_year__segment",
+        "funder_financial_year__category",
         "checked",
         ("checked_by", admin.EmptyFieldListFilter),
     )
@@ -270,6 +272,10 @@ class FunderYearAdmin(CSVUploadModelAdmin):
     @admin.display(description="Segment")
     def funder__segment(self, obj):
         return obj.funder_financial_year.segment
+
+    @admin.display(description="Category")
+    def funder__category(self, obj):
+        return obj.funder_financial_year.category
 
     @admin.display(description="Included", boolean=True)
     def funder__included(self, obj):

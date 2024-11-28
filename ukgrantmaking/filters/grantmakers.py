@@ -1,7 +1,8 @@
 import django_filters
 from django.db import models
 
-from ukgrantmaking.models.funder import Funder, FunderSegment
+from ukgrantmaking.models.funder import Funder
+from ukgrantmaking.models.funder_utils import FunderCategory, FunderSegment
 
 
 class NewOrderingFilter(django_filters.OrderingFilter):
@@ -22,6 +23,9 @@ class GrantmakerFilter(django_filters.FilterSet):
     )
     segment = django_filters.MultipleChoiceFilter(
         field_name="segment", choices=FunderSegment.choices
+    )
+    category = django_filters.MultipleChoiceFilter(
+        field_name="category", choices=FunderCategory.choices
     )
     search = django_filters.CharFilter(
         field_name="name", lookup_expr="icontains", label="Search"
@@ -99,6 +103,7 @@ class GrantmakerFilter(django_filters.FilterSet):
             "included",
             "active",
             "segment",
+            "category",
             "tags",
             "makes_grants_to_individuals",
         ]
