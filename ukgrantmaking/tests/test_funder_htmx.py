@@ -119,12 +119,12 @@ def test_htmx_edit_tags(
     for tag in new_tags:
         assert tag in response.content.decode("utf-8")
         assert funder.tags.filter(tag=tag).exists()
-        assert funder.latest_year.tags.filter(tag=tag).exists()
+        assert funder.current_year.tags.filter(tag=tag).exists()
     for tag in existing_tags:
         if tag not in new_tags:
             assert tag not in response.content.decode("utf-8")
             assert not funder.tags.filter(tag=tag).exists()
-            assert not funder.latest_year.tags.filter(tag=tag).exists()
+            assert not funder.current_year.tags.filter(tag=tag).exists()
 
     assert check_log_entry(funder) is not None
 
@@ -165,7 +165,7 @@ def test_htmx_change_status_bool(
     # check the funder status was changed
     funder.refresh_from_db()
     assert getattr(funder, field) == new_status
-    assert getattr(funder.latest_year, field) == new_status
+    assert getattr(funder.current_year, field) == new_status
     assert check_log_entry(funder) is not None
 
 
@@ -195,8 +195,8 @@ def test_htmx_change_status_checked(
     new_status,
     check_log_entry,
 ):
-    funder.latest_year.checked = initial_status
-    funder.latest_year.save()
+    funder.current_year.checked = initial_status
+    funder.current_year.save()
 
     response = client_logged_in.post(
         f"/grantmakers/funder/{funder.org_id}/change_status",
@@ -207,9 +207,9 @@ def test_htmx_change_status_checked(
 
     # check the funder status was changed
     funder.refresh_from_db()
-    assert funder.latest_year.checked == new_status
-    assert funder.latest_year.checked_on is not None
-    assert funder.latest_year.checked_by == admin_user
+    assert funder.current_year.checked == new_status
+    assert funder.current_year.checked_on is not None
+    assert funder.current_year.checked_by == admin_user
     assert check_log_entry(funder) is not None
 
 
@@ -239,7 +239,7 @@ def test_htmx_change_status_segment(
     # check the funder status was changed
     funder.refresh_from_db()
     assert funder.segment == new_segment
-    assert funder.latest_year.segment == new_segment
+    assert funder.current_year.segment == new_segment
     assert check_log_entry(funder) is not None
 
 

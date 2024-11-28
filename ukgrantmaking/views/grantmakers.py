@@ -29,7 +29,7 @@ def index(request):
     filters = GrantmakerFilter(
         request.GET,
         queryset=Funder.objects.all()
-        .select_related("latest_year", "latest_year__checked_by")
+        .select_related("current_year", "current_year__checked_by")
         .prefetch_related("tags"),
     )
     paginator = Paginator(filters.qs, 25)
@@ -203,31 +203,31 @@ def htmx_edit_funder(request, org_id):
         funder.makes_grants_to_individuals = True
         change_message = "Marked as making grants to individuals"
     elif action == "marked_as_checked":
-        if funder.latest_year:
-            funder.latest_year.checked = RecordStatus.CHECKED
-            funder.latest_year.checked_on = timezone.now()
-            funder.latest_year.checked_by = request.user
-            funder.latest_year.save()
+        if funder.current_year:
+            funder.current_year.checked = RecordStatus.CHECKED
+            funder.current_year.checked_on = timezone.now()
+            funder.current_year.checked_by = request.user
+            funder.current_year.save()
             change_message = (
-                f"Marked as checked for {funder.latest_year.financial_year.fy}"
+                f"Marked as checked for {funder.current_year.financial_year.fy}"
             )
     elif action == "marked_as_unchecked":
-        if funder.latest_year:
-            funder.latest_year.checked = RecordStatus.UNCHECKED
-            funder.latest_year.checked_on = timezone.now()
-            funder.latest_year.checked_by = request.user
-            funder.latest_year.save()
+        if funder.current_year:
+            funder.current_year.checked = RecordStatus.UNCHECKED
+            funder.current_year.checked_on = timezone.now()
+            funder.current_year.checked_by = request.user
+            funder.current_year.save()
             change_message = (
-                f"Marked as unchecked for {funder.latest_year.financial_year.fy}"
+                f"Marked as unchecked for {funder.current_year.financial_year.fy}"
             )
     elif action == "mark_for_review":
-        if funder.latest_year:
-            funder.latest_year.checked = RecordStatus.FOR_REVIEW
-            funder.latest_year.checked_on = timezone.now()
-            funder.latest_year.checked_by = request.user
-            funder.latest_year.save()
+        if funder.current_year:
+            funder.current_year.checked = RecordStatus.FOR_REVIEW
+            funder.current_year.checked_on = timezone.now()
+            funder.current_year.checked_by = request.user
+            funder.current_year.save()
             change_message = (
-                f"Marked for review for {funder.latest_year.financial_year.fy}"
+                f"Marked for review for {funder.current_year.financial_year.fy}"
             )
     elif action == "update_segment":
         old_segment = funder.segment

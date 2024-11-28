@@ -23,7 +23,7 @@
 <h3>Filters</h3>
 <form action="{{ url_for('grantmakers:index') }}" method="get" class="filters">
     {% for field in filters.form %}
-    {% if field.name == "latest_year__income__gt" %}
+    {% if field.name == "current_year__income__gt" %}
     <details>
         <summary>Financial</summary>
         {% endif %}

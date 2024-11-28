@@ -96,6 +96,13 @@ class Funder(models.Model):
     active = models.BooleanField(null=True, blank=True)
     activities = models.TextField(null=True, blank=True)
     website = models.URLField(null=True, blank=True)
+    current_year = models.ForeignKey(
+        FunderFinancialYear,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="funder_current_year",
+    )
     latest_year = models.ForeignKey(
         FunderFinancialYear,
         on_delete=models.SET_NULL,
@@ -199,17 +206,17 @@ class Funder(models.Model):
     )
 
     class Meta:
-        ordering = ["-latest_year__spending_grant_making"]
+        ordering = ["-latest_year__scaling"]
 
     def __str__(self):
         return f"{self.name} ({self.org_id})"
 
     @property
     def checked(self):
-        if self.latest_year:
-            if self.latest_year.checked_by:
-                return self.latest_year.checked_by
-            if self.latest_year.checked:
+        if self.current_year:
+            if self.current_year.checked_by:
+                return self.current_year.checked_by
+            if self.current_year.checked:
                 return "Checked"
         return False
 
@@ -268,19 +275,19 @@ class Funder(models.Model):
         return new_funder_financial_year
 
     def update_funder_financial_year(self):
-        self.latest_year = self.get_latest_funder_financial_year()
-        self.latest_year.update_fields()
-        self.latest_year.save()
+        self.current_year = self.get_latest_funder_financial_year()
+        self.current_year.update_fields()
+        self.current_year.save()
 
         current_fy = FinancialYear.objects.current()
         if current_fy.status == FinancialYearStatus.OPEN:
-            self.latest_year.segment = self.segment
-            self.latest_year.included = self.included
-            self.latest_year.makes_grants_to_individuals = (
+            self.current_year.segment = self.segment
+            self.current_year.included = self.included
+            self.current_year.makes_grants_to_individuals = (
                 self.makes_grants_to_individuals
             )
-            self.latest_year.save()
-            self.latest_year.tags.set(self.tags.all())
+            self.current_year.save()
+            self.current_year.tags.set(self.tags.all())
 
     def transfer_funder_financial_years_to_successor(self):
         # transfer financial years to successor

@@ -132,6 +132,12 @@ FIELD_DEFINITIONS = [
         bool,
     ),
     (
+        "funder_financial_year__funder__latest_year__scaling",
+        "Grantmaker size (latest)",
+        CleaningStatusType.GRANTMAKER,
+        int,
+    ),
+    (
         "funder_financial_year__scaling",
         "Grantmaker size",
         CleaningStatusType.GRANTMAKER,
@@ -389,7 +395,7 @@ class CleaningStatus(models.Model):
     sort_by = models.CharField(
         max_length=255,
         choices=FIELD_CHOICES,
-        default="funder_financial_year__scaling",
+        default="funder_financial_year__funder__latest_year__scaling",
     )
     sort_order = models.CharField(
         max_length=1,

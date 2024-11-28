@@ -52,8 +52,8 @@ def index(request):
             #     "title": "Funders with edited data",
             #     "value": Funder.objects.filter(
             #         included=True,
-            #         latest_year__financial_year="2022-23",
-            #         latest_year__checked=True,
+            #         current_year__financial_year="2022-23",
+            #         current_year__checked=True,
             #     ).count(),
             # },
         ]

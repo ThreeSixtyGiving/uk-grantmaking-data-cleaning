@@ -46,11 +46,11 @@
         </footer>
     </li>
     <li
-        class="{% if object.latest_year and object.latest_year.checked == 'Checked' %}positive{% else %}negative{% endif %}">
+        class="{% if object.current_year and object.current_year.checked == 'Checked' %}positive{% else %}negative{% endif %}">
         <header>Checked?</header>
-        <span>{{ object.latest_year.checked or '' }}</span>
+        <span>{{ object.current_year.checked or '' }}</span>
         <footer>
-            {% if not object.latest_year.checked or object.latest_year.checked != 'Checked' %}
+            {% if not object.current_year.checked or object.current_year.checked != 'Checked' %}
             <a href="#" hx-target="#funder-status" hx-swap="outerHTML" class="button"
                 hx-post="{{ url_for('grantmakers:change_status', org_id=object.org_id) }}"
                 hx-vals='{"action": "marked_as_checked"}'>Mark as checked</a>
@@ -59,7 +59,7 @@
                 hx-post="{{ url_for('grantmakers:change_status', org_id=object.org_id) }}"
                 hx-vals='{"action": "marked_as_unchecked"}'>Mark as unchecked</a>
             {% endif %}
-            {% if not object.latest_year.checked or object.latest_year.checked != 'For Review' %}
+            {% if not object.current_year.checked or object.current_year.checked != 'For Review' %}
             <a href="#" hx-target="#funder-status" hx-swap="outerHTML" class="button"
                 hx-post="{{ url_for('grantmakers:change_status', org_id=object.org_id) }}"
                 hx-vals='{"action": "mark_for_review"}'>Flag for review</a>

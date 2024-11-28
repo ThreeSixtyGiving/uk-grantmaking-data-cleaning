@@ -52,8 +52,8 @@ class FunderAdmin(CSVUploadModelAdmin):
         "tags",
         "makes_grants_to_individuals",
         "org_id_schema",
-        # "latest_year__checked",
-        ("latest_year", admin.EmptyFieldListFilter),
+        # "current_year__checked",
+        ("current_year", admin.EmptyFieldListFilter),
     )
     show_facets = admin.ShowFacets.NEVER
     list_editable = (
@@ -95,8 +95,8 @@ class FunderAdmin(CSVUploadModelAdmin):
 
     @admin.display(description="Latest grantmaking")
     def size(self, obj):
-        if obj.latest_year and obj.latest_year.spending_grant_making:
-            return "{:,.0f}".format(obj.latest_year.spending_grant_making)
+        if obj.current_year and obj.current_year.spending_grant_making:
+            return "{:,.0f}".format(obj.current_year.spending_grant_making)
 
     @admin.display(description="Tags")
     def tag_list(self, obj):
@@ -104,12 +104,14 @@ class FunderAdmin(CSVUploadModelAdmin):
 
     @admin.display(description="Checked by")
     def checked_by(self, obj):
-        return obj.latest_year.checked_by if obj.latest_year else None
+        return obj.current_year.checked_by if obj.current_year else None
 
     @admin.display(description="Checked", boolean=True)
     def checked(self, obj):
         return (
-            obj.latest_year.checked == RecordStatus.CHECKED if obj.latest_year else None
+            obj.current_year.checked == RecordStatus.CHECKED
+            if obj.current_year
+            else None
         )
 
     @admin.display(description="")

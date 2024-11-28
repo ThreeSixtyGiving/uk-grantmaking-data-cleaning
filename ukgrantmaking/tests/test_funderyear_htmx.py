@@ -3,7 +3,7 @@ import pytest
 
 def test_funder_htmx_get_funderyear(client_logged_in, funder):
     response = client_logged_in.get(
-        f"/grantmakers/funder/{funder.org_id}/funderyear/{funder.latest_year.funder_years.first().id}",
+        f"/grantmakers/funder/{funder.org_id}/funderyear/{funder.current_year.funder_years.first().id}",
         headers={"HX-Request": "true"},
     )
     assert response.status_code == 200
@@ -15,7 +15,7 @@ def test_funder_htmx_get_funderyear(client_logged_in, funder):
 
 def test_not_htmx(client_logged_in, funder, check_log_entry):
     response = client_logged_in.get(
-        f"/grantmakers/funder/{funder.org_id}/funderyear/{funder.latest_year.funder_years.first().id}"
+        f"/grantmakers/funder/{funder.org_id}/funderyear/{funder.current_year.funder_years.first().id}"
     )
     assert response.status_code == 400
     assert "This view is only accessible via htmx" in response.content.decode("utf-8")
@@ -25,7 +25,7 @@ def test_not_htmx(client_logged_in, funder, check_log_entry):
 def test_wrong_funderid(client_logged_in, funder, make_funder, check_log_entry):
     funder2 = make_funder(2)
     response = client_logged_in.get(
-        f"/grantmakers/funder/{funder.org_id}/funderyear/{funder2.latest_year.funder_years.first().id}",
+        f"/grantmakers/funder/{funder.org_id}/funderyear/{funder2.current_year.funder_years.first().id}",
         headers={"HX-Request": "true"},
     )
     assert response.status_code == 400
@@ -35,8 +35,8 @@ def test_wrong_funderid(client_logged_in, funder, make_funder, check_log_entry):
 
 
 def test_delete_funderyear(client_logged_in, funder, check_log_entry):
-    assert funder.latest_year.funder_years.count() == 1
-    to_delete = funder.latest_year.funder_years.first()
+    assert funder.current_year.funder_years.count() == 1
+    to_delete = funder.current_year.funder_years.first()
     fye = to_delete.financial_year_end.strftime("%Y-%m-%d")
 
     response = client_logged_in.delete(
@@ -46,7 +46,7 @@ def test_delete_funderyear(client_logged_in, funder, check_log_entry):
     assert response.status_code == 200
 
     funder.refresh_from_db()
-    assert funder.latest_year.funder_years.count() == 0
+    assert funder.current_year.funder_years.count() == 0
     assert fye in check_log_entry(funder)[0].change_message
 
 
@@ -69,7 +69,7 @@ def test_edit_funderyear_cy(
     new_value_cy,
     expected_value_cy,
 ):
-    fy = funder.latest_year.funder_years.first()
+    fy = funder.current_year.funder_years.first()
     if initial_value_cy is not None:
         fy.spending_investment_manual = initial_value_cy
         fy.save()
@@ -123,7 +123,7 @@ def test_edit_funderyear_py(
     expected_value_cy,
     expected_value_py,
 ):
-    fy = funder_with_py.latest_year.funder_years.first()
+    fy = funder_with_py.current_year.funder_years.first()
     if initial_value_cy is not None:
         fy.spending_investment_manual = initial_value_cy
         fy.save()
@@ -176,7 +176,7 @@ def test_edit_funderyear_py(
 
 
 def test_edit_funderyear_add_note(client_logged_in, funder, check_log_entry):
-    fy = funder.latest_year.funder_years.first()
+    fy = funder.current_year.funder_years.first()
     assert fy.notes is None
 
     note = "Test note"

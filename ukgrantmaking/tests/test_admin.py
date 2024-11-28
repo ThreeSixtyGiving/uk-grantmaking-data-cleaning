@@ -31,7 +31,7 @@ def test_admin_funder_page(client_logged_in, funder_with_py):
 
 def test_admin_funder_year_page(client_logged_in, funder_with_py):
     funder = funder_with_py
-    fy = funder.latest_year.funder_years.first()
+    fy = funder.current_year.funder_years.first()
     url = reverse("admin:ukgrantmaking_funderyear_change", args=[fy.pk])
     response = client_logged_in.get(url)
     assert response.status_code == 200
@@ -40,7 +40,7 @@ def test_admin_funder_year_page(client_logged_in, funder_with_py):
 
 def test_admin_funder_financial_year_page(client_logged_in, funder_with_py):
     funder = funder_with_py
-    fy = funder.latest_year
+    fy = funder.current_year
     url = reverse("admin:ukgrantmaking_funderfinancialyear_change", args=[fy.pk])
     response = client_logged_in.get(url)
     assert response.status_code == 200
@@ -49,7 +49,7 @@ def test_admin_funder_financial_year_page(client_logged_in, funder_with_py):
 
 def test_admin_financial_year_page(client_logged_in, funder_with_py):
     funder = funder_with_py
-    fy = funder.latest_year.financial_year
+    fy = funder.current_year.financial_year
     url = reverse("admin:ukgrantmaking_financialyear_change", args=[fy.pk])
     response = client_logged_in.get(url)
     assert response.status_code == 200
