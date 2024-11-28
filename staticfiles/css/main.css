@@ -728,6 +728,13 @@ details>summary {
     gap: 0.5rem;
 }
 
+.grid-row {
+    display: grid;
+    gap: 0.5rem;
+    grid-auto-flow: column;
+    width: 100%;
+}
+
 
 .tl {
     text-align: left;

@@ -7,35 +7,39 @@
 {% set title = object.name + ' | Cleaning Tasks' %}
 
 {% block content %}
-{% if object.description %}
-<p>{{ object.description }}</p>
-{% endif %}
 
-<details>
-    <summary>Query definition</summary>
-    <ul>
-        <li>Is a {{ object.type }}</li>
-        {% for query in object.queries_qs %}
-        {% set query_definition = query.__str__() %}
-        {% if query.active %}
-        <li>{{ query_definition }}</li>
-        {% else %}
-        <li><del>{{ query_definition }}</del></li>
-        {% endif %}
-        {% endfor %}
-        {% if object.sort_by_name %}
-        <li>Sorted by {{ object.sort_by_name }}</li>
-        {% endif %}
-        {% if object.n > 0 %}
-        <li>Limited to the first {{ "{:,.0f}".format(object.n) }} records</li>
-        {% else: %}
-        <li>Showing all records</li>
-        {% endif %}
-    </ul>
-</details>
+<div class="grid-row">
+    <details>
+        <summary>Query definition</summary>
+        <ul>
+            <li>Is a {{ object.type }}</li>
+            {% for query in object.queries_qs %}
+            {% set query_definition = query.__str__() %}
+            {% if query.active %}
+            <li>{{ query_definition }}</li>
+            {% else %}
+            <li><del>{{ query_definition }}</del></li>
+            {% endif %}
+            {% endfor %}
+            {% if object.sort_by_name %}
+            <li>Sorted by {{ object.sort_by_name }}</li>
+            {% endif %}
+            {% if object.n > 0 %}
+            <li>Limited to the first {{ "{:,.0f}".format(object.n) }} records</li>
+            {% else: %}
+            <li>Showing all records</li>
+            {% endif %}
+        </ul>
+    </details>
+    {% if object.description %}
+    <p>{{ object.description }}</p>
+    {% endif %}
+</div>
 
-
-<a href="{{ url_for('admin:ukgrantmaking_cleaningstatus_change', args=object.id) }}" class="">Edit</a>
+<div class="flex-row">
+    <a href="{{ url_for('admin:ukgrantmaking_cleaningstatus_change', args=object.id) }}" class="">Edit</a>
+    <a href="{{ object.get_csv_url() }}" class="">Download CSV</a>
+</div>
 
 {% if status %}
 <div class="progress-grid">

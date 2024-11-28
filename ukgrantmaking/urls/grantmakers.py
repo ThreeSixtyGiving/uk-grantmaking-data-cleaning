@@ -25,9 +25,15 @@ urlpatterns = [
         name="task_index",
     ),
     path(
-        "tasks/<int:task_id>/",
+        "tasks/<int:task_id>",
         task_detail,
         name="task_detail",
+    ),
+    path(
+        "tasks/<int:task_id>.csv",
+        task_detail,
+        name="task_detail_csv",
+        kwargs={"filetype": "csv"},
     ),
     path(
         "funder/<str:org_id>/",

@@ -1,3 +1,4 @@
+import csv
 from decimal import Decimal
 
 from dateutil import parser
@@ -57,7 +58,7 @@ def task_index(request):
 
 
 @login_required
-def task_detail(request, task_id):
+def task_detail(request, task_id, filetype=None):
     current_fy = FinancialYear.objects.get(current=True)
     try:
         cleaning_task = CleaningStatus.objects.filter(
@@ -74,6 +75,25 @@ def task_detail(request, task_id):
     exclude_cleaned = "exclude_cleaned" in request.GET
 
     qs = cleaning_task.run(base_qs, exclude_cleaned=exclude_cleaned)
+
+    if filetype == "csv":
+        now = timezone.now()
+        response = HttpResponse(
+            content_type="text/csv",
+            headers={
+                "Content-Disposition": f'attachment; filename="ukgrantmaking-cleaning-{cleaning_task.slug}-{now:%Y-%m-%d}.csv"'
+            },
+        )
+        writer = csv.writer(response)
+        headers = None
+        for row in qs:
+            if not headers:
+                headers = [field.name for field in row._meta.fields]
+                writer.writerow(headers)
+            writer.writerow([getattr(row, field) for field in headers])
+
+        return response
+
     status = cleaning_task.get_status(base_qs)
     paginator = Paginator(qs, 25)
     page_number = request.GET.get("page")

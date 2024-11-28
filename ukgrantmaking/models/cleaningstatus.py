@@ -4,6 +4,7 @@ from datetime import date
 from django.db import models
 from django.forms import ValidationError
 from django.urls import reverse
+from django.utils.text import slugify
 from inline_ordering.models import Orderable
 
 LOW_THRESHOLD = 0.2
@@ -401,6 +402,10 @@ class CleaningStatus(models.Model):
     def __str__(self):
         return self.name
 
+    @property
+    def slug(self):
+        return slugify(self.name)
+
     class Meta:
         verbose_name = "Cleaning check"
         verbose_name_plural = "Cleaning checks"
@@ -481,6 +486,9 @@ class CleaningStatus(models.Model):
 
     def get_absolute_url(self):
         return reverse("grantmakers:task_detail", kwargs={"task_id": self.pk})
+
+    def get_csv_url(self):
+        return reverse("grantmakers:task_detail_csv", kwargs={"task_id": self.pk})
 
 
 class CleaningStatusQuery(Orderable):
