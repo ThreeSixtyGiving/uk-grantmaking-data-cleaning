@@ -405,6 +405,10 @@ class CleaningStatus(models.Model):
     date_added = models.DateTimeField(auto_now_add=True, db_index=True, null=True)
     date_updated = models.DateTimeField(auto_now=True, null=True)
 
+    def __init__(self, *args, **kwargs):
+        self._query_results = {}
+        super().__init__(*args, **kwargs)
+
     def __str__(self):
         return self.name
 
@@ -432,6 +436,11 @@ class CleaningStatus(models.Model):
         return self.queries_qs.filter(active=True)
 
     def run(self, qs, exclude_cleaned=False):
+        query_hash = hash((self.pk, qs.query.__str__(), exclude_cleaned))
+
+        if query_hash in self._query_results:
+            return self._query_results[query_hash]
+
         previous_query: models.Q = None
         for query in self.active_queries_qs:
             query_filter = query.get_filter(qs, self.type)
@@ -451,7 +460,12 @@ class CleaningStatus(models.Model):
 
         if exclude_cleaned:
             if self.type == CleaningStatusType.GRANTMAKER:
-                qs = qs.exclude(funder_financial_year__checked="Checked")
+                qs = qs.filter(
+                    ~models.Q(
+                        funder_financial_year__checked="Checked",
+                        funder_financial_year__checked__isnull=False,
+                    )
+                )
 
         if self.sort_by:
             if self.sort_order == self.SortOrder.DESC:
@@ -462,20 +476,23 @@ class CleaningStatus(models.Model):
         else:
             qs = qs.distinct("id")
         if self.n > 0:
-            return qs[: self.n]
-        return qs
+            qs = qs[: self.n]
+        self._query_results[query_hash] = list(qs)
+        return self._query_results[query_hash]
 
     def get_status(self, qs):
-        total = self.run(qs).count()
+        results = self.run(qs)
+        total = len(results)
         if self.type == CleaningStatusType.GRANTMAKER:
+            checked = len(
+                [r for r in results if r.funder_financial_year.checked == "Checked"]
+            )
             return [
                 Meter(
                     **{
                         "name": "Checked",
                         "total": total,
-                        "value": self.run(
-                            qs.filter(funder_financial_year__checked="Checked")
-                        ).count(),
+                        "value": checked,
                     }
                 ),
                 # Meter(
