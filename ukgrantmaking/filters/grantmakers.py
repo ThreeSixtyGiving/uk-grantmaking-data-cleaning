@@ -1,8 +1,7 @@
 import django_filters
 from django.db import models
 
-from ukgrantmaking.models import Funder
-from ukgrantmaking.models.funder import FunderSegment
+from ukgrantmaking.models.funder import Funder, FunderSegment
 
 
 class NewOrderingFilter(django_filters.OrderingFilter):

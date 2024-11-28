@@ -1,7 +1,8 @@
 import djclick as click
 import pandas as pd
 
-from ukgrantmaking.models import Funder, FunderYear
+from ukgrantmaking.models.funder import Funder
+from ukgrantmaking.models.funder_year import FunderYear
 
 
 @click.command(deprecated=True)

@@ -57,6 +57,7 @@ INSTALLED_APPS = [
     "charity_django.utils",
     "ukgrantmaking",
     "markdownx",
+    "adminsortable2",
     "django_filters",
 ]
 

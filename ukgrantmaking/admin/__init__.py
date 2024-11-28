@@ -13,18 +13,17 @@ from ukgrantmaking.admin.grants import (
     GrantRecipientAdmin,
     GrantRecipientYearAdmin,
 )
-from ukgrantmaking.models import (
-    CleaningStatus,
+from ukgrantmaking.models.cleaningstatus import CleaningStatus
+from ukgrantmaking.models.financial_years import FinancialYear
+from ukgrantmaking.models.funder import Funder, FunderTag
+from ukgrantmaking.models.funder_financial_year import FunderFinancialYear
+from ukgrantmaking.models.funder_year import FunderYear
+from ukgrantmaking.models.grant import (
     CurrencyConverter,
-    FinancialYear,
-    Funder,
-    FunderTag,
-    FunderYear,
     Grant,
     GrantRecipient,
     GrantRecipientYear,
 )
-from ukgrantmaking.models.funder_financial_year import FunderFinancialYear
 
 
 class UKGrantmakingAdminSite(admin.AdminSite):

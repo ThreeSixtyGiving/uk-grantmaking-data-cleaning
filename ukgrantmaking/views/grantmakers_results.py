@@ -10,11 +10,11 @@ from django.shortcuts import render
 from django.urls import reverse
 from django.utils.text import slugify
 
-from ukgrantmaking.models import (
+from ukgrantmaking.models.funder import FunderTag
+from ukgrantmaking.models.funder_utils import (
     FUNDER_CATEGORIES,
     FunderCategory,
     FunderSegment,
-    FunderTag,
 )
 from ukgrantmaking.utils.funder import (
     funder_individuals_summary,

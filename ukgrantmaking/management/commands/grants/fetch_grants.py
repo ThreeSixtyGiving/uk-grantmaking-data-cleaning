@@ -7,8 +7,8 @@ import pandas as pd
 from django.db import transaction
 from django.db.models import Q
 
-from ukgrantmaking.models import CurrencyConverter, Grant
 from ukgrantmaking.models.financial_years import FinancialYear
+from ukgrantmaking.models.grant import CurrencyConverter, Grant
 from ukgrantmaking.utils import do_batched_update
 
 logger = logging.getLogger(__name__)

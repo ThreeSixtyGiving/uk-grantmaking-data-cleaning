@@ -1,6 +1,7 @@
 from ukgrantmaking.models.cleaningstatus import (
     CleaningStatus,
     CleaningStatusQuery,
+    CleaningStatusType,
 )
 from ukgrantmaking.models.financial_years import (
     DEFAULT_BREAK_MONTH,
@@ -45,5 +46,6 @@ __all__ = [
     "CurrencyConverter",
     "CleaningStatus",
     "CleaningStatusQuery",
+    "CleaningStatusType",
     "FinancialYear",
 ]

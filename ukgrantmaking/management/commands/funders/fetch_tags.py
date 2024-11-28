@@ -2,7 +2,7 @@ import djclick as click
 import numpy as np
 import pandas as pd
 
-from ukgrantmaking.models import Funder, FunderTag
+from ukgrantmaking.models.funder import Funder, FunderTag
 
 
 @click.command(deprecated=True)

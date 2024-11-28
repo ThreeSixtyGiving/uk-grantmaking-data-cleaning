@@ -2,7 +2,7 @@ import djclick as click
 from django.db import transaction
 from openpyxl import load_workbook
 
-from ukgrantmaking.models import Funder, FunderTag
+from ukgrantmaking.models.funder import Funder, FunderTag
 
 TAG_LOOKUP = {
     "foundation_giving_trends": "Foundation Giving Trends",

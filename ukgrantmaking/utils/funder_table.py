@@ -6,10 +6,8 @@ import pandas as pd
 from caradoc import FinancialYear
 from django.utils.text import slugify
 
-from ukgrantmaking.models import (
-    Funder,
-    FunderYear,
-)
+from ukgrantmaking.models.funder import Funder
+from ukgrantmaking.models.funder_year import FunderYear
 
 
 def funder_table(

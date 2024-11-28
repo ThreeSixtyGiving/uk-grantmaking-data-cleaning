@@ -3,7 +3,7 @@ from django.utils.html import format_html
 
 from ukgrantmaking.admin.csv_upload import CSVUploadModelAdmin
 from ukgrantmaking.admin.funder_financial_year import FunderFinancialYearInline
-from ukgrantmaking.models import FunderNote
+from ukgrantmaking.models.funder import FunderNote
 from ukgrantmaking.models.funder_utils import RecordStatus
 
 

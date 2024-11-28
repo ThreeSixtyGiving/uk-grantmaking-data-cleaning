@@ -4,7 +4,7 @@ import djclick as click
 import numpy as np
 import pandas as pd
 
-from ukgrantmaking.models import FunderYear
+from ukgrantmaking.models.funder_year import FunderYear
 
 
 @click.command(deprecated=True)

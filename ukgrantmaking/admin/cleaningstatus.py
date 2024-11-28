@@ -1,19 +1,23 @@
+from adminsortable2.admin import SortableAdminBase, SortableTabularInline
 from django.contrib import admin
 
 from ukgrantmaking.models.cleaningstatus import CleaningStatusQuery
 
 
-class CleaningStatusQueryAdminInline(admin.TabularInline):
+class CleaningStatusQueryAdminInline(SortableTabularInline):
     model = CleaningStatusQuery
     fields = (
         "field",
+        "operator",
         "comparison",
         "value",
         "active",
+        "order",
     )
+    ordering = ("order",)
 
 
-class CleaningStatusAdmin(admin.ModelAdmin):
+class CleaningStatusAdmin(SortableAdminBase, admin.ModelAdmin):
     list_display = (
         "name",
         "type",

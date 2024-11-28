@@ -4,8 +4,7 @@ from django.db.models.functions import ExtractYear
 from django.utils.html import format_html
 
 from ukgrantmaking.admin.csv_upload import CSVUploadModelAdmin
-from ukgrantmaking.models import Grant
-from ukgrantmaking.models.grant import GrantRecipientYear
+from ukgrantmaking.models.grant import Grant, GrantRecipientYear
 
 
 class CurrencyConverterAdmin(admin.ModelAdmin):

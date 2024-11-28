@@ -7,8 +7,8 @@ from django.db import transaction
 from django.db.models import Count, F, Sum
 from django.db.models.functions import Coalesce
 
-from ukgrantmaking.models import Grant, GrantRecipient, GrantRecipientYear
 from ukgrantmaking.models.financial_years import FinancialYear
+from ukgrantmaking.models.grant import Grant, GrantRecipient, GrantRecipientYear
 from ukgrantmaking.utils import do_batched_update
 from ukgrantmaking.utils.text import to_titlecase
 

@@ -4,10 +4,8 @@ import numpy as np
 import pandas as pd
 from django.db import models
 
-from ukgrantmaking.models import (
-    FUNDER_CATEGORIES,
-    Funder,
-)
+from ukgrantmaking.models.funder import Funder
+from ukgrantmaking.models.funder_utils import FUNDER_CATEGORIES
 
 
 def funder_trend_over_time(

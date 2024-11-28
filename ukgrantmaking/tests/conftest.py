@@ -2,7 +2,11 @@ import pytest
 from django.contrib.admin.models import ADDITION, CHANGE, DELETION, LogEntry
 from django.contrib.contenttypes.models import ContentType
 
-from ukgrantmaking.models.cleaningstatus import CleaningStatus, CleaningStatusQuery
+from ukgrantmaking.models.cleaningstatus import (
+    CleaningStatus,
+    CleaningStatusType,
+    Comparison,
+)
 from ukgrantmaking.models.financial_years import FinancialYear, FinancialYearStatus
 from ukgrantmaking.models.funder import Funder, FunderTag
 
@@ -87,7 +91,7 @@ def funder_with_py(make_funder):
 @pytest.fixture
 def task():
     return CleaningStatus.objects.create(
-        type=CleaningStatus.CleaningStatusType.GRANTMAKER,
+        type=CleaningStatusType.GRANTMAKER,
         name="Test Task",
     )
 
@@ -95,13 +99,13 @@ def task():
 @pytest.fixture
 def complex_task(make_funder):
     task = CleaningStatus.objects.create(
-        type=CleaningStatus.CleaningStatusType.GRANTMAKER,
+        type=CleaningStatusType.GRANTMAKER,
         name="Test Task",
     )
     # add a condition to the task
     task.cleaningstatusquery_set.create(
         field="funder_financial_year__funder__name",
-        comparison=CleaningStatusQuery.Comparison.EQUAL,
+        comparison=Comparison.EQUAL,
         value="Test Funder 1",
     )
 

@@ -71,11 +71,14 @@ django==5.0.6
     #   -r requirements.in
     #   charity-django
     #   dj-database-url
+    #   django-admin-sortable2
     #   django-debug-toolbar
     #   django-filter
     #   django-htmx
     #   django-markdownx
     #   django-storages
+django-admin-sortable2==2.2.4
+    # via -r requirements.in
 django-click==2.4.0
     # via -r requirements.in
 django-debug-toolbar==4.3.0

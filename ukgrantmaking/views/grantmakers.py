@@ -16,7 +16,9 @@ from django.utils import timezone
 from django.utils.text import slugify
 
 from ukgrantmaking.filters.grantmakers import GrantmakerFilter
-from ukgrantmaking.models import CleaningStatus, FinancialYear, Funder, FunderTag
+from ukgrantmaking.models.cleaningstatus import CleaningStatus, CleaningStatusType
+from ukgrantmaking.models.financial_years import FinancialYear
+from ukgrantmaking.models.funder import Funder, FunderTag
 from ukgrantmaking.models.funder_utils import RecordStatus
 from ukgrantmaking.models.funder_year import FunderYear
 
@@ -40,9 +42,7 @@ def index(request):
 @login_required
 def task_index(request):
     current_fy = FinancialYear.objects.get(current=True)
-    cleaning_tasks = CleaningStatus.objects.filter(
-        type=CleaningStatus.CleaningStatusType.GRANTMAKER
-    )
+    cleaning_tasks = CleaningStatus.objects.filter(type=CleaningStatusType.GRANTMAKER)
     base_qs = FunderYear.objects.filter(
         funder_financial_year__financial_year=current_fy
     ).select_related(
@@ -61,7 +61,7 @@ def task_detail(request, task_id):
     current_fy = FinancialYear.objects.get(current=True)
     try:
         cleaning_task = CleaningStatus.objects.filter(
-            type=CleaningStatus.CleaningStatusType.GRANTMAKER
+            type=CleaningStatusType.GRANTMAKER
         ).get(id=task_id)
     except CleaningStatus.DoesNotExist:
         raise Http404("Task not found")

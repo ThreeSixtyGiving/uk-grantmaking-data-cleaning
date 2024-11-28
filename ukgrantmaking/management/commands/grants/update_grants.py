@@ -6,14 +6,11 @@ import djclick as click
 from django.db import transaction
 from django.db.models import F, Sum
 
-from ukgrantmaking.models import (
-    CurrencyConverter,
-    Grant,
-)
 from ukgrantmaking.models.financial_years import FinancialYear, FinancialYearStatus
 from ukgrantmaking.models.funder import Funder
 from ukgrantmaking.models.funder_financial_year import FunderFinancialYear
 from ukgrantmaking.models.funder_year import FunderYear
+from ukgrantmaking.models.grant import CurrencyConverter, Grant
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)

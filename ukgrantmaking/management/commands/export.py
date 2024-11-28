@@ -1,6 +1,8 @@
 import djclick as click
 
-from ukgrantmaking.models import Funder, FunderNote, FunderTag, FunderYear, Grant
+from ukgrantmaking.models.funder import Funder, FunderNote, FunderTag
+from ukgrantmaking.models.funder_year import FunderYear
+from ukgrantmaking.models.grant import Grant
 from ukgrantmaking.views import export_all_data
 
 

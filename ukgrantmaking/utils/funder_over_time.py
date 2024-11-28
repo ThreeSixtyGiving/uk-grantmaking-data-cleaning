@@ -5,9 +5,7 @@ import pandas as pd
 from caradoc import FinancialYear
 from django.db import models
 
-from ukgrantmaking.models import (
-    Funder,
-)
+from ukgrantmaking.models.funder import Funder
 from ukgrantmaking.utils.funder_table import funder_table
 
 

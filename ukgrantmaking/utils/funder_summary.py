@@ -5,10 +5,8 @@ import pandas as pd
 from caradoc import FinancialYear
 from django.db import models
 
-from ukgrantmaking.models import (
-    FUNDER_CATEGORIES,
-    Funder,
-)
+from ukgrantmaking.models.funder import Funder
+from ukgrantmaking.models.funder_utils import FUNDER_CATEGORIES
 
 
 def funder_summary(current_fy: FinancialYear, effective_date: datetime):

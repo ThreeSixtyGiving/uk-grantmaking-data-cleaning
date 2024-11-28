@@ -5,12 +5,9 @@ from django.contrib.auth.decorators import login_required
 from django.http import HttpResponse, HttpResponseForbidden, JsonResponse
 from django.shortcuts import render
 
-from ukgrantmaking.models import (
-    Funder,
-    FunderTag,
-    FunderYear,
-    Grant,
-)
+from ukgrantmaking.models.funder import Funder, FunderTag
+from ukgrantmaking.models.funder_year import FunderYear
+from ukgrantmaking.models.grant import Grant
 from ukgrantmaking.views.grantmakers_results import (
     all_grantmakers_csv,
     financial_year,

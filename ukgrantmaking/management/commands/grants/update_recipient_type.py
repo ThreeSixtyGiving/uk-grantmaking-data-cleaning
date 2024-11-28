@@ -5,7 +5,7 @@ import pandas as pd
 from django.db import transaction
 from django.db.models import Count, Q
 
-from ukgrantmaking.models import Grant
+from ukgrantmaking.models.grant import Grant
 from ukgrantmaking.utils import batched
 
 logger = logging.getLogger(__name__)
