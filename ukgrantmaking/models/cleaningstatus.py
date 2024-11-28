@@ -5,7 +5,6 @@ from django.db import models
 from django.forms import ValidationError
 from django.urls import reverse
 from django.utils.text import slugify
-from inline_ordering.models import Orderable
 
 LOW_THRESHOLD = 0.2
 HIGH_THRESHOLD = 0.8
@@ -497,7 +496,7 @@ class CleaningStatus(models.Model):
         return reverse("grantmakers:task_detail_csv", kwargs={"task_id": self.pk})
 
 
-class CleaningStatusQuery(Orderable):
+class CleaningStatusQuery(models.Model):
     cleaning_status = models.ForeignKey(CleaningStatus, on_delete=models.CASCADE)
     operator = models.CharField(
         max_length=50, choices=CleaningOperator.choices, default=CleaningOperator.AND
@@ -606,5 +605,5 @@ class CleaningStatusQuery(Orderable):
         if self.comparison == Comparison.IS_FALSE:
             return "is False"
 
-    class Meta(Orderable.Meta):
+    class Meta:
         ordering = ["cleaning_status", "order"]
