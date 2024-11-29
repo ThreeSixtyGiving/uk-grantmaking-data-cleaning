@@ -547,13 +547,31 @@ class CleaningStatusQuery(models.Model):
                 f"Comparison {self.comparison} not available for field {self.field}"
             )
 
-        if not self.value and self.comparison not in [
+        if (self.value is None or self.value == "") and self.comparison not in [
             Comparison.IS_NULL,
             Comparison.IS_NOT_NULL,
             Comparison.IS_FALSE,
             Comparison.IS_TRUE,
         ]:
             raise ValidationError(f"Value required for comparison {self.comparison}")
+
+        if field_type == date:
+            try:
+                self.value = date.fromisoformat(self.value)
+            except ValueError:
+                raise ValidationError(f"Invalid date format '{self.value}'")
+
+        elif field_type == int:
+            try:
+                self.value = int(self.value)
+            except ValueError:
+                raise ValidationError(f"Invalid number format '{self.value}'")
+
+        elif field_type == float:
+            try:
+                self.value = float(self.value)
+            except ValueError:
+                raise ValidationError(f"Invalid number format '{self.value}'")
 
     def get_filter(self, qs, status_type) -> models.Q:
         field_type = FIELD_TYPES[status_type, self.field]
