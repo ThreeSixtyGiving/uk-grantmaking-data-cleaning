@@ -18,7 +18,9 @@ class FunderFinancialYear(models.Model):
         "FinancialYear", on_delete=models.CASCADE, related_name="funder_financial_years"
     )
 
-    tags = models.ManyToManyField("FunderTag", blank=True)
+    tags = models.ManyToManyField(
+        "FunderTag", blank=True, related_name="funder_financial_years"
+    )
     segment = models.CharField(
         max_length=50,
         choices=FunderSegment.choices,

@@ -1,7 +1,9 @@
 import csv
 from decimal import Decimal
+from io import TextIOWrapper
 
 from dateutil import parser
+from django.contrib import messages
 from django.contrib.admin.models import CHANGE, LogEntry
 from django.contrib.auth.decorators import login_required
 from django.contrib.contenttypes.models import ContentType
@@ -11,15 +13,19 @@ from django.http import (
     HttpResponse,
     HttpResponseBadRequest,
     HttpResponseNotAllowed,
+    HttpResponseRedirect,
 )
 from django.shortcuts import get_object_or_404, render
+from django.urls import reverse
 from django.utils import timezone
 from django.utils.text import slugify
 
 from ukgrantmaking.filters.grantmakers import GrantmakerFilter
+from ukgrantmaking.forms.funder_upload import FunderUploadForm
 from ukgrantmaking.models.cleaningstatus import CleaningStatus, CleaningStatusType
-from ukgrantmaking.models.financial_years import FinancialYear
+from ukgrantmaking.models.financial_years import FinancialYear, FinancialYearStatus
 from ukgrantmaking.models.funder import Funder, FunderTag
+from ukgrantmaking.models.funder_financial_year import FunderFinancialYear
 from ukgrantmaking.models.funder_utils import RecordStatus
 from ukgrantmaking.models.funder_year import FunderYear
 
@@ -115,6 +121,74 @@ def task_detail(request, task_id, filetype=None):
 def detail(request, org_id):
     funder = get_object_or_404(Funder, org_id=org_id)
     return render(request, "grantmakers/detail.html.j2", {"object": funder})
+
+
+@login_required
+def upload_csv(request):
+    form = FunderUploadForm()
+    if request.method == "POST":
+        form = FunderUploadForm(request.POST, request.FILES)
+        if form.is_valid():
+            csv_file = form.cleaned_data["file"]
+            tag_defaults = {}
+            tag_cache = {}
+            if form.cleaned_data.get("parent_tag"):
+                parent_tag_name = form.cleaned_data.get("parent_tag").strip()
+                parent_tag, parent_tag_created = FunderTag.objects.get_or_create(
+                    tag=parent_tag_name
+                )
+                if parent_tag_created:
+                    messages.info(request, f"Created parent tag '{parent_tag}'.")
+                else:
+                    messages.info(request, f"Using existing parent tag '{parent_tag}'.")
+                tag_defaults["parent"] = parent_tag
+                tag_cache[parent_tag_name] = {"tag": parent_tag, "orgs": []}
+            reader = csv.DictReader(TextIOWrapper(csv_file, encoding="utf-8-sig"))
+            for row in reader:
+                if "org_id" not in row:
+                    messages.error(request, "'org_id' column not found")
+                    break
+                if "tag" not in row:
+                    messages.error(request, "'tag' column not found")
+                    break
+                funder_id = row["org_id"].strip()
+                if not funder_id:
+                    messages.warning(request, "funder_id not found")
+
+                tag_name = row["tag"].strip()
+
+                if tag_name not in tag_cache:
+                    tag, tag_created = FunderTag.objects.update_or_create(
+                        tag=row["tag"].strip(), defaults=tag_defaults
+                    )
+                    tag_cache[tag_name] = {"tag": tag, "orgs": []}
+                    if tag_created:
+                        messages.info(request, f"Created tag '{tag}'.")
+
+                tag_cache[tag_name]["orgs"].append(funder_id)
+
+            current_fy = FinancialYear.objects.filter(
+                current=True, status=FinancialYearStatus.OPEN
+            ).first()
+
+            for tag_name, tag in tag_cache.items():
+                tag["tag"].funders.add(*tag["orgs"])
+                messages.success(
+                    request, f"{tag_name}: {len(tag['orgs']):,.0f} funders updated."
+                )
+                if current_fy:
+                    tag["tag"].funder_financial_years.add(
+                        *FunderFinancialYear.objects.filter(
+                            funder_id__in=tag["orgs"], financial_year=current_fy
+                        ).values_list("id", flat=True)
+                    )
+                    messages.success(
+                        request,
+                        f"{tag_name}: {len(tag['orgs']):,.0f} funder years updated for ({current_fy}).",
+                    )
+
+            return HttpResponseRedirect(reverse("grantmakers:upload_csv"))
+    return render(request, "grantmakers/upload.html.j2", {"form": form})
 
 
 @login_required

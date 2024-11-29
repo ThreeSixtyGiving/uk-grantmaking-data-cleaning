@@ -78,6 +78,10 @@ def sidebar(request):
                             title="Admin",
                             view="admin:ukgrantmaking_funder_changelist",
                         ),
+                        SidebarItem(
+                            title="Upload",
+                            view="grantmakers:upload_csv",
+                        ),
                     ],
                 ),
                 SidebarItem(

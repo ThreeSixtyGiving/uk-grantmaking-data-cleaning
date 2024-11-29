@@ -39,17 +39,11 @@
       </header>
       {% endblock %}
       {% block flashes %}
-      {% with messages = get_flashed_messages(with_categories=true) %}
+      {% with messages = get_messages(request) %}
       {% if messages %}
-      <ul class="flashes list ma0 pa0">
-        {% for category, message in messages %}
-        {% set bg = 'bg-washed-green' %}
-        {% if category == 'error' %}
-        {% set bg = 'bg-washed-red' %}
-        {% elif category == 'info' %}
-        {% set bg = 'bg-lightest-blue' %}
-        {% endif %}
-        <li class="pa2 {{bg}} ph3 ph5-ns b">{{ message }}</li>
+      <ul class="messages">
+        {% for message in messages %}
+        <li class="message {{ message.tags }}">{{ message }}</li>
         {% endfor %}
       </ul>
       {% endif %}

@@ -638,7 +638,7 @@ ul.tags {
 
 }
 
-.button, form.filters button {
+.button, form.filters button, form.filters input[type=submit] {
     cursor: pointer;
     color: var(--color-white);
     background-color: var(--color-green);
@@ -949,6 +949,45 @@ data.number {
 
         tr:nth-child(even)>td {
             background-color: var(--color-green-lightest);
+        }
+    }
+}
+
+ul.messages {
+    list-style-type: none;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    padding-left: 0;
+    margin-bottom: 1rem;
+
+    >li.message {
+        --bg-color: var(--color-green-light);
+        --color: var(--color-green);
+        --border-color: var(--color);
+        display: block;
+        padding: 8px 12px;
+        border-radius: 5px;
+        background-color: var(--bg-color);
+        color: var(--color);
+        border: solid 2px var(--border-color);
+        width: 100%;
+
+        &.success {
+            --bg-color: var(--color-positive);
+            --color: var(--color-white);
+            --border-color: var(--bg-color);
+        }
+
+        &.warning {
+            --bg-color: var(--color-red-light);
+            --color: var(--color-red-dark);
+        }
+
+        &.error {
+            --bg-color: var(--color-red-dark);
+            --color: var(--color-white);
+            --border-color: var(--bg-color);
         }
     }
 }

@@ -9,6 +9,7 @@ from ukgrantmaking.views.grantmakers import (
     index,
     task_detail,
     task_index,
+    upload_csv,
 )
 
 app_name = "grantmakers"
@@ -18,6 +19,11 @@ urlpatterns = [
         "",
         index,
         name="index",
+    ),
+    path(
+        "upload",
+        upload_csv,
+        name="upload_csv",
     ),
     path(
         "tasks/",

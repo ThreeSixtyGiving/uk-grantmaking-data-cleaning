@@ -1,0 +1,23 @@
+{% extends 'base.html.j2' %}
+
+{% set title = 'Grantmakers Data Upload' %}
+
+{% block content %}
+<h2>Upload new funder tags</h2>
+
+<p>Select a CSV file to upload tags. The file must have the following columns:</p>
+
+<ul>
+    <li><code>org_id</code>: The ID of the funder</li>
+    <li><code>tag</code>: The name of the tag</li>
+</ul>
+
+<p>Funders can have multiple rows with one tag per row. If they do not exist the tags will be created.</p>
+<p>Any funders not found will be ignored.</p>
+
+<form method="post" enctype="multipart/form-data" class="filters" style="max-width: 400px;">
+    {{ csrf_input }}
+    {{ form }}
+    <input type="submit" value="Upload file" />
+</form>
+{% endblock %}

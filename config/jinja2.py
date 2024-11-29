@@ -6,6 +6,7 @@ from decimal import Decimal
 import titlecase
 from django.contrib.admin.models import ADDITION, CHANGE, DELETION
 from django.contrib.humanize.templatetags.humanize import naturalday, naturaltime
+from django.contrib.messages import get_messages
 from django.http import HttpRequest
 from django.shortcuts import resolve_url
 from django.templatetags.static import static
@@ -158,10 +159,6 @@ def url_for(
     return url
 
 
-def get_flashed_messages(*args, **kwargs):
-    return []
-
-
 def get_now():
     return datetime.now()
 
@@ -263,7 +260,7 @@ def environment(**options):
     env.globals.update(
         {
             "url_for": url_for,
-            "get_flashed_messages": get_flashed_messages,
+            "get_messages": get_messages,
             "now": get_now(),
             "django_htmx_script": django_htmx_script,
             "default_title": "UK Grantmaking Data",
