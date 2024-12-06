@@ -51,7 +51,7 @@ Once the tag is saved it should appear in the edit tag section of the funder pag
 
 ### Bulk import tags from csv file
 
-Tags can also be imported from a csv file formatted in two columns headed org_id and tag.  
+Tags can also be imported from a csv file formatted in two columns headed <code>org_id</code> and <code>tag</code>.  
 
 Navigate to [Upload data tags](https://uk-grantmaking-data.360dokku1.vs.mythic-beasts.com/grantmakers/upload).  Choose your file and click upload.
 
