@@ -49,6 +49,12 @@ The "slug" for the tag should include only lowercase characters (a-z), numbers a
 
 Once the tag is saved it should appear in the edit tag section of the funder page.
 
+### Bulk import tags from csv file
+
+Tags can also be imported from a csv file formatted in two columns headed org_id and tag.  
+
+Navigate to [Upload data tags](https://uk-grantmaking-data.360dokku1.vs.mythic-beasts.com/grantmakers/upload).  Choose your file and click upload.
+
 ## Add a note
 
 Use the "Add note" box to add a note about this funder. This should record any decision making about whether to include or exclude the funder, which segment to put it in, or any complications with the data entry process.
