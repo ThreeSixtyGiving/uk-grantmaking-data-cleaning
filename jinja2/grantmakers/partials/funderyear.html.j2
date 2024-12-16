@@ -9,9 +9,9 @@
 
 {% macro funder_year_row(funder_year)%}
 <td>
-    {% if funder_year.original_funder_financial_year %}
-    {% set original_funder = funder_year.original_funder_financial_year.funder %}
-    {% set new_funder = funder_year.funder_financial_year.funder %}
+    {% if funder_year.new_funder_financial_year %}
+    {% set original_funder = funder_year.funder_financial_year.funder %}
+    {% set new_funder = funder_year.new_funder_financial_year.funder %}
     <p class="negative">
         <strong>
             {% if original_funder == object %}

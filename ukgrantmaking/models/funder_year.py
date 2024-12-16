@@ -18,10 +18,10 @@ class FunderYear(models.Model):
         null=True,
         blank=True,
     )
-    original_funder_financial_year = models.ForeignKey(
+    new_funder_financial_year = models.ForeignKey(
         FunderFinancialYear,
         on_delete=models.CASCADE,
-        related_name="new_funder_years",
+        related_name="original_funder_years",
         null=True,
         blank=True,
     )
@@ -392,25 +392,29 @@ class FunderYear(models.Model):
     )
 
     class Meta:
-        unique_together = [
-            [
-                "funder_financial_year",
-                "financial_year_end",
-                "original_funder_financial_year",
-            ]
-        ]
         ordering = ["funder_financial_year", "-financial_year_end"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=[
+                    "funder_financial_year",
+                    "financial_year_end",
+                ],
+                name="unique_funder_year",
+            ),
+        ]
 
     def __str__(self):
+        if self.new_funder_financial_year:
+            return f"{self.new_funder_financial_year.funder.name} ({self.financial_year_end})"
         return f"{self.funder_financial_year.funder.name} ({self.financial_year_end})"
 
     def save(self, *args, **kwargs):
         super().save(*args, **kwargs)
         self.funder_financial_year.update_fields()
         self.funder_financial_year.save()
-        if self.original_funder_financial_year:
-            self.original_funder_financial_year.update_fields()
-            self.original_funder_financial_year.save()
+        if self.new_funder_financial_year:
+            self.new_funder_financial_year.update_fields()
+            self.new_funder_financial_year.save()
 
     def editable_fields(self) -> list[EditableField]:
         fields = [

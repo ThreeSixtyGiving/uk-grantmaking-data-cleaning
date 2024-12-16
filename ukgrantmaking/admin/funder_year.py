@@ -167,9 +167,9 @@ class FunderYearAdmin(CSVUploadModelAdmin):
         "date_added",
         "date_updated",
         # "funder_financial_year",
-        # "original_funder_financial_year",
+        # "new_funder_financial_year",
     )
-    autocomplete_fields = ("funder_financial_year", "original_funder_financial_year")
+    autocomplete_fields = ("funder_financial_year", "new_funder_financial_year")
     # raw_id_fields = ("funder",)
     fieldsets = (
         (
@@ -182,7 +182,7 @@ class FunderYearAdmin(CSVUploadModelAdmin):
                         "financial_year_start",
                         # "financial_year",
                     ),
-                    "original_funder_financial_year",
+                    "new_funder_financial_year",
                 ]
             },
         ),
