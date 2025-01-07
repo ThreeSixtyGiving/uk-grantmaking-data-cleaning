@@ -114,9 +114,13 @@
     <td class="tr">{{ display_number(object.employees, format_str="{:,.0f}") }}</td>
     <td class="tr">
         This: {{ display_number(object.funder_financial_year.scaling, format_str="{:,.0f}") }}<br>
+        {% if object.funder_financial_year.funder.current_year %}
         Current:
         {{ display_number(object.funder_financial_year.funder.current_year.scaling, format_str="{:,.0f}") }}<br>
+        {% endif %}
+        {% if object.funder_financial_year.funder.latest_year %}
         Latest: {{ display_number(object.funder_financial_year.funder.latest_year.scaling, format_str="{:,.0f}") }}
+        {% endif %}
     </td>
 </tr>
 {% endfor %}

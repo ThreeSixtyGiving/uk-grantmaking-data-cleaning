@@ -92,8 +92,12 @@
     <td class="tr">{{ display_number(object.current_year.funds_unrestricted, format_str="£{:,.0f}") }}</td>
     <td class="tr">{{ display_number(object.current_year.employees, format_str="{:,.0f}") }}</td>
     <td class="tr">
+        {% if object.current_year %}
         Current: {{ display_number(object.current_year.scaling, format_str="{:,.0f}") }}<br>
+        {% endif %}
+        {% if object.latest_year %}
         Latest: {{ display_number(object.latest_year.scaling, format_str="{:,.0f}") }}
+        {% endif %}
     </td>
     {% else %}
     <td class="tr"></td>
