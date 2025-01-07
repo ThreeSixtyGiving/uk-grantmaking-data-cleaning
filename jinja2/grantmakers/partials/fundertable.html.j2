@@ -29,6 +29,7 @@
                 <th class="tr small-width">Funds restricted</th>
                 <th class="tr small-width">Funds unrestricted</th>
                 <th class="tr small-width">Employees</th>
+                <th class="tr small-width">Scaling</th>
             </tr>
         </thead>
         <tbody>
@@ -90,7 +91,12 @@
     <td class="tr">{{ display_number(object.current_year.funds_restricted, format_str="£{:,.0f}") }}</td>
     <td class="tr">{{ display_number(object.current_year.funds_unrestricted, format_str="£{:,.0f}") }}</td>
     <td class="tr">{{ display_number(object.current_year.employees, format_str="{:,.0f}") }}</td>
+    <td class="tr">
+        Current: {{ display_number(object.current_year.scaling, format_str="{:,.0f}") }}<br>
+        Latest: {{ display_number(object.latest_year.scaling, format_str="{:,.0f}") }}
+    </td>
     {% else %}
+    <td class="tr"></td>
     <td class="tr"></td>
     <td class="tr"></td>
     <td class="tr"></td>
