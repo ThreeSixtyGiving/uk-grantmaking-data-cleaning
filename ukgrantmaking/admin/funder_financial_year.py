@@ -26,6 +26,7 @@ class FunderFinancialYearAdmin(CSVUploadModelAdmin):
         "income",
         "spending",
         "spending_charitable",
+        "scaling",
         "checked",
     )
     readonly_fields = (
@@ -44,6 +45,7 @@ class FunderFinancialYearAdmin(CSVUploadModelAdmin):
         "spending_grant_making_institutions_noncharitable",
         "spending_grant_making_institutions_unknown",
         "spending_grant_making_institutions",
+        "scaling",
         "total_net_assets",
         "funds",
         "funds_endowment",

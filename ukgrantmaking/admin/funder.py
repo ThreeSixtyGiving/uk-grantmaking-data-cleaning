@@ -73,6 +73,10 @@ class FunderAdmin(CSVUploadModelAdmin):
         "date_of_registration",
         "activities",
         "ftc_link",
+        "latest_scaling",
+        "current_scaling",
+        "latest_year",
+        "current_year",
     )
     autocomplete_fields = ("successor",)
     fieldsets = (
@@ -90,6 +94,8 @@ class FunderAdmin(CSVUploadModelAdmin):
                     "makes_grants_to_individuals",
                     "date_of_registration",
                     "activities",
+                    ("latest_year", "latest_scaling"),
+                    ("current_year", "current_scaling"),
                 ]
             },
         ),
@@ -115,6 +121,18 @@ class FunderAdmin(CSVUploadModelAdmin):
             if obj.current_year
             else None
         )
+
+    @admin.display(description="Grantmaker size (latest)")
+    def latest_scaling(self, obj):
+        if obj.latest_year:
+            return obj.latest_year.scaling
+        return None
+
+    @admin.display(description="Grantmaker size (current)")
+    def current_scaling(self, obj):
+        if obj.current_year:
+            return obj.current_year.scaling
+        return None
 
     @admin.display(description="")
     def ftc_link(self, obj):
