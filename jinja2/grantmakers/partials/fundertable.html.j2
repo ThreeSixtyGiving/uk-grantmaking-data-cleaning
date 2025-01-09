@@ -44,8 +44,11 @@
 {% call wrap_table() %}
 {% for object in object_list %}
 <tr class="{% if object.current_year.checked == 'Checked' %}positive{% endif %}">
-    <td><a class="b" href="{{ url_for('grantmakers:detail', org_id=object.org_id) }}">{{ object.name }}</a>
-    <td><a href="{{ url_for('grantmakers:detail', org_id=object.org_id) }}">{{ object.org_id }}</a></td>
+    <td>
+        <a class="b" href="{{ url_for('grantmakers:detail', org_id=object.org_id) }}">{{ object.name }}</a>
+    </td>
+    <td>
+        <a href="{{ url_for('grantmakers:detail', org_id=object.org_id) }}">{{ object.org_id }}</a>
     </td>
     <td>{{ display_text(object.segment) }}</td>
     <td class="tc">{{ display_boolean(object.included) }}</td>

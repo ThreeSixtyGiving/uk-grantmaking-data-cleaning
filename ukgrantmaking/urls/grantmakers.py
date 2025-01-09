@@ -42,38 +42,38 @@ urlpatterns = [
         kwargs={"filetype": "csv"},
     ),
     path(
-        "funder/<str:org_id>/",
-        detail,
-        name="detail",
+        "funder/<path:org_id>/funderyear/<int:funderyear_id>",
+        htmx_edit_funderyear,
+        name="edit_funderyear",
     ),
     path(
-        "funder/<str:org_id>/change_status",
-        htmx_edit_funder,
-        name="change_status",
-    ),
-    path(
-        "funder/<str:org_id>/tags",
-        htmx_tags_edit,
-        name="edit_tags",
-    ),
-    path(
-        "funder/<str:org_id>/note",
-        htmx_edit_note,
-        name="add_note",
-    ),
-    path(
-        "funder/<str:org_id>/note/<int:note_id>",
+        "funder/<path:org_id>/note/<int:note_id>",
         htmx_edit_note,
         name="edit_note",
     ),
     path(
-        "funder/<str:org_id>/funderyear",
+        "funder/<path:org_id>/change_status",
+        htmx_edit_funder,
+        name="change_status",
+    ),
+    path(
+        "funder/<path:org_id>/tags",
+        htmx_tags_edit,
+        name="edit_tags",
+    ),
+    path(
+        "funder/<path:org_id>/note",
+        htmx_edit_note,
+        name="add_note",
+    ),
+    path(
+        "funder/<path:org_id>/funderyear",
         htmx_edit_funderyear,
         name="add_funderyear",
     ),
     path(
-        "funder/<str:org_id>/funderyear/<int:funderyear_id>",
-        htmx_edit_funderyear,
-        name="edit_funderyear",
+        "funder/<path:org_id>/",
+        detail,
+        name="detail",
     ),
 ]
