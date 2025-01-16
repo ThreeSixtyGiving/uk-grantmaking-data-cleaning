@@ -51,6 +51,10 @@ class Grant(models.Model):
         PRIVATE_SECTOR_GRANT = "Private sector grant", "Private sector grant"
         GRANT_TO_EDUCATION = "Grant to education", "Grant to education"
 
+    class LotteryGrantType(models.TextChoices):
+        EXCHEQUER = "Exchequer", "Exchequer"
+        LOTTERY = "Lottery", "Lottery"
+
     class RegrantType(models.TextChoices):
         FRG010 = (
             "FRG010",
@@ -324,6 +328,13 @@ class Grant(models.Model):
         default=InclusionStatus.UNSURE,
         db_index=True,
         verbose_name="Exclusion status",
+    )
+    lottery_grant_type = models.CharField(
+        max_length=50,
+        choices=LotteryGrantType.choices,
+        null=True,
+        blank=True,
+        db_index=True,
     )
     notes = MarkdownxField(null=True, blank=True)
     checked_by = models.CharField(max_length=255, null=True, blank=True)

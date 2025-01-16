@@ -118,9 +118,10 @@ class GrantAdmin(CSVUploadModelAdmin):
         "recipient_text",
         "recipient_type_manual",
         "title",
+        "lottery_grant_type",
     )
     date_hierarchy = "award_date"
-    list_editable = ("inclusion", "recipient_type_manual")
+    list_editable = ("inclusion", "recipient_type_manual", "lottery_grant_type")
     raw_id_fields = ("funder",)
     search_fields = (
         "title",
@@ -226,6 +227,7 @@ class GrantAdmin(CSVUploadModelAdmin):
                     ("regrant_type", "regrant_type_manual"),
                     "location_scope",
                     "grant_programme_title",
+                    "lottery_grant_type",
                 ]
             },
         ),
