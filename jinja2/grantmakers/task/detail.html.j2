@@ -118,7 +118,7 @@
     <td class="tr">{{ display_number(object.funds_unrestricted, format_str="£{:,.0f}") }}</td>
     <td class="tr">{{ display_number(object.employees, format_str="{:,.0f}") }}</td>
     <td class="tr">
-        {% if object.funder.latest_year != object.funder.current_year %}
+        {% if object.latest_year and (object.funder.latest_year != object.funder.current_year) %}
         Latest: {{ display_number(object.funder.latest_year.scaling, format_str="{:,.0f}") }}
         {% elif object.funder.current_year %}
         Current: {{ display_number(object.funder.current_year.scaling, format_str="{:,.0f}") }}
