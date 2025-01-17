@@ -57,6 +57,12 @@ SQL_QUERIES = {
         WHERE status != 'Future'
         ORDER BY fy DESC
     ),
+    funder_year_count AS (
+        SELECT funder_financial_year_id,
+            COUNT(*) AS funder_years
+        FROM {ukgrantmaking_funderyear} fy
+        GROUP BY 1
+    ),
     latest_ffy AS (
         SELECT DISTINCT ON (funder_id)
             funder_id,
@@ -65,6 +71,9 @@ SQL_QUERIES = {
         FROM {ukgrantmaking_funderfinancialyear} ffy
             INNER JOIN current_fys
                 ON ffy.financial_year_id = current_fys.fy
+            LEFT OUTER JOIN funder_year_count
+                ON ffy.id = funder_year_count.funder_financial_year_id
+        WHERE funder_year_count.funder_years > 0
         ORDER BY funder_id ASC, current_fys.fy DESC
     )
     UPDATE {ukgrantmaking_funder}
