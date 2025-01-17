@@ -80,7 +80,6 @@ the `Funder` model in these attributes will be copied to the equivalent `FunderF
 | `checked`                     | Whether this record has been checked by a user                                          |
 | `checked_on`                  | The time at which this record was marked as checked                                     |
 | `checked_by`                  | The user who marked this record as checked                                              |
-| `notes`                       | Any notes made about this financial year when checking                                  |
 
 #### FunderFinancialYear financial data
 

@@ -1,7 +1,6 @@
 from django.conf import settings
 from django.db import models
 from django.db.models.functions import Coalesce
-from markdownx.models import MarkdownxField
 
 from ukgrantmaking.models.funder_utils import (
     FUNDER_CATEGORIES,
@@ -106,7 +105,6 @@ class FunderFinancialYear(models.Model):
         null=True,
         blank=True,
     )
-    notes = MarkdownxField(null=True, blank=True)
     date_added = models.DateTimeField(
         auto_now_add=True, db_index=True, null=True, blank=True
     )

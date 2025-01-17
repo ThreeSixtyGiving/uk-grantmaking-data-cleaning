@@ -95,95 +95,95 @@ FIELD_DEFINITIONS = [
     ("employees", "Employees", CleaningStatusType.GRANTMAKER, int),
     ("checked", "Checked", CleaningStatusType.GRANTMAKER, str),
     (
-        "funder_financial_year__funder__org_id",
+        "funder__org_id",
         "Funder ID",
         CleaningStatusType.GRANTMAKER,
         str,
     ),
     (
-        "funder_financial_year__funder__name",
+        "funder__name",
         "Funder Name",
         CleaningStatusType.GRANTMAKER,
         str,
     ),
     (
-        "funder_financial_year__funder__status",
+        "funder__status",
         "Funder status",
         CleaningStatusType.GRANTMAKER,
         str,
     ),
     (
-        "funder_financial_year__funder__date_of_registration",
+        "funder__date_of_registration",
         "Registration date",
         CleaningStatusType.GRANTMAKER,
         date,
     ),
     (
-        "funder_financial_year__funder__date_of_removal",
+        "funder__date_of_removal",
         "Removal date",
         CleaningStatusType.GRANTMAKER,
         date,
     ),
     (
-        "funder_financial_year__funder__active",
+        "funder__active",
         "Funder Active",
         CleaningStatusType.GRANTMAKER,
         bool,
     ),
     (
-        "funder_financial_year__funder__latest_year__scaling",
+        "funder__latest_year__scaling",
         "Grantmaker size (latest)",
         CleaningStatusType.GRANTMAKER,
         int,
     ),
     (
-        "funder_financial_year__scaling",
+        "scaling",
         "Grantmaker size",
         CleaningStatusType.GRANTMAKER,
         int,
     ),
     (
-        "funder_financial_year__tags__tag",
+        "tags__tag",
         "Tags",
         CleaningStatusType.GRANTMAKER,
         list[str],
     ),
-    ("funder_financial_year__segment", "Segment", CleaningStatusType.GRANTMAKER, str),
-    ("funder_financial_year__category", "Category", CleaningStatusType.GRANTMAKER, str),
+    ("segment", "Segment", CleaningStatusType.GRANTMAKER, str),
+    ("category", "Category", CleaningStatusType.GRANTMAKER, str),
     (
-        "funder_financial_year__included",
+        "included",
         "Included",
         CleaningStatusType.GRANTMAKER,
         bool,
     ),
     (
-        "funder_financial_year__makes_grants_to_individuals",
+        "makes_grants_to_individuals",
         "Makes grants to individuals",
         CleaningStatusType.GRANTMAKER,
         bool,
     ),
-    ("funder_financial_year__checked", "Checked", CleaningStatusType.GRANTMAKER, str),
+    ("checked", "Checked", CleaningStatusType.GRANTMAKER, str),
     (
-        "funder_financial_year__checked_on",
+        "checked_on",
         "Checked on",
         CleaningStatusType.GRANTMAKER,
         date,
     ),
     (
-        "funder_financial_year__checked_by",
+        "checked_by",
         "Checked by",
         CleaningStatusType.GRANTMAKER,
         str,
     ),
-    ("funder_financial_year__notes", "Notes", CleaningStatusType.GRANTMAKER, str),
+    ("notes", "Notes", CleaningStatusType.GRANTMAKER, str),
     (
-        "funder_financial_year__date_added",
+        "date_added",
         "Date added",
         CleaningStatusType.GRANTMAKER,
         date,
     ),
     (
-        "funder_financial_year__date_updated",
+        "date_updated",
         "Date updated",
         CleaningStatusType.GRANTMAKER,
         date,
@@ -395,7 +395,7 @@ class CleaningStatus(models.Model):
     sort_by = models.CharField(
         max_length=255,
         choices=FIELD_CHOICES,
-        default="funder_financial_year__funder__latest_year__scaling",
+        default="funder__latest_year__scaling",
     )
     sort_order = models.CharField(
         max_length=1,
@@ -407,6 +407,7 @@ class CleaningStatus(models.Model):
 
     def __init__(self, *args, **kwargs):
         self._query_results = {}
+        self._sql_query = None
         super().__init__(*args, **kwargs)
 
     def __str__(self):
@@ -462,8 +463,8 @@ class CleaningStatus(models.Model):
             if self.type == CleaningStatusType.GRANTMAKER:
                 qs = qs.filter(
                     ~models.Q(
-                        funder_financial_year__checked="Checked",
-                        funder_financial_year__checked__isnull=False,
+                        checked="Checked",
+                        checked__isnull=False,
                     )
                 )
 
@@ -477,6 +478,7 @@ class CleaningStatus(models.Model):
             qs = qs.distinct("id")
         if self.n > 0:
             qs = qs[: self.n]
+        self._sql_query = qs.query.__str__()
         self._query_results[query_hash] = list(qs)
         return self._query_results[query_hash]
 
@@ -484,9 +486,7 @@ class CleaningStatus(models.Model):
         results = self.run(qs)
         total = len(results)
         if self.type == CleaningStatusType.GRANTMAKER:
-            checked = len(
-                [r for r in results if r.funder_financial_year.checked == "Checked"]
-            )
+            checked = len([r for r in results if r.checked == "Checked"])
             return [
                 Meter(
                     **{
@@ -500,7 +500,7 @@ class CleaningStatus(models.Model):
                 #         "name": "Checked segment",
                 #         "total": total,
                 #         "value": self.run(
-                #             qs.filter(funder_financial_year__funder__status="Checked")
+                #             qs.filter(funder__status="Checked")
                 #         ).count(),
                 #     }
                 # ),

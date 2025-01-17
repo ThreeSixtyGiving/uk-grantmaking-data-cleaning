@@ -37,10 +37,12 @@
     {% if funder_year.account_url %}
     <br><a href="{{ funder_year.account_url }}" target="_blank">Accounts PDF</a>
     {% endif %}
-    {% if funder_year.notes %}
+    {% if funder_year.notes.count() %}
     <details>
         <summary>Note</summary>
-        {{ funder_year.notes|markdownify|safe }}<br>
+        {% for note in funder_year.notes.all() %}
+        {{ note.note|markdownify|safe }}<br>
+        {% endfor %}
     </details>
     {% endif %}
 </td>
@@ -245,7 +247,7 @@
             <tr>
                 <td class="tr">Note</td>
                 <td colspan="{% if funder_year_py %}3{% else %}2{% endif%}">
-                    <textarea name="note" class="funder-year-edit" rows="7">{{ funder_year.notes or '' }}</textarea>
+                    <textarea name="note" class="funder-year-edit" rows="7"></textarea>
                 </td>
             </tr>
         </tbody>

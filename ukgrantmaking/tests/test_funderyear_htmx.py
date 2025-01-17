@@ -177,7 +177,7 @@ def test_edit_funderyear_py(
 
 def test_edit_funderyear_add_note(client_logged_in, funder, check_log_entry):
     fy = funder.current_year.funder_years.first()
-    assert fy.notes is None
+    assert fy.notes.count() == 0
 
     note = "Test note"
 
@@ -189,7 +189,8 @@ def test_edit_funderyear_add_note(client_logged_in, funder, check_log_entry):
     assert response.status_code == 200
 
     fy.refresh_from_db()
-    assert fy.notes == note
+    assert fy.notes.count() == 1
+    assert fy.notes.first().note == note
     assert (
         fy.financial_year_end.strftime("%Y-%m-%d")
         in check_log_entry(funder)[0].change_message

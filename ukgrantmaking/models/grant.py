@@ -1,6 +1,6 @@
+from django.contrib.contenttypes.fields import GenericRelation
 from django.db import models
 from django.db.models.functions import Coalesce, Left, Length, Right, StrIndex
-from markdownx.models import MarkdownxField
 
 from ukgrantmaking.models.financial_years import FinancialYear
 
@@ -336,7 +336,7 @@ class Grant(models.Model):
         blank=True,
         db_index=True,
     )
-    notes = MarkdownxField(null=True, blank=True)
+    notes = GenericRelation("FunderNote")
     checked_by = models.CharField(max_length=255, null=True, blank=True)
     financial_year = models.ForeignKey(
         FinancialYear,

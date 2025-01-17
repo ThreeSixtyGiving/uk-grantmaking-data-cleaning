@@ -104,7 +104,7 @@ def complex_task(make_funder):
     )
     # add a condition to the task
     task.cleaningstatusquery_set.create(
-        field="funder_financial_year__funder__name",
+        field="funder__name",
         comparison=Comparison.EQUAL,
         value="Test Funder 1",
     )

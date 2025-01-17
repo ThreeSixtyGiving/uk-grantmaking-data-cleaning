@@ -50,11 +50,9 @@ def index(request):
 def task_index(request):
     current_fy = FinancialYear.objects.get(current=True)
     cleaning_tasks = CleaningStatus.objects.filter(type=CleaningStatusType.GRANTMAKER)
-    base_qs = FunderYear.objects.filter(
-        funder_financial_year__financial_year=current_fy
-    ).select_related(
-        "funder_financial_year__funder", "funder_financial_year__financial_year"
-    )
+    base_qs = FunderFinancialYear.objects.filter(
+        financial_year=current_fy
+    ).select_related("funder", "financial_year")
     statuses = {task.id: task.get_status(base_qs) for task in cleaning_tasks}
     return render(
         request,
@@ -72,11 +70,9 @@ def task_detail(request, task_id, filetype=None):
         ).get(id=task_id)
     except CleaningStatus.DoesNotExist:
         raise Http404("Task not found")
-    base_qs = FunderYear.objects.filter(
-        funder_financial_year__financial_year=current_fy
-    ).select_related(
-        "funder_financial_year__funder", "funder_financial_year__financial_year"
-    )
+    base_qs = FunderFinancialYear.objects.filter(
+        financial_year=current_fy
+    ).select_related("funder", "financial_year")
 
     exclude_cleaned = "exclude_cleaned" in request.GET
 
@@ -359,11 +355,12 @@ def edit_funderyear(funder_year: FunderYear, request, suffix: str = "cy"):
         if current_value != new_value:
             changed_values.append(f"{field.name} from {current_value} to {new_value}")
 
-    if "note" in request.POST:
-        existing_value = funder_year.notes
-        funder_year.notes = request.POST.get("note")
-        if existing_value != funder_year.notes:
-            changed_values.append(f"Note from {existing_value} to {funder_year.notes}")
+    if "note" in request.POST and request.POST.get("note"):
+        funder_year.notes.create(
+            added_by=request.user,
+            note=request.POST.get("note"),
+        )
+        changed_values.append(f"Note added {funder_year.notes}")
 
     if changed_values:
         funder_year.funder_financial_year.checked_on = timezone.now()

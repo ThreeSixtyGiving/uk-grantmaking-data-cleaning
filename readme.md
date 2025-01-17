@@ -178,6 +178,16 @@ without fetching any new data.
 
 #### `python manage.py update financial-year`
 
+This runs a series of SQL commands to keep the financial data up to date. The commands are:
+
+1. Ensure every funder has a funder financial year for the current financial year
+2. Set the current year to the correct year
+3. Set the latest year to the correct year
+4. Recalculate aggregate values for funder financial years
+5. Update current funder financial years with the latest funder data
+6. Ensure that the current funder financial year has the correct tags
+7. Remove existing tags from the current funder financial year
+
 #### `python manage.py update grants`
 
 #### `python manage.py update grant-recipient-type`
@@ -203,3 +213,9 @@ Should instead use the endpoint at `/grantmakers/upload`.
 #### `python manage.py fetch fgt`
 
 Used to import data from the back catalogue of Foundation Giving Trends.
+
+## Export data as backup
+
+```sh
+dokku postgres:export uk-grantmaking-data-db > ~/uk-grantmaking-data-db-20251701.export
+```

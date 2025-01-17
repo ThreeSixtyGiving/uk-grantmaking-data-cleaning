@@ -1,5 +1,6 @@
 from django.conf import settings
 from django.contrib.admin.models import LogEntry
+from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelation
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
 from django.db.models.functions import Coalesce, Left, Length, Right, StrIndex
@@ -41,7 +42,9 @@ class FunderTag(models.Model):
 
 
 class FunderNote(models.Model):
-    funder = models.ForeignKey("Funder", on_delete=models.CASCADE, related_name="notes")
+    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
+    object_id = models.CharField(max_length=255)
+    content_object = GenericForeignKey("content_type", "object_id")
     note = MarkdownxField()
     date_added = models.DateTimeField(auto_now_add=True)
     date_updated = models.DateTimeField(auto_now=True)
@@ -56,6 +59,11 @@ class FunderNote(models.Model):
 
     def __str__(self):
         return self.note
+
+    class Meta:
+        indexes = [
+            models.Index(fields=["content_type", "object_id"]),
+        ]
 
 
 class Funder(models.Model):
@@ -201,6 +209,7 @@ class Funder(models.Model):
     )
 
     tags = models.ManyToManyField(FunderTag, blank=True, related_name="funders")
+    notes = GenericRelation(FunderNote)
 
     name = models.GeneratedField(
         expression=Coalesce(

@@ -1,8 +1,8 @@
+from django.contrib.contenttypes.fields import GenericRelation
 from django.core.exceptions import FieldDoesNotExist
 from django.db import models
 from django.db.models.functions import Coalesce
 from django.db.models.lookups import IsNull
-from markdownx.models import MarkdownxField
 
 from ukgrantmaking.models.funder_financial_year import FunderFinancialYear
 from ukgrantmaking.models.funder_utils import EditableField
@@ -355,41 +355,9 @@ class FunderYear(models.Model):
 
     checked_on = models.DateTimeField(null=True, blank=True)
     checked_by = models.CharField(max_length=255, null=True, blank=True)
-    notes = MarkdownxField(null=True, blank=True)
+    notes = GenericRelation("FunderNote")
     date_added = models.DateTimeField(auto_now_add=True, db_index=True)
     date_updated = models.DateTimeField(auto_now=True)
-
-    checked = models.GeneratedField(
-        db_persist=True,
-        expression=models.Q(
-            models.lookups.IsNull(models.F("checked_by"), False),
-            models.lookups.IsNull(models.F("notes"), False),
-            models.lookups.IsNull(models.F("income_manual"), False),
-            models.lookups.IsNull(models.F("spending_manual"), False),
-            models.lookups.IsNull(models.F("spending_charitable_manual"), False),
-            models.lookups.IsNull(
-                models.F("spending_grant_making_individuals_manual"), False
-            ),
-            models.lookups.IsNull(
-                models.F("spending_grant_making_institutions_charitable_manual"), False
-            ),
-            models.lookups.IsNull(
-                models.F("spending_grant_making_institutions_noncharitable_manual"),
-                False,
-            ),
-            models.lookups.IsNull(
-                models.F("spending_grant_making_institutions_unknown_manual"), False
-            ),
-            models.lookups.IsNull(models.F("total_net_assets_manual"), False),
-            models.lookups.IsNull(models.F("funds_manual"), False),
-            models.lookups.IsNull(models.F("funds_endowment_manual"), False),
-            models.lookups.IsNull(models.F("funds_restricted_manual"), False),
-            models.lookups.IsNull(models.F("funds_unrestricted_manual"), False),
-            models.lookups.IsNull(models.F("employees_manual"), False),
-            _connector="OR",
-        ),
-        output_field=models.BooleanField(),
-    )
 
     class Meta:
         ordering = ["funder_financial_year", "-financial_year_end"]

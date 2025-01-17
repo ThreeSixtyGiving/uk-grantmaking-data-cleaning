@@ -1,4 +1,5 @@
 from django.contrib import admin
+from django.contrib.contenttypes.admin import GenericTabularInline
 from django.utils.html import format_html
 
 from ukgrantmaking.admin.csv_upload import CSVUploadModelAdmin
@@ -16,7 +17,7 @@ class FunderTagAdmin(admin.ModelAdmin):
         return obj.funders.count()
 
 
-class FunderNoteInline(admin.TabularInline):
+class FunderNoteInline(GenericTabularInline):
     model = FunderNote
     extra = 0
     fields = (

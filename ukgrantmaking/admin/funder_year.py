@@ -73,10 +73,6 @@ class FunderYearInline(admin.StackedInline):
                         "spending_grant_making_institutions_unknown_manual",
                     ),
                     ("spending_grant_making_institutions",),
-                    (
-                        "checked_by",
-                        "notes",
-                    ),
                 ],
             },
         ),
@@ -126,7 +122,6 @@ class FunderYearAdmin(CSVUploadModelAdmin):
         "income",
         "spending",
         "spending_charitable",
-        "checked",
     )
     show_facets = admin.ShowFacets.ALWAYS
     list_display_links = ("financial_year_end",)
@@ -136,8 +131,6 @@ class FunderYearAdmin(CSVUploadModelAdmin):
         "funder_financial_year__financial_year__fy",
         "funder_financial_year__segment",
         "funder_financial_year__category",
-        "checked",
-        ("checked_by", admin.EmptyFieldListFilter),
     )
     readonly_fields = (
         "income_registered",
@@ -162,8 +155,6 @@ class FunderYearAdmin(CSVUploadModelAdmin):
         "funds_restricted_registered",
         "funds_unrestricted_registered",
         "employees_registered",
-        "checked_on",
-        "checked",
         "date_added",
         "date_updated",
         # "funder_financial_year",
@@ -254,10 +245,6 @@ class FunderYearAdmin(CSVUploadModelAdmin):
             "Checked",
             {
                 "fields": [
-                    "checked",
-                    "checked_on",
-                    "checked_by",
-                    "notes",
                     "date_added",
                     "date_updated",
                 ]
