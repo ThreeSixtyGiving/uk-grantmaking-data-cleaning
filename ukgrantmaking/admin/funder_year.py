@@ -28,6 +28,9 @@ class FunderYearInline(admin.StackedInline):
         "funds_restricted_registered",
         "funds_unrestricted_registered",
         "employees_registered",
+        "employees_permanent_registered",
+        "employees_fixedterm_registered",
+        "employees_selfemployed_registered",
     )
     show_change_link = True
     can_delete = False
@@ -90,6 +93,12 @@ class FunderYearInline(admin.StackedInline):
                     ("funds_restricted_registered", "funds_restricted_manual"),
                     ("funds_unrestricted_registered", "funds_unrestricted_manual"),
                     ("employees_registered", "employees_manual"),
+                    ("employees_permanent_registered", "employees_permanent_manual"),
+                    ("employees_fixedterm_registered", "employees_fixedterm_manual"),
+                    (
+                        "employees_selfemployed_registered",
+                        "employees_selfemployed_manual",
+                    ),
                 ],
             },
         ),
@@ -155,6 +164,9 @@ class FunderYearAdmin(CSVUploadModelAdmin):
         "funds_restricted_registered",
         "funds_unrestricted_registered",
         "employees_registered",
+        "employees_permanent_registered",
+        "employees_fixedterm_registered",
+        "employees_selfemployed_registered",
         "date_added",
         "date_updated",
         # "funder_financial_year",
@@ -237,7 +249,19 @@ class FunderYearAdmin(CSVUploadModelAdmin):
                     (
                         "employees_registered",
                         "employees_manual",
-                    )
+                    ),
+                    (
+                        "employees_permanent_registered",
+                        "employees_permanent_manual",
+                    ),
+                    (
+                        "employees_fixedterm_registered",
+                        "employees_fixedterm_manual",
+                    ),
+                    (
+                        "employees_selfemployed_registered",
+                        "employees_selfemployed_manual",
+                    ),
                 ]
             },
         ),

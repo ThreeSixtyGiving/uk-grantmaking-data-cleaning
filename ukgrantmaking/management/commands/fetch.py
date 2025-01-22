@@ -1,5 +1,6 @@
 import djclick as click
 
+from ukgrantmaking.management.commands.funders.fetch_ccew import ccew
 from ukgrantmaking.management.commands.funders.fetch_cleaned_data import cleaned_data
 from ukgrantmaking.management.commands.funders.fetch_fgt import fgt
 from ukgrantmaking.management.commands.funders.fetch_ftc import ftc
@@ -21,6 +22,7 @@ main.add_command(ftc, "ftc")
 main.add_command(cleaned_data, "cleaned-data")
 main.add_command(tags, "tags")
 main.add_command(fgt, "fgt")
+main.add_command(ccew, "ccew")
 
 
 main.add_command(grants, "grants")

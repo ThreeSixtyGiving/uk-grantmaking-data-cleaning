@@ -52,6 +52,9 @@ class FunderFinancialYearAdmin(CSVUploadModelAdmin):
         "funds_restricted",
         "funds_unrestricted",
         "employees",
+        "employees_permanent",
+        "employees_fixedterm",
+        "employees_selfemployed",
     )
     search_fields = ("funder__name",)
     filter_horizontal = ("tags",)

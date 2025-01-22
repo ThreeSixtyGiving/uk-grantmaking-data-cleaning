@@ -141,6 +141,9 @@ The `FunderYear` attributes make use of `_registered` and `_manual` variants, wi
 | `funds_restricted`                                 | CCEW                                  |                                | Thresholds apply (eg >£500k income for CCEW)                                                 |
 | `funds_unrestricted`                               | CCEW                                  |                                | Thresholds apply (eg >£500k income for CCEW)                                                 |
 | `employees`                                        | CCEW, CCNI                            |                                | Thresholds apply (eg >£500k income for CCEW)                                                 |
+| `employees_permanent`                              | CCEW, CCNI                            |                                | Thresholds apply (eg >£500k income for CCEW)                                                 |
+| `employees_fixedterm`                              | CCEW, CCNI                            |                                | Thresholds apply (eg >£500k income for CCEW)                                                 |
+| `employees_selfemployed`                           | CCEW, CCNI                            |                                | Thresholds apply (eg >£500k income for CCEW)                                                 |
 
 [^CCEW]: Charity Commission for England and Wales (from Find that Charity)
 [^OSCR]: Scottish Charity Regulator (from Find that Charity)

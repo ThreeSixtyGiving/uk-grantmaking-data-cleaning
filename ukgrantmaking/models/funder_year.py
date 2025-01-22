@@ -95,30 +95,12 @@ class FunderYear(models.Model):
                         "spending_grant_making_individuals_manual",
                         "spending_grant_making_individuals_registered",
                         "spending_grant_making_individuals_360Giving",
-                        output_field=models.BigIntegerField(),
-                    ),
-                    False,
-                )
-                | IsNull(
-                    Coalesce(
                         "spending_grant_making_institutions_charitable_manual",
                         "spending_grant_making_institutions_charitable_registered",
                         "spending_grant_making_institutions_charitable_360Giving",
-                        output_field=models.BigIntegerField(),
-                    ),
-                    False,
-                )
-                | IsNull(
-                    Coalesce(
                         "spending_grant_making_institutions_noncharitable_manual",
                         "spending_grant_making_institutions_noncharitable_registered",
                         "spending_grant_making_institutions_noncharitable_360Giving",
-                        output_field=models.BigIntegerField(),
-                    ),
-                    False,
-                )
-                | IsNull(
-                    Coalesce(
                         "spending_grant_making_institutions_unknown_manual",
                         "spending_grant_making_institutions_unknown_registered",
                         "spending_grant_making_institutions_unknown_360Giving",
@@ -241,15 +223,9 @@ class FunderYear(models.Model):
                         "spending_grant_making_institutions_charitable_manual",
                         "spending_grant_making_institutions_charitable_registered",
                         "spending_grant_making_institutions_charitable_360Giving",
-                        output_field=models.BigIntegerField(),
-                    )
-                    + Coalesce(
                         "spending_grant_making_institutions_noncharitable_manual",
                         "spending_grant_making_institutions_noncharitable_registered",
                         "spending_grant_making_institutions_noncharitable_360Giving",
-                        output_field=models.BigIntegerField(),
-                    )
-                    + Coalesce(
                         "spending_grant_making_institutions_unknown_manual",
                         "spending_grant_making_institutions_unknown_registered",
                         "spending_grant_making_institutions_unknown_360Giving",
@@ -352,6 +328,33 @@ class FunderYear(models.Model):
         output_field=models.BigIntegerField(),
         db_persist=True,
     )
+    employees_permanent_registered = models.IntegerField(null=True, blank=True)
+    employees_permanent_manual = models.IntegerField(null=True, blank=True)
+    employees_permanent = models.GeneratedField(
+        expression=Coalesce(
+            "employees_permanent_manual", "employees_permanent_registered"
+        ),
+        output_field=models.BigIntegerField(),
+        db_persist=True,
+    )
+    employees_fixedterm_registered = models.IntegerField(null=True, blank=True)
+    employees_fixedterm_manual = models.IntegerField(null=True, blank=True)
+    employees_fixedterm = models.GeneratedField(
+        expression=Coalesce(
+            "employees_fixedterm_manual", "employees_fixedterm_registered"
+        ),
+        output_field=models.BigIntegerField(),
+        db_persist=True,
+    )
+    employees_selfemployed_registered = models.IntegerField(null=True, blank=True)
+    employees_selfemployed_manual = models.IntegerField(null=True, blank=True)
+    employees_selfemployed = models.GeneratedField(
+        expression=Coalesce(
+            "employees_selfemployed_manual", "employees_selfemployed_registered"
+        ),
+        output_field=models.BigIntegerField(),
+        db_persist=True,
+    )
 
     checked_on = models.DateTimeField(null=True, blank=True)
     checked_by = models.CharField(max_length=255, null=True, blank=True)
@@ -401,6 +404,9 @@ class FunderYear(models.Model):
             "funds_restricted",
             "funds_unrestricted",
             "employees",
+            "employees_permanent",
+            "employees_fixedterm",
+            "employees_selfemployed",
         ]
         field_labels = {
             "spending_grant_making_institutions_unknown": "Grant making to institutions"

@@ -78,7 +78,12 @@ class EditableField:
 
     @property
     def format_str(self) -> str:
-        if self.name in ["employees"]:
+        if self.name in [
+            "employees",
+            "employees_permanent",
+            "employees_fixedterm",
+            "employees_selfemployed",
+        ]:
             return "{:,.0f}"
         return "£{:,.0f}"
 

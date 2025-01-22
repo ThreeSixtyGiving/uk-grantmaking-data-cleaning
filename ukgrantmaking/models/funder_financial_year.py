@@ -78,6 +78,11 @@ class FunderFinancialYear(models.Model):
     funds_restricted = models.BigIntegerField(null=True, blank=True, editable=False)
     funds_unrestricted = models.BigIntegerField(null=True, blank=True, editable=False)
     employees = models.BigIntegerField(null=True, blank=True, editable=False)
+    employees_permanent = models.BigIntegerField(null=True, blank=True, editable=False)
+    employees_fixedterm = models.BigIntegerField(null=True, blank=True, editable=False)
+    employees_selfemployed = models.BigIntegerField(
+        null=True, blank=True, editable=False
+    )
 
     scaling = models.GeneratedField(
         expression=Coalesce(
@@ -137,6 +142,9 @@ class FunderFinancialYear(models.Model):
             "funds_restricted",
             "funds_unrestricted",
             "employees",
+            "employees_permanent",
+            "employees_fixedterm",
+            "employees_selfemployed",
         ]
         fys = list(
             self.funder_years.order_by("-financial_year_end").values(

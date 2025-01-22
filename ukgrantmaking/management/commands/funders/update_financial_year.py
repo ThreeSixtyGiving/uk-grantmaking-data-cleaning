@@ -98,7 +98,10 @@ SQL_QUERIES = {
             funds_endowment,
             funds_restricted,
             funds_unrestricted,
-            employees
+            employees,
+            employees_permanent,
+            employees_fixedterm,
+            employees_selfemployed
         FROM
             fy
     ),
@@ -140,7 +143,10 @@ SQL_QUERIES = {
         funds_endowment = latest_fields.funds_endowment,
         funds_restricted = latest_fields.funds_restricted,
         funds_unrestricted = latest_fields.funds_unrestricted,
-        employees = latest_fields.employees
+        employees = latest_fields.employees,
+        employees_permanent = latest_fields.employees_permanent,
+        employees_fixedterm = latest_fields.employees_fixedterm,
+        employees_selfemployed = latest_fields.employees_selfemployed
     FROM
         latest_fields,
         summed_fields
