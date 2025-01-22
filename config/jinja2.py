@@ -254,6 +254,13 @@ def user_name(user=None):
     return user.username
 
 
+def get_logentry_change_message(logentry):
+    try:
+        return logentry.get_change_message()
+    except Exception:
+        return str(logentry.change_message)
+
+
 def environment(**options):
     env = Environment(**options)
 
@@ -285,6 +292,7 @@ def environment(**options):
             "format_number": format_number,
             "user_name": user_name,
             "logentry_action_flag": logentry_action_flag,
+            "get_logentry_change_message": get_logentry_change_message,
         }
     )
     return env
