@@ -56,6 +56,7 @@ class FunderFinancialYearAdmin(CSVUploadModelAdmin):
         "employees_fixedterm",
         "employees_selfemployed",
     )
+    autocomplete_fields = ("funder",)
     search_fields = ("funder__name",)
     filter_horizontal = ("tags",)
 
