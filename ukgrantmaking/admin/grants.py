@@ -1,4 +1,5 @@
 from django.contrib import admin
+from django.db import models
 from django.db.models import Count, Q
 from django.db.models.functions import ExtractYear
 from django.utils.html import format_html
@@ -7,12 +8,25 @@ from ukgrantmaking.admin.csv_upload import CSVUploadModelAdmin
 from ukgrantmaking.models.grant import Grant, GrantRecipientYear
 
 
+class EmptyOrOneFieldListFilter(admin.EmptyFieldListFilter):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def get_lookup_condition(self):
+        lookup_conditions = [(self.field_path, 1)]
+        if self.field.empty_strings_allowed:
+            lookup_conditions.append((self.field_path, ""))
+        if self.field.null:
+            lookup_conditions.append((f"{self.field_path}__isnull", True))
+        return models.Q.create(lookup_conditions, connector=models.Q.OR)
+
+
 class CurrencyConverterAdmin(admin.ModelAdmin):
     list_display = ("currency", "date", "rate", "link")
     list_editable = ("rate",)
     list_filter = (
         "currency",
-        ("rate", admin.EmptyFieldListFilter),
+        ("rate", EmptyOrOneFieldListFilter),
     )
     ordering = (
         "currency",
