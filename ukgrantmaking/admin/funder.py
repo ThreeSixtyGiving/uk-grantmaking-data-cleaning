@@ -1,9 +1,14 @@
-from django.contrib import admin
+from django.contrib import admin, messages
 from django.contrib.contenttypes.admin import GenericTabularInline
+from django.db import connection, transaction
 from django.utils.html import format_html
 
 from ukgrantmaking.admin.csv_upload import CSVUploadModelAdmin
 from ukgrantmaking.admin.funder_financial_year import FunderFinancialYearInline
+from ukgrantmaking.management.commands.funders.update_financial_year import (
+    SQL_QUERIES,
+    format_query,
+)
 from ukgrantmaking.models.funder import FunderNote
 from ukgrantmaking.models.funder_utils import RecordStatus
 
@@ -141,3 +146,25 @@ class FunderAdmin(CSVUploadModelAdmin):
             '<a href="https://findthatcharity.uk/orgid/{}" target="_blank">Find that Charity</a>',
             obj.org_id,
         )
+
+    def handle_file_upload(
+        self, file, pk_fields, fields, request, skip_blanks=False, add_new_rows=True
+    ):
+        result = super().handle_file_upload(
+            file, pk_fields, fields, request, skip_blanks, add_new_rows
+        )
+        # Make sure that all the new funders have a financial year
+        query_keys = [
+            "Ensure every funder has a funder financial year for the current financial year",
+        ]
+        queries = {query_name: SQL_QUERIES[query_name] for query_name in query_keys}
+
+        with transaction.atomic(), connection.cursor() as cursor:
+            for query_name, query in queries.items():
+                cursor.execute(format_query(query))
+                messages.add_message(
+                    request,
+                    messages.INFO,
+                    f"Added funder financial year for {cursor.rowcount:,.0f} funders",
+                )
+        return result

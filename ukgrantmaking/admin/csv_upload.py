@@ -75,6 +75,53 @@ class CSVUploadModelAdmin(admin.ModelAdmin):
             headers={"Content-Disposition": f'attachment; filename="{filename}"'},
         )
 
+    def handle_file_upload(
+        self, file, pk_fields, fields, request, skip_blanks=False, add_new_rows=True
+    ):
+        reader = csv.DictReader(TextIOWrapper(file, encoding="utf-8-sig"))
+        for pk_field in pk_fields:
+            if pk_field.get_attname() not in reader.fieldnames:
+                raise ValueError(f"'{pk_field}' column not found in file")
+        keys_found = [k for k in reader.fieldnames if k in fields]
+        if not keys_found:
+            raise ValueError("No data in file")
+        bulk_updates = []
+        for row in reader:
+            obj_pks = {
+                pk_field.get_attname(): row[pk_field.get_attname()]
+                for pk_field in pk_fields
+            }
+            try:
+                obj = self.model.objects.get(**obj_pks)
+            except self.model.DoesNotExist:
+                if add_new_rows:
+                    obj = self.model.objects.create(**obj_pks)
+                else:
+                    obj_pk = ", ".join([f"{k}: {v}" for k, v in obj_pks.items()])
+                    messages.add_message(
+                        request,
+                        messages.ERROR,
+                        f"Row with {obj_pk} not found",
+                    )
+                    continue
+            for k, v in row.items():
+                if k in keys_found:
+                    if skip_blanks and v == "":
+                        continue
+                    if fields[k].get_internal_type() == "BooleanField":
+                        if v.lower() in ["true", "yes", "1", "t"]:
+                            v = True
+                        elif v.lower() in ["false", "no", "0", "f"]:
+                            v = False
+                        else:
+                            v = None
+                    setattr(obj, k, v)
+            bulk_updates.append(obj)
+        if bulk_updates:
+            return self.model.objects.bulk_update(
+                bulk_updates, keys_found, batch_size=1_000
+            )
+
     def upload_csv_file(self, request):
         non_readonly_fields = [
             f
@@ -113,48 +160,17 @@ class CSVUploadModelAdmin(admin.ModelAdmin):
                 label="Handle blank values",
                 help_text="Choose whether to update fields with blank values",
             )
-
-        def handle_file_upload(file, skip_blanks=False):
-            reader = csv.DictReader(TextIOWrapper(file, encoding="utf-8-sig"))
-            for pk_field in pk_fields:
-                if pk_field.get_attname() not in reader.fieldnames:
-                    raise ValueError(f"'{pk_field}' column not found in file")
-            keys_found = [k for k in reader.fieldnames if k in fields]
-            if not keys_found:
-                raise ValueError("No data dsgsdfound in file")
-            bulk_updates = []
-            for row in reader:
-                try:
-                    obj_pks = {
-                        pk_field.get_attname(): row[pk_field.get_attname()]
-                        for pk_field in pk_fields
-                    }
-                    obj = self.model.objects.get(**obj_pks)
-                except self.model.DoesNotExist:
-                    obj_pk = ", ".join([f"{k}: {v}" for k, v in obj_pks.items()])
-                    messages.add_message(
-                        request,
-                        messages.ERROR,
-                        f"Row with {obj_pk} not found",
-                    )
-                    continue
-                for k, v in row.items():
-                    if k in keys_found:
-                        if skip_blanks and v == "":
-                            continue
-                        if fields[k].get_internal_type() == "BooleanField":
-                            if v.lower() in ["true", "yes", "1", "t"]:
-                                v = True
-                            elif v.lower() in ["false", "no", "0", "f"]:
-                                v = False
-                            else:
-                                v = None
-                        setattr(obj, k, v)
-                bulk_updates.append(obj)
-            if bulk_updates:
-                return self.model.objects.bulk_update(
-                    bulk_updates, keys_found, batch_size=1_000
-                )
+            add_new_rows = forms.ChoiceField(
+                choices=[
+                    ("true", "Yes - add new rows to the database"),
+                    (
+                        "false",
+                        "No - only update existing rows in the database",
+                    ),
+                ],
+                label="Add new rows",
+                help_text="Choose whether to add new rows for missing primary keys",
+            )
 
         context = dict(
             self.admin_site.each_context(request),
@@ -173,14 +189,19 @@ class CSVUploadModelAdmin(admin.ModelAdmin):
             if form.is_valid():
                 file = request.FILES["file"]
                 try:
-                    result = handle_file_upload(
-                        file, form.cleaned_data["handle_blanks"] == "skip"
+                    result = self.handle_file_upload(
+                        file,
+                        pk_fields,
+                        fields,
+                        request,
+                        skip_blanks=form.cleaned_data["handle_blanks"] == "skip",
+                        add_new_rows=form.cleaned_data["add_new_rows"] == "true",
                     )
                     messages.add_message(
                         request,
                         messages.INFO,
                         "{} {} updated".format(
-                            result,
+                            result or 0,
                             (
                                 self.model._meta.verbose_name
                                 if result == 1

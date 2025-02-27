@@ -13,6 +13,13 @@ logger.setLevel(logging.INFO)
 
 SQL_QUERIES = {
     "Ensure every funder has a funder financial year for the current financial year": """
+    WITH fy AS (
+        SELECT *
+        FROM {ukgrantmaking_financialyear}
+        WHERE "current" OR status != 'Future'
+        ORDER BY fy DESC
+        LIMIT 5
+    )
     INSERT INTO
         {ukgrantmaking_funderfinancialyear} (
             financial_year_id,
@@ -28,14 +35,21 @@ SQL_QUERIES = {
         f.included AS included,
         f.makes_grants_to_individuals AS makes_grants_to_individuals
     FROM
-        {ukgrantmaking_funder} f,
-        {ukgrantmaking_financialyear} fy
-    WHERE
-        fy."current" = TRUE
-        AND (
-            f.active = TRUE
-            OR f.active IS NULL
-        ) ON CONFLICT (financial_year_id, funder_id) DO NOTHING
+        {ukgrantmaking_funder} f, fy
+    WHERE f.active = TRUE
+        OR f.active IS NULL
+    ON CONFLICT (financial_year_id, funder_id) DO NOTHING
+    """,
+    "Update tags": """
+    INSERT INTO {ukgrantmaking_funder_tags} (funder_id, fundertag_id)
+    SELECT org_id AS funder_id,
+        CASE WHEN org_id ILIKE 'GB-CHC-%%' THEN 'ccew'
+            WHEN org_id ILIKE 'GB-SC-%%' THEN 'oscr'
+            WHEN org_id ILIKE 'GB-NIC-%%' THEN 'ccni'
+            ELSE NULL END AS "fundertag_id"
+    FROM {ukgrantmaking_funder}
+    WHERE org_id ~* 'GB-(CHC|NIC|SC)-*'
+    ON CONFLICT (funder_id, fundertag_id) DO NOTHING
     """,
     "Set the current year to the correct year": """
     WITH current_fy AS (
