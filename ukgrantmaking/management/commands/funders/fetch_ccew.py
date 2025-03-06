@@ -11,6 +11,18 @@ FIELDS_TO_UPDATE = [
     ),
     ("Employees: Number of self-employed people", "employees_selfemployed_registered"),
     ("Income from investments", "income_investment_registered"),
+    (
+        "Grant making: Value of grants made to individuals",
+        "spending_grant_making_individuals_registered",
+    ),
+    (
+        "Grant making: Value of grants made to other charities",
+        "spending_grant_making_institutions_charitable_registered",
+    ),
+    (
+        "Grant making: Value of grants made to other organisations that are not charities",
+        "spending_grant_making_institutions_noncharitable_registered",
+    ),
 ]
 
 
@@ -23,6 +35,12 @@ def ccew(file, sheet: str, skip_rows: int = 0, debug: bool = False):
     click.secho("Opening {}".format(file), fg="green")
     df = pd.read_excel(file, sheet_name=sheet, skiprows=skip_rows)
     click.secho("{:,.0f} rows in datafile".format(len(df)), fg="green")
+
+    # for employee fields, replace "0 - 2" with None
+    for field_name, _ in FIELDS_TO_UPDATE:
+        if field_name.startswith("Employees"):
+            df[field_name] = pd.to_numeric(df[field_name].replace("0 - 2", pd.NA))
+
     if debug:
         df = df.sample(1000)
     updates = []
