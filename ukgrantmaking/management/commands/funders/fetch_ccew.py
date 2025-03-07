@@ -20,6 +20,10 @@ FIELDS_TO_UPDATE = [
         "spending_grant_making_institutions_charitable_registered",
     ),
     (
+        "Grant making: Value of unknown institution grants",
+        "spending_grant_making_institutions_unknown_registered",
+    ),
+    (
         "Grant making: Value of grants made to other organisations that are not charities",
         "spending_grant_making_institutions_noncharitable_registered",
     ),
