@@ -92,9 +92,20 @@ def ccew(file, sheet: str, skip_rows: int = 0, debug: bool = False):
                             employees = 0
                         employees += int(row[field_name])
 
-            if funder_year.spending_grant_making_institutions_unknown_registered == (
+            # if the two registered grant making fields are equal to the
+            # current partb value, set the partb value to 0
+            if (
                 funder_year.spending_grant_making_institutions_charitable_registered
-                + funder_year.spending_grant_making_institutions_noncharitable_registered
+                or funder_year.spending_grant_making_institutions_noncharitable_registered
+            ) and funder_year.spending_grant_making_institutions_unknown_registered == (
+                (
+                    funder_year.spending_grant_making_institutions_charitable_registered
+                    or 0
+                )
+                + (
+                    funder_year.spending_grant_making_institutions_noncharitable_registered
+                    or 0
+                )
             ):
                 funder_year.spending_grant_making_institutions_unknown_registered = 0
 
