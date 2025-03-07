@@ -88,6 +88,12 @@ def ccew(file, sheet: str, skip_rows: int = 0, debug: bool = False):
                             employees = 0
                         employees += int(row[field_name])
 
+            if funder_year.spending_grant_making_institutions_unknown_registered == (
+                funder_year.spending_grant_making_institutions_charitable_registered
+                + funder_year.spending_grant_making_institutions_noncharitable_registered
+            ):
+                funder_year.spending_grant_making_institutions_unknown_registered = 0
+
             if employees is not None and funder_year.employees is None:
                 funder_year.employees_registered = employees
 

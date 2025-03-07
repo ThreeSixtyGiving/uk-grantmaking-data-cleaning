@@ -88,56 +88,99 @@ class FunderYear(models.Model):
         db_persist=True,
     )
     spending_grant_making = models.GeneratedField(
-        expression=models.Case(
-            models.When(
-                IsNull(
-                    Coalesce(
-                        "spending_grant_making_individuals_manual",
-                        "spending_grant_making_individuals_registered",
-                        "spending_grant_making_individuals_360Giving",
-                        "spending_grant_making_institutions_charitable_manual",
-                        "spending_grant_making_institutions_charitable_registered",
-                        "spending_grant_making_institutions_charitable_360Giving",
-                        "spending_grant_making_institutions_noncharitable_manual",
-                        "spending_grant_making_institutions_noncharitable_registered",
-                        "spending_grant_making_institutions_noncharitable_360Giving",
-                        "spending_grant_making_institutions_unknown_manual",
-                        "spending_grant_making_institutions_unknown_registered",
-                        "spending_grant_making_institutions_unknown_360Giving",
-                        output_field=models.BigIntegerField(),
+        expression=(
+            models.Case(
+                models.When(
+                    IsNull(
+                        Coalesce(
+                            "spending_grant_making_institutions_charitable_manual",
+                            "spending_grant_making_institutions_noncharitable_manual",
+                            "spending_grant_making_institutions_unknown_manual",
+                            output_field=models.BigIntegerField(),
+                        ),
+                        False,
                     ),
-                    False,
+                    then=(
+                        Coalesce(
+                            "spending_grant_making_institutions_charitable_manual",
+                            0,
+                            output_field=models.BigIntegerField(),
+                        )
+                        + Coalesce(
+                            "spending_grant_making_institutions_noncharitable_manual",
+                            0,
+                            output_field=models.BigIntegerField(),
+                        )
+                        + Coalesce(
+                            "spending_grant_making_institutions_unknown_manual",
+                            0,
+                            output_field=models.BigIntegerField(),
+                        )
+                    ),
                 ),
-                then=(
-                    Coalesce(
-                        "spending_grant_making_individuals_manual",
-                        "spending_grant_making_individuals_registered",
-                        "spending_grant_making_individuals_360Giving",
-                        0,
-                        output_field=models.BigIntegerField(),
-                    )
-                    + Coalesce(
-                        "spending_grant_making_institutions_charitable_manual",
-                        "spending_grant_making_institutions_charitable_registered",
-                        "spending_grant_making_institutions_charitable_360Giving",
-                        0,
-                        output_field=models.BigIntegerField(),
-                    )
-                    + Coalesce(
-                        "spending_grant_making_institutions_noncharitable_manual",
-                        "spending_grant_making_institutions_noncharitable_registered",
-                        "spending_grant_making_institutions_noncharitable_360Giving",
-                        0,
-                        output_field=models.BigIntegerField(),
-                    )
-                    + Coalesce(
-                        "spending_grant_making_institutions_unknown_manual",
-                        "spending_grant_making_institutions_unknown_registered",
-                        "spending_grant_making_institutions_unknown_360Giving",
-                        0,
-                        output_field=models.BigIntegerField(),
-                    )
+                models.When(
+                    IsNull(
+                        Coalesce(
+                            "spending_grant_making_institutions_charitable_360Giving",
+                            "spending_grant_making_institutions_noncharitable_360Giving",
+                            "spending_grant_making_institutions_unknown_360Giving",
+                            output_field=models.BigIntegerField(),
+                        ),
+                        False,
+                    ),
+                    then=(
+                        Coalesce(
+                            "spending_grant_making_institutions_charitable_360Giving",
+                            0,
+                            output_field=models.BigIntegerField(),
+                        )
+                        + Coalesce(
+                            "spending_grant_making_institutions_noncharitable_360Giving",
+                            0,
+                            output_field=models.BigIntegerField(),
+                        )
+                        + Coalesce(
+                            "spending_grant_making_institutions_unknown_360Giving",
+                            0,
+                            output_field=models.BigIntegerField(),
+                        )
+                    ),
                 ),
+                models.When(
+                    IsNull(
+                        Coalesce(
+                            "spending_grant_making_institutions_charitable_registered",
+                            "spending_grant_making_institutions_noncharitable_registered",
+                            "spending_grant_making_institutions_unknown_registered",
+                            output_field=models.BigIntegerField(),
+                        ),
+                        False,
+                    ),
+                    then=(
+                        Coalesce(
+                            "spending_grant_making_institutions_charitable_registered",
+                            0,
+                            output_field=models.BigIntegerField(),
+                        )
+                        + Coalesce(
+                            "spending_grant_making_institutions_noncharitable_registered",
+                            0,
+                            output_field=models.BigIntegerField(),
+                        )
+                        + Coalesce(
+                            "spending_grant_making_institutions_unknown_registered",
+                            0,
+                            output_field=models.BigIntegerField(),
+                        )
+                    ),
+                ),
+            )
+            + Coalesce(
+                "spending_grant_making_individuals_manual",
+                "spending_grant_making_individuals_registered",
+                "spending_grant_making_individuals_360Giving",
+                0,
+                output_field=models.BigIntegerField(),
             )
         ),
         output_field=models.BigIntegerField(),
@@ -221,14 +264,8 @@ class FunderYear(models.Model):
                 IsNull(
                     Coalesce(
                         "spending_grant_making_institutions_charitable_manual",
-                        "spending_grant_making_institutions_charitable_registered",
-                        "spending_grant_making_institutions_charitable_360Giving",
                         "spending_grant_making_institutions_noncharitable_manual",
-                        "spending_grant_making_institutions_noncharitable_registered",
-                        "spending_grant_making_institutions_noncharitable_360Giving",
                         "spending_grant_making_institutions_unknown_manual",
-                        "spending_grant_making_institutions_unknown_registered",
-                        "spending_grant_making_institutions_unknown_360Giving",
                         output_field=models.BigIntegerField(),
                     ),
                     False,
@@ -236,27 +273,77 @@ class FunderYear(models.Model):
                 then=(
                     Coalesce(
                         "spending_grant_making_institutions_charitable_manual",
-                        "spending_grant_making_institutions_charitable_registered",
-                        "spending_grant_making_institutions_charitable_360Giving",
                         0,
                         output_field=models.BigIntegerField(),
                     )
                     + Coalesce(
                         "spending_grant_making_institutions_noncharitable_manual",
-                        "spending_grant_making_institutions_noncharitable_registered",
-                        "spending_grant_making_institutions_noncharitable_360Giving",
                         0,
                         output_field=models.BigIntegerField(),
                     )
                     + Coalesce(
                         "spending_grant_making_institutions_unknown_manual",
-                        "spending_grant_making_institutions_unknown_registered",
+                        0,
+                        output_field=models.BigIntegerField(),
+                    )
+                ),
+            ),
+            models.When(
+                IsNull(
+                    Coalesce(
+                        "spending_grant_making_institutions_charitable_360Giving",
+                        "spending_grant_making_institutions_noncharitable_360Giving",
+                        "spending_grant_making_institutions_unknown_360Giving",
+                        output_field=models.BigIntegerField(),
+                    ),
+                    False,
+                ),
+                then=(
+                    Coalesce(
+                        "spending_grant_making_institutions_charitable_360Giving",
+                        0,
+                        output_field=models.BigIntegerField(),
+                    )
+                    + Coalesce(
+                        "spending_grant_making_institutions_noncharitable_360Giving",
+                        0,
+                        output_field=models.BigIntegerField(),
+                    )
+                    + Coalesce(
                         "spending_grant_making_institutions_unknown_360Giving",
                         0,
                         output_field=models.BigIntegerField(),
                     )
                 ),
-            )
+            ),
+            models.When(
+                IsNull(
+                    Coalesce(
+                        "spending_grant_making_institutions_charitable_registered",
+                        "spending_grant_making_institutions_noncharitable_registered",
+                        "spending_grant_making_institutions_unknown_registered",
+                        output_field=models.BigIntegerField(),
+                    ),
+                    False,
+                ),
+                then=(
+                    Coalesce(
+                        "spending_grant_making_institutions_charitable_registered",
+                        0,
+                        output_field=models.BigIntegerField(),
+                    )
+                    + Coalesce(
+                        "spending_grant_making_institutions_noncharitable_registered",
+                        0,
+                        output_field=models.BigIntegerField(),
+                    )
+                    + Coalesce(
+                        "spending_grant_making_institutions_unknown_registered",
+                        0,
+                        output_field=models.BigIntegerField(),
+                    )
+                ),
+            ),
         ),
         output_field=models.BigIntegerField(),
         db_persist=True,
