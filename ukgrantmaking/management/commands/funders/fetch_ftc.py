@@ -84,6 +84,11 @@ def ftc(db_con, debug, do_funders, do_financial):
         if not do_financial:
             return
 
+        # @todo: check that we're not overwriting any financial data
+        raise NotImplementedError(
+            "Not fetching financial data - need to make sure it doesn't overwrite the new CC data"
+        )
+
         # get all financial years
         financial_years = pd.DataFrame(FinancialYear.objects.all().values())
 
