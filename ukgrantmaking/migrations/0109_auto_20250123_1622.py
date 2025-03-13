@@ -106,6 +106,6 @@ class Migration(migrations.Migration):
             WHERE ffy.included
             ORDER BY fy.fy DESC, spending_grant_making DESC NULLS LAST
             """,
-            "DROP VIEW ukgrantmaking_funders_view",
+            reverse_sql="DROP VIEW ukgrantmaking_funders_view",
         ),
     ]

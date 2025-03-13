@@ -174,6 +174,18 @@ class FunderYear(models.Model):
                         )
                     ),
                 ),
+                models.When(
+                    IsNull(
+                        Coalesce(
+                            "spending_grant_making_individuals_manual",
+                            "spending_grant_making_individuals_registered",
+                            "spending_grant_making_individuals_360Giving",
+                            output_field=models.BigIntegerField(),
+                        ),
+                        False,
+                    ),
+                    then=0,
+                ),
             )
             + Coalesce(
                 "spending_grant_making_individuals_manual",
