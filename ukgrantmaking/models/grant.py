@@ -54,6 +54,7 @@ class Grant(models.Model):
     class LotteryGrantType(models.TextChoices):
         EXCHEQUER = "Exchequer", "Exchequer"
         LOTTERY = "Lottery", "Lottery"
+        OTHER = "Other", "Other"
 
     class RegrantType(models.TextChoices):
         FRG010 = (
