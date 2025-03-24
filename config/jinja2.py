@@ -217,7 +217,7 @@ def clean_url(url: str) -> str:
         url = url[4:]
     if url.endswith("/"):
         url = url[:-1]
-    return url.lower()
+    return url
 
 
 def working_url(url: str) -> str:
