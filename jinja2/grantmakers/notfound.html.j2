@@ -1,0 +1,23 @@
+{% extends 'base.html.j2' %}
+{% from 'components/values.html.j2' import display_date, display_number, display_longtext, display_list, display_text, none_wrapper, display_boolean, display_url %}
+
+{% set title = org_id + ' Not Found | ' + default_title %}
+{% block header %}
+<div id="funder-header" style="margin-bottom: 2rem;">
+    <h2 class="flex-row">Grantmaker: {{ org_id }} Not Found</h2>
+</div>
+{% endblock header %}
+
+{% block content %}
+<form method="post" class="filters">
+    <h3>
+        Add a new record
+        {% if object %} with <a href="https://findthatcharity.uk/orgid/{{ org_id }}" target="_blank">data from Find that
+            Charity</a>
+        {% endif %}
+    </h3>
+    {{ csrf_input }}
+    {{ form }}
+    <input type="submit" value="Add" class="btn btn-primary">
+</form>
+{% endblock %}

@@ -228,3 +228,7 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # minimum number of characters to be considered a complete document
 MIN_DOC_LENGTH = 1000
+
+# Find that Charity connection details
+FTC_API_KEY = os.environ.get("FTC_API_KEY")
+FTC_API_URL = os.environ.get("FTC_API_URL", "https://findthatcharity.uk/api/v1")

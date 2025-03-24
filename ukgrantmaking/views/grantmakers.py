@@ -2,7 +2,9 @@ import csv
 from decimal import Decimal
 from io import TextIOWrapper
 
+import requests
 from dateutil import parser
+from django.conf import settings
 from django.contrib import messages
 from django.contrib.admin.models import CHANGE, LogEntry
 from django.contrib.auth.decorators import login_required
@@ -21,6 +23,7 @@ from django.utils import timezone
 from django.utils.text import slugify
 
 from ukgrantmaking.filters.grantmakers import GrantmakerFilter
+from ukgrantmaking.forms.funder import FunderForm
 from ukgrantmaking.forms.funder_upload import FunderUploadForm
 from ukgrantmaking.models.cleaningstatus import CleaningStatus, CleaningStatusType
 from ukgrantmaking.models.financial_years import FinancialYear, FinancialYearStatus
@@ -28,6 +31,7 @@ from ukgrantmaking.models.funder import Funder, FunderTag
 from ukgrantmaking.models.funder_financial_year import FunderFinancialYear
 from ukgrantmaking.models.funder_utils import RecordStatus
 from ukgrantmaking.models.funder_year import FunderYear
+from ukgrantmaking.utils.text import to_titlecase
 
 
 @login_required
@@ -115,8 +119,71 @@ def task_detail(request, task_id, filetype=None):
 
 @login_required
 def detail(request, org_id):
-    funder = get_object_or_404(Funder, org_id=org_id)
-    return render(request, "grantmakers/detail.html.j2", {"object": funder})
+    org_id = org_id.removesuffix("/")
+    try:
+        funder = Funder.objects.get(org_id=org_id)
+        return render(request, "grantmakers/detail.html.j2", {"object": funder})
+    except Funder.DoesNotExist:
+        if request.method == "POST":
+            form = FunderForm(request.POST)
+            if form.is_valid():
+                funder = form.save()
+                LogEntry.objects.log_action(
+                    user_id=request.user.id,
+                    content_type_id=ContentType.objects.get_for_model(funder).pk,
+                    object_id=funder.pk,
+                    object_repr=funder.name,
+                    action_flag=CHANGE,
+                    change_message="Created funder",
+                )
+                return HttpResponseRedirect(
+                    reverse("grantmakers:detail", args=[org_id])
+                )
+            return render(
+                request,
+                "grantmakers/notfound.html.j2",
+                {"org_id": org_id, "object": None, "form": form},
+            )
+        try:
+            r = requests.get(
+                "{api_url}/organisations/{organisation_id}".format(
+                    api_url=settings.FTC_API_URL, organisation_id=org_id
+                )
+            )
+            r.raise_for_status()
+        except requests.HTTPError:
+            raise Http404(f"Funder with org_id {org_id} not found")
+        data = r.json()
+        if data.get("success"):
+            form = FunderForm(
+                initial={
+                    "org_id": data["result"]["id"],
+                    "charity_number": data["result"]["charityNumber"],
+                    "name_registered": data["result"]["name"],
+                    "name_manual": to_titlecase(data["result"]["name"]),
+                    # "segment": data["result"]["id"],
+                    "included": True,
+                    # "makes_grants_to_individuals": data["result"]["id"],
+                    # "successor": data["result"]["id"],
+                    # "status": data["result"]["id"],
+                    "date_of_registration": data["result"]["dateRegistered"],
+                    "date_of_removal": data["result"]["dateRemoved"],
+                    "active": data["result"]["active"],
+                    "activities": data["result"]["description"],
+                    "website": data["result"]["url"],
+                }
+            )
+            return render(
+                request,
+                "grantmakers/notfound.html.j2",
+                {"org_id": org_id, "object": data["result"], "form": form},
+            )
+        form = FunderForm(initial={"org_id": org_id})
+        return render(
+            request,
+            "grantmakers/notfound.html.j2",
+            {"org_id": org_id, "object": None, "form": form},
+        )
 
 
 @login_required
