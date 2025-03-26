@@ -1,5 +1,6 @@
 import pytest
 
+from ukgrantmaking.models.funder import FunderTag
 from ukgrantmaking.models.funder_utils import FunderSegment, RecordStatus
 
 # urls:
@@ -92,6 +93,8 @@ def test_htmx_get_tags(client_logged_in, funder, check_log_entry):
         (["Tag 1", "Tag X"], ["Tag Z", "Tag Y"]),
         (["Tag 1", "Tag X"], ["Tag Z"]),
         (["Tag 1", "Tag X"], ["Tag X"]),
+        (["Tag X"], ["Tag X"]),
+        (["Tag 1"], ["Tag X"]),
         (["Tag 1", "Tag X"], ["Tag 1"]),
         (["Tag 1", "Tag X"], []),
         ([], []),
@@ -100,11 +103,14 @@ def test_htmx_get_tags(client_logged_in, funder, check_log_entry):
 def test_htmx_edit_tags(
     client_logged_in, funder, existing_tags, new_tags, check_log_entry
 ):
-    funder.tags.set([])
+    tags = []
     if existing_tags:
-        for tag in existing_tags:
-            funder.tags.create(tag=tag)
-        funder.save()
+        for tag_name in existing_tags:
+            tag, _ = FunderTag.objects.get_or_create(tag=tag_name)
+            tags.append(tag)
+    funder.tags.set(tags)
+    funder.org_id = "GB-XI-12345678"
+    funder.save()
     response = client_logged_in.post(
         f"/grantmakers/funder/{funder.org_id}/tags",
         {"tags": new_tags},
@@ -113,9 +119,9 @@ def test_htmx_edit_tags(
     assert response.status_code == 200
 
     # check the tags were added to the funder
-    funder.refresh_from_db()
     assert funder.tags.count() == len(new_tags)
 
+    funder.current_year.refresh_from_db()
     for tag in new_tags:
         assert tag in response.content.decode("utf-8")
         assert funder.tags.filter(tag=tag).exists()

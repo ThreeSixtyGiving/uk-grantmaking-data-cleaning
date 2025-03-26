@@ -132,7 +132,14 @@ def test_edit_funderyear_py(
     assert fy.spending_investment_manual == initial_value_cy
     assert fy.spending_investment == initial_value_cy
 
-    fy_py = funder_with_py.funder_financial_years.last().funder_years.first()
+    fy_py = (
+        funder_with_py.funder_financial_years.exclude(
+            financial_year=funder_with_py.current_year.financial_year
+        )
+        .order_by("-financial_year")
+        .first()
+        .funder_years.first()
+    )
     if initial_value_py is not None:
         fy_py.spending_investment_manual = initial_value_py
         fy_py.save()

@@ -313,7 +313,9 @@ class Funder(models.Model):
         }
         for prefix, tag in orgids.items():
             if self.org_id.startswith(prefix):
-                tag_object, created = FunderTag.objects.get_or_create(slug=tag)
+                tag_object, created = FunderTag.objects.get_or_create(
+                    slug=tag, defaults={"tag": tag.upper()}
+                )
                 if not self.tags.filter(tag=tag_object).exists():
                     self.tags.add(tag_object)
 
