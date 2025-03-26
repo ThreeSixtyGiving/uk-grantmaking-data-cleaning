@@ -100,7 +100,7 @@ def grants():
                         for grant_amount in grants_amount_by_recipient:
                             changed = False
                             if grant_amount["recipient_type"] == "Organisation":
-                                funder_year.spending_grant_making_institutions_unknown_360Giving = grant_amount[
+                                funder_year.spending_grant_making_institutions_main_360Giving = grant_amount[
                                     "grants_amount"
                                 ]
                                 changed = True
@@ -148,7 +148,7 @@ def grants():
                         for grant_amount in grants_amount_by_recipient:
                             changed = False
                             if grant_amount["recipient_type"] == "Organisation":
-                                funder_year.spending_grant_making_institutions_unknown_360Giving = grant_amount[
+                                funder_year.spending_grant_making_institutions_main_360Giving = grant_amount[
                                     "grants_amount"
                                 ]
                                 changed = True
@@ -164,7 +164,7 @@ def grants():
         updated = FunderYear.objects.bulk_update(
             bulk_update,
             [
-                "spending_grant_making_institutions_unknown_360Giving",
+                "spending_grant_making_institutions_main_360Giving",
                 "spending_grant_making_individuals_360Giving",
             ],
         )

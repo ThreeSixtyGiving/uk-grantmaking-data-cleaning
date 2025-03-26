@@ -85,5 +85,14 @@
             </select>
         </footer>
     </li>
+    <li class="">
+        <header>Refresh data</header>
+        <p></p>
+        <footer>
+            <a href="#" hx-target="#funder-status" hx-swap="outerHTML" class="button"
+                hx-post="{{ url_for('grantmakers:change_status', org_id=object.org_id) }}"
+                hx-vals='{"action": "refresh_ftc"}'>From FTC</a>
+        </footer>
+    </li>
 </ul>
 {% if request.htmx %}{% include 'grantmakers/partials/audittrail.html.j2'%}{% endif %}

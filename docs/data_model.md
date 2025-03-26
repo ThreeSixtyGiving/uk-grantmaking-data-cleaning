@@ -93,25 +93,26 @@ The `FunderFinancialYear` record does stores a read-only copy of financial recor
 
 When a `FunderFinancialYear` has more than 2 `FunderYears`, the financial records are worked out either by summing the `FunderYear` values (for income and expenditure items) or by taking the latest value (for balance sheet or employment items). The values included are:
 
-| Attribute                                          | Produced by | Note                                            |
-| -------------------------------------------------- | ----------- | ----------------------------------------------- |
-| `income`                                           | SUM         |                                                 |
-| `income_investment`                                | SUM         |                                                 |
-| `spending`                                         | SUM         |                                                 |
-| `spending_investment`                              | SUM         |                                                 |
-| `spending_charitable`                              | SUM         |                                                 |
-| `spending_grant_making`                            | SUM         |                                                 |
-| `spending_grant_making_individuals`                | SUM         |                                                 |
-| `spending_grant_making_institutions_charitable`    | SUM         | Not currently included                          |
-| `spending_grant_making_institutions_noncharitable` | SUM         | Not currently included                          |
-| `spending_grant_making_institutions_unknown`       | SUM         | (Shown as `spending_grant_making_institutions`) |
-| `spending_grant_making_institutions`               | SUM         | Not currently included                          |
-| `total_net_assets`                                 | LATEST      |                                                 |
-| `funds`                                            | LATEST      |                                                 |
-| `funds_endowment`                                  | LATEST      |                                                 |
-| `funds_restricted`                                 | LATEST      |                                                 |
-| `funds_unrestricted`                               | LATEST      |                                                 |
-| `employees`                                        | LATEST      |                                                 |
+| Attribute                                          | Produced by | Note                                                        |
+| -------------------------------------------------- | ----------- | ----------------------------------------------------------- |
+| `income`                                           | SUM         |                                                             |
+| `income_investment`                                | SUM         |                                                             |
+| `spending`                                         | SUM         |                                                             |
+| `spending_investment`                              | SUM         |                                                             |
+| `spending_charitable`                              | SUM         |                                                             |
+| `spending_grant_making`                            | SUM         |                                                             |
+| `spending_grant_making_individuals`                | SUM         |                                                             |
+| `spending_grant_making_institutions_charitable`    | SUM         | From additionally provided data from the Charity Commission |
+| `spending_grant_making_institutions_noncharitable` | SUM         | From additionally provided data from the Charity Commission |
+| `spending_grant_making_institutions_unknown`       | SUM         | From additionally provided data from the Charity Commission |
+| `spending_grant_making_institutions_main`          | SUM         | Main value from Charity Commission Part B                   |
+| `spending_grant_making_institutions`               | SUM         | Not currently included                                      |
+| `total_net_assets`                                 | LATEST      |                                                             |
+| `funds`                                            | LATEST      |                                                             |
+| `funds_endowment`                                  | LATEST      |                                                             |
+| `funds_restricted`                                 | LATEST      |                                                             |
+| `funds_unrestricted`                               | LATEST      |                                                             |
+| `employees`                                        | LATEST      |                                                             |
 
 ### Funder Year
 

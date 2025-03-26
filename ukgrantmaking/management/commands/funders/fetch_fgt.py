@@ -54,9 +54,9 @@ def fgt(file):
 
             if (
                 not pd.isna(row["Giving £m"])
-                and not funder_year.spending_grant_making_institutions_unknown_manual
+                and not funder_year.spending_grant_making_institutions_main_manual
             ):
-                funder_year.spending_grant_making_institutions_unknown_manual = (
+                funder_year.spending_grant_making_institutions_main_manual = (
                     row["Giving £m"] * 1_000_000
                 )
 

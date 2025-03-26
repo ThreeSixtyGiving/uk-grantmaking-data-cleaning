@@ -136,6 +136,7 @@ def detail(request, org_id):
                     action_flag=CHANGE,
                     change_message="Created funder",
                 )
+                funder.update_from_ftc()
                 return HttpResponseRedirect(
                     reverse("grantmakers:detail", args=[org_id])
                 )
@@ -334,6 +335,10 @@ def htmx_edit_funder(request, org_id):
     elif action == "include":
         funder.included = True
         change_message = "Marked as included"
+    elif action == "refresh_ftc":
+        funder.save()
+        funder.update_from_ftc()
+        change_message = "Refreshed from Find that Charity"
     elif action == "doesnt_make_grants_to_individuals":
         funder.makes_grants_to_individuals = False
         change_message = "Marked as not making grants to individuals"

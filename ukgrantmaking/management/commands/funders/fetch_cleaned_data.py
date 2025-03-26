@@ -64,7 +64,7 @@ def cleaned_data(files):
                 spending_manual=record.spending_checked,
                 spending_charitable_manual=record.exp_charble_checked,
                 spending_grant_making_individuals_manual=record.spending_on_grants_to_individuals,
-                spending_grant_making_institutions_unknown_manual=record.spending_on_grants_to_institutions,
+                spending_grant_making_institutions_main_manual=record.spending_on_grants_to_institutions,
                 total_net_assets_manual=record.total_assets_checked,
                 funds_manual=record.funds_end_checked,
                 funds_endowment_manual=record.funds_end_checked,

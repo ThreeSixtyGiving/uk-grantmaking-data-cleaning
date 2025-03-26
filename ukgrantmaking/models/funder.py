@@ -1,3 +1,5 @@
+import os
+
 from django.conf import settings
 from django.contrib.admin.models import LogEntry
 from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelation
@@ -8,6 +10,7 @@ from django.urls import reverse
 from django.utils.text import slugify
 from markdownx.models import MarkdownxField
 
+from ukgrantmaking.management.commands.funders.fetch_ftc import do_ftc_finance
 from ukgrantmaking.models.financial_years import FinancialYear, FinancialYearStatus
 from ukgrantmaking.models.funder_financial_year import FunderFinancialYear
 from ukgrantmaking.models.funder_utils import (
@@ -287,6 +290,33 @@ class Funder(models.Model):
             object_id=self.pk,
         ).order_by("-action_time")
 
+    def ensure_funder_financial_years(self):
+        fys = FinancialYear.objects.filter(
+            models.Q(current=True) | ~models.Q(status=FinancialYearStatus.FUTURE)
+        ).order_by("-fy")[:5]
+        for fy in fys:
+            FunderFinancialYear.objects.get_or_create(
+                funder=self,
+                financial_year=fy,
+                defaults={
+                    "segment": self.segment,
+                    "included": self.included,
+                    "makes_grants_to_individuals": self.makes_grants_to_individuals,
+                },
+            )
+
+    def update_tags(self):
+        orgids = {
+            "GB-CHC": "ccew",
+            "GB-SC": "oscr",
+            "GB-NIC": "ccni",
+        }
+        for prefix, tag in orgids.items():
+            if self.org_id.startswith(prefix):
+                tag_object, created = FunderTag.objects.get_or_create(slug=tag)
+                if not self.tags.filter(tag=tag_object).exists():
+                    self.tags.add(tag_object)
+
     def get_latest_funder_financial_year(self) -> FunderFinancialYear:
         current_fy = FinancialYear.objects.current()
         latest_funder_year = (
@@ -341,8 +371,21 @@ class Funder(models.Model):
     def get_absolute_url(self):
         return reverse("grantmakers:detail", kwargs={"org_id": self.pk})
 
+    def update_from_ftc(self):
+        do_ftc_finance(
+            db_con=os.environ.get("FTC_DB_URL"),
+            org_ids=(self.org_id,),
+            debug=True,
+        )
+
     def save(self, *args, **kwargs):
         super().save(*args, **kwargs)
+
+        # make sure the funder has last five funder financial years
+        self.ensure_funder_financial_years()
+
+        # update auto-generated tags
+        self.update_tags()
 
         # update the funder financial year with the latest values
         self.update_funder_financial_year()

@@ -1,12 +1,8 @@
 import logging
 
 import djclick as click
+from django.apps import apps
 from django.db import connection, transaction
-
-from ukgrantmaking.models.financial_years import FinancialYear
-from ukgrantmaking.models.funder import Funder
-from ukgrantmaking.models.funder_financial_year import FunderFinancialYear
-from ukgrantmaking.models.funder_year import FunderYear
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -132,6 +128,7 @@ SQL_QUERIES = {
             sum(spending_grant_making_institutions_charitable) AS spending_grant_making_institutions_charitable,
             sum(spending_grant_making_institutions_noncharitable) AS spending_grant_making_institutions_noncharitable,
             sum(spending_grant_making_institutions_unknown) AS spending_grant_making_institutions_unknown,
+            sum(spending_grant_making_institutions_main) AS spending_grant_making_institutions_main,
             sum(spending_grant_making_institutions) AS spending_grant_making_institutions
         FROM
             fy
@@ -151,6 +148,7 @@ SQL_QUERIES = {
         spending_grant_making_institutions_charitable = summed_fields.spending_grant_making_institutions_charitable,
         spending_grant_making_institutions_noncharitable = summed_fields.spending_grant_making_institutions_noncharitable,
         spending_grant_making_institutions_unknown = summed_fields.spending_grant_making_institutions_unknown,
+        spending_grant_making_institutions_main = summed_fields.spending_grant_making_institutions_main,
         spending_grant_making_institutions = summed_fields.spending_grant_making_institutions,
         total_net_assets = latest_fields.total_net_assets,
         funds = latest_fields.funds,
@@ -215,6 +213,11 @@ SQL_QUERIES = {
 
 
 def format_query(query):
+    FinancialYear = apps.get_model("ukgrantmaking", "FinancialYear")
+    FunderFinancialYear = apps.get_model("ukgrantmaking", "FunderFinancialYear")
+    FunderYear = apps.get_model("ukgrantmaking", "FunderYear")
+    Funder = apps.get_model("ukgrantmaking", "Funder")
+
     return query.format(
         ukgrantmaking_funder=Funder._meta.db_table,
         ukgrantmaking_funderfinancialyear=FunderFinancialYear._meta.db_table,

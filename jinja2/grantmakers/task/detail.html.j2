@@ -104,9 +104,12 @@
     </td>
     <td class="tr">
         {{ display_number(object.spending_grant_making_institutions_noncharitable, format_str="£{:,.0f}") }}
-    </td> #}
+    </td>
     <td class="tr">
         {{ display_number(object.spending_grant_making_institutions_unknown, format_str="£{:,.0f}") }}
+    </td> #}
+    <td class="tr">
+        {{ display_number(object.spending_grant_making_institutions_main, format_str="£{:,.0f}") }}
     </td>
     {# <td class="tr">
         {{ display_number(object.spending_grant_making_institutions, format_str="£{:,.0f}") }}

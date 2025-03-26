@@ -20,6 +20,7 @@ class FunderYearInline(admin.StackedInline):
         "spending_grant_making_institutions_charitable",
         "spending_grant_making_institutions_noncharitable",
         "spending_grant_making_institutions_unknown",
+        "spending_grant_making_institutions_main",
         "spending_grant_making_institutions",
         "accounts_link",
         "total_net_assets_registered",
@@ -74,6 +75,10 @@ class FunderYearInline(admin.StackedInline):
                     (
                         "spending_grant_making_institutions_unknown",
                         "spending_grant_making_institutions_unknown_manual",
+                    ),
+                    (
+                        "spending_grant_making_institutions_main",
+                        "spending_grant_making_institutions_main_manual",
                     ),
                     ("spending_grant_making_institutions",),
                 ],
@@ -157,6 +162,8 @@ class FunderYearAdmin(CSVUploadModelAdmin):
         "spending_grant_making_institutions_noncharitable_360Giving",
         "spending_grant_making_institutions_unknown_registered",
         "spending_grant_making_institutions_unknown_360Giving",
+        "spending_grant_making_institutions_main_registered",
+        "spending_grant_making_institutions_main_360Giving",
         "spending_grant_making_institutions",
         "total_net_assets_registered",
         "funds_registered",
@@ -225,6 +232,11 @@ class FunderYearAdmin(CSVUploadModelAdmin):
                         "spending_grant_making_institutions_unknown_registered",
                         "spending_grant_making_institutions_unknown_360Giving",
                         "spending_grant_making_institutions_unknown_manual",
+                    ),
+                    (
+                        "spending_grant_making_institutions_main_registered",
+                        "spending_grant_making_institutions_main_360Giving",
+                        "spending_grant_making_institutions_main_manual",
                     ),
                     ("spending_grant_making_institutions",),
                 ]

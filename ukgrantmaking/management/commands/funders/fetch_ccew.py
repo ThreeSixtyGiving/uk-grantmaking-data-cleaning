@@ -57,7 +57,7 @@ def ccew(file, sheet: str, skip_rows: int = 0, debug: bool = False):
         label="Updating finances from CCEW data",
     ) as bar:
         for index, row in bar:
-            org_id = f'GB-CHC-{row["Registered charity number"]:.0f}'
+            org_id = f"GB-CHC-{row['Registered charity number']:.0f}"
             fye = row["fin_period_end_date"].to_pydatetime().date()
             org_ids.add(org_id)
             fyes.add(fye)
@@ -91,23 +91,6 @@ def ccew(file, sheet: str, skip_rows: int = 0, debug: bool = False):
                         if employees is None:
                             employees = 0
                         employees += int(row[field_name])
-
-            # if the two registered grant making fields are equal to the
-            # current partb value, set the partb value to 0
-            if (
-                funder_year.spending_grant_making_institutions_charitable_registered
-                or funder_year.spending_grant_making_institutions_noncharitable_registered
-            ) and funder_year.spending_grant_making_institutions_unknown_registered == (
-                (
-                    funder_year.spending_grant_making_institutions_charitable_registered
-                    or 0
-                )
-                + (
-                    funder_year.spending_grant_making_institutions_noncharitable_registered
-                    or 0
-                )
-            ):
-                funder_year.spending_grant_making_institutions_unknown_registered = 0
 
             if employees is not None and funder_year.employees is None:
                 funder_year.employees_registered = employees

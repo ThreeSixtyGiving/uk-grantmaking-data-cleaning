@@ -82,6 +82,12 @@ FIELD_DEFINITIONS = [
         int,
     ),
     (
+        "spending_grant_making_institutions_main",
+        "Spending grant making institutions main",
+        CleaningStatusType.GRANTMAKER,
+        int,
+    ),
+    (
         "spending_grant_making_institutions",
         "Spending grant making institutions",
         CleaningStatusType.GRANTMAKER,
@@ -561,13 +567,13 @@ class CleaningStatusQuery(models.Model):
             except ValueError:
                 raise ValidationError(f"Invalid date format '{self.value}'")
 
-        elif field_type == int:
+        elif field_type == int:  # noqa: E721
             try:
                 self.value = int(self.value)
             except ValueError:
                 raise ValidationError(f"Invalid number format '{self.value}'")
 
-        elif field_type == float:
+        elif field_type == float:  # noqa: E721
             try:
                 self.value = float(self.value)
             except ValueError:

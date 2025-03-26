@@ -44,6 +44,7 @@ class FunderFinancialYearAdmin(CSVUploadModelAdmin):
         "spending_grant_making_institutions_charitable",
         "spending_grant_making_institutions_noncharitable",
         "spending_grant_making_institutions_unknown",
+        "spending_grant_making_institutions_main",
         "spending_grant_making_institutions",
         "scaling",
         "total_net_assets",
