@@ -52,6 +52,14 @@ def grants():
         ):
             logger.warning(f"   {funder[0]} - {funder[1]}")
 
+        # update financial years on all grants
+        for fy in FinancialYear.objects.all():
+            Grant.objects.filter(
+                financial_year__isnull=True,
+                award_date__gte=fy.grants_start_date,
+                award_date__lte=fy.grants_end_date,
+            ).update(financial_year=fy)
+
         # update funder years
         logger.info("Updating funder years")
         funders = (
@@ -97,24 +105,34 @@ def grants():
                             .values("recipient_type")
                             .annotate(grants_amount=Sum("amount_awarded_GBP"))
                         )
+                        grant_amounts = {
+                            "Organisation": 0,
+                            "Individual": 0,
+                        }
+                        changed = False
                         for grant_amount in grants_amount_by_recipient:
-                            changed = False
-                            if grant_amount["recipient_type"] == "Organisation":
-                                funder_year.spending_grant_making_institutions_main_360Giving = grant_amount[
+                            if grant_amount["recipient_type"] != "Individual":
+                                grant_amounts["Organisation"] += grant_amount[
                                     "grants_amount"
                                 ]
                                 changed = True
                             if grant_amount["recipient_type"] == "Individual":
-                                funder_year.spending_grant_making_individuals_360Giving = grant_amount[
+                                grant_amounts["Individual"] += grant_amount[
                                     "grants_amount"
                                 ]
                                 changed = True
-                            if changed:
-                                logger.info(
-                                    f"Updating {funder.name} [{funder.org_id}] {funder_year.financial_year_end}",
-                                )
-                                results["Funder years updated"] += 1
-                                bulk_update.append(funder_year)
+                        if changed:
+                            funder_year.spending_grant_making_institutions_main_360Giving = grant_amounts[
+                                "Organisation"
+                            ]
+                            funder_year.spending_grant_making_individuals_360Giving = (
+                                grant_amounts["Individual"]
+                            )
+                            logger.info(
+                                f"Updating {funder.name} [{funder.org_id}] {funder_year.financial_year_end}",
+                            )
+                            results["Funder years updated"] += 1
+                            bulk_update.append(funder_year)
 
                 # otherwise check for grants data and add it if it exists
                 else:
@@ -143,23 +161,36 @@ def grants():
                             financial_year_end=year.grants_start_date,
                         )
                         logger.info(
-                            f"Creating {funder_year.funder} {funder_year.financial_year_end}",
+                            f"Creating {funder_financial_year.funder} {funder_year.financial_year_end}",
                         )
+                        grant_amounts = {
+                            "Organisation": 0,
+                            "Individual": 0,
+                        }
+                        changed = False
                         for grant_amount in grants_amount_by_recipient:
-                            changed = False
-                            if grant_amount["recipient_type"] == "Organisation":
-                                funder_year.spending_grant_making_institutions_main_360Giving = grant_amount[
+                            if grant_amount["recipient_type"] != "Individual":
+                                grant_amounts["Organisation"] += grant_amount[
                                     "grants_amount"
                                 ]
                                 changed = True
                             if grant_amount["recipient_type"] == "Individual":
-                                funder_year.spending_grant_making_individuals_360Giving = grant_amount[
+                                grant_amounts["Individual"] += grant_amount[
                                     "grants_amount"
                                 ]
                                 changed = True
-                            if changed:
-                                results["Funder years created"] += 1
-                                funder_year.save()
+                        if changed:
+                            funder_year.spending_grant_making_institutions_main_360Giving = grant_amounts[
+                                "Organisation"
+                            ]
+                            funder_year.spending_grant_making_individuals_360Giving = (
+                                grant_amounts["Individual"]
+                            )
+                            logger.info(
+                                f"Updating {funder.name} [{funder.org_id}] {funder_year.financial_year_end}",
+                            )
+                            results["Funder years created"] += 1
+                            funder_year.save()
 
         updated = FunderYear.objects.bulk_update(
             bulk_update,
