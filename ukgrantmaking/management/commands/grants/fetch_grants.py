@@ -42,8 +42,8 @@ def grants(db_con):
             g.data->>'amountAwarded' as "amount_awarded",
             g.data->>'awardDate' as "award_date",
             g.data->'plannedDates'->0->>'duration' as "planned_dates_duration",
-            g.data->'plannedDates'->0->>'startDate' as "planned_dates_startDate",
-            g.data->'plannedDates'->0->>'endDate' as "planned_dates_endDate",
+            to_date(g.data->'plannedDates'->0->>'startDate', 'YYYY-MM-DD') as "planned_dates_startDate",
+            to_date(g.data->'plannedDates'->0->>'endDate', 'YYYY-MM-DD') as "planned_dates_endDate",
             g.data->'recipientOrganization'->0->>'id' as "recipient_organization_id",
             g.data->'recipientOrganization'->0->>'name' as "recipient_organization_name",
             g.data->'recipientIndividual'->>'id' as "recipient_individual_id",
@@ -95,20 +95,9 @@ def grants(db_con):
     # fields to fill in any gaps. We need to convert them to dates and
     # then find the gap between them.
 
-    # The `planned_dates_endDate` has some invalid date values, which we'll
-    # replace before turning them into dates.
-    enddate = (
-        df["planned_dates_endDate"]
-        .str[0:10]
-        .replace(
-            {
-                "2022-02-30": "2022-02-28",
-            }
-        )
-    )
     # calculate duration as python timedelta
-    duration = pd.to_datetime(enddate, utc=True) - pd.to_datetime(
-        df["planned_dates_startDate"].str[0:10], utc=True
+    duration = pd.to_datetime(df["planned_dates_endDate"], utc=True) - pd.to_datetime(
+        df["planned_dates_startDate"], utc=True
     )
     # convert into months
     duration = duration.divide(np.timedelta64(30, "D"))

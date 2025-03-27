@@ -166,6 +166,22 @@ SQL_QUERIES = {
         {ukgrantmaking_funderfinancialyear}.id = latest_fields.funder_financial_year_id
         AND {ukgrantmaking_funderfinancialyear}.id = summed_fields.funder_financial_year_id
     """,
+    "Update funder makes_grants_to_individuals": """
+    WITH individual_funders AS (
+        SELECT DISTINCT ffy.funder_id
+        FROM
+            {ukgrantmaking_funderfinancialyear} ffy,
+            {ukgrantmaking_financialyear} fy
+        WHERE
+            ffy.financial_year_id = fy.fy
+            AND (fy."current" = TRUE OR fy.status IN ('Open', 'Future'))
+            AND spending_grant_making_individuals > 0
+    )
+    UPDATE {ukgrantmaking_funder}
+    SET makes_grants_to_individuals = TRUE
+    FROM individual_funders
+    WHERE {ukgrantmaking_funder}.org_id = individual_funders.funder_id
+    """,
     "Update current funder financial years with the latest funder data": """
     UPDATE
         {ukgrantmaking_funderfinancialyear}
