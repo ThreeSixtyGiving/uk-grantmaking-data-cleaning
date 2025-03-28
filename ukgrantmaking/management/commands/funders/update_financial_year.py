@@ -94,7 +94,25 @@ SQL_QUERIES = {
     "Recalculate aggregate values for funder financial years": """
     WITH fy AS (
         SELECT
-            *
+            *,
+            case when (
+                abs(coalesce(funds_endowment, 0)) + 
+                abs(coalesce(funds_restricted, 0)) + 
+                abs(coalesce(funds_unrestricted, 0))
+            ) > 0 then (
+                coalesce(funds_endowment, 0) + 
+                coalesce(funds_restricted, 0) + 
+                coalesce(funds_unrestricted, 0)
+            ) else null end as funds_calculated,
+            case when (
+                coalesce(employees_permanent, 0) + 
+                coalesce(employees_fixedterm, 0) + 
+                coalesce(employees_selfemployed, 0)
+            ) > 0 then (
+                coalesce(employees_permanent, 0) + 
+                coalesce(employees_fixedterm, 0) + 
+                coalesce(employees_selfemployed, 0)
+            ) else null end as employees_calculated
         FROM
             {ukgrantmaking_funderyear} fy
         ORDER BY
@@ -103,12 +121,12 @@ SQL_QUERIES = {
     latest_fields AS (
         SELECT
             DISTINCT ON (funder_financial_year_id) funder_financial_year_id,
-            total_net_assets,
-            funds,
+            coalesce(total_net_assets, funds_calculated) AS total_net_assets,
+            coalesce(funds, funds_calculated) AS funds,
             funds_endowment,
             funds_restricted,
             funds_unrestricted,
-            employees,
+            coalesce(employees, employees_calculated) AS employees,
             employees_permanent,
             employees_fixedterm,
             employees_selfemployed
