@@ -243,7 +243,7 @@ def ftc(db_con: str, debug: bool, do_funders: bool, do_financial: bool):
         org_ids = tuple(funder_qs.values_list("org_id", flat=True))
 
         if do_funders:
-            do_ftc_funders(org_ids, db_con)
+            do_ftc_funders(db_con, org_ids)
 
         if not do_financial:
             return
