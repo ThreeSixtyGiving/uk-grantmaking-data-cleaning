@@ -382,6 +382,7 @@ class Funder(models.Model):
             org_ids=(self.org_id,),
             debug=True,
         )
+        self.refresh_from_db()
         do_ftc_finance(
             db_con=os.environ.get("FTC_DB_URL"),
             org_ids=(self.org_id,),
