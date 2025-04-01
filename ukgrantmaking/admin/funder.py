@@ -1,3 +1,5 @@
+import os
+
 from django.contrib import admin, messages
 from django.contrib.contenttypes.admin import GenericTabularInline
 from django.db import connection, transaction
@@ -6,6 +8,10 @@ from django.utils.html import format_html
 from ukgrantmaking.admin.csv_upload import CSVUploadModelAdmin
 from ukgrantmaking.admin.funder_financial_year import FunderFinancialYearInline
 from ukgrantmaking.admin.utils import Action, add_admin_actions
+from ukgrantmaking.management.commands.funders.fetch_ftc import (
+    do_ftc_finance,
+    do_ftc_funders,
+)
 from ukgrantmaking.management.commands.funders.update_financial_year import (
     SQL_QUERIES,
     format_query,
@@ -111,6 +117,7 @@ class FunderAdmin(CSVUploadModelAdmin):
         ),
     )
     actions = [
+        "refresh_from_findthatcharity",
         "set_as_included",
         "set_as_excluded",
         "set_as_makes_grants_to_individuals",
@@ -155,6 +162,33 @@ class FunderAdmin(CSVUploadModelAdmin):
         return format_html(
             '<a href="https://findthatcharity.uk/orgid/{}" target="_blank">Find that Charity</a>',
             obj.org_id,
+        )
+
+    @admin.action(description="Refresh from Find that Charity")
+    def refresh_from_findthatcharity(self, request, queryset):
+        """Set the included status of the selected funders to True."""
+        org_ids = tuple(queryset.values_list("org_id", flat=True))
+        if not org_ids:
+            self.message_user(
+                request,
+                "No funders selected.",
+                messages.WARNING,
+            )
+            return
+        do_ftc_funders(
+            db_con=os.environ.get("FTC_DB_URL"),
+            org_ids=org_ids,
+            debug=True,
+        )
+        do_ftc_finance(
+            db_con=os.environ.get("FTC_DB_URL"),
+            org_ids=org_ids,
+            debug=True,
+        )
+        self.message_user(
+            request,
+            f"{queryset.count()} funders refreshed from Find that Charity.",
+            messages.SUCCESS,
         )
 
     @admin.action(description="Mark as included")
