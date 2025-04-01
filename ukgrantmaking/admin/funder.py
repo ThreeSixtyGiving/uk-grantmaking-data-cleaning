@@ -5,12 +5,16 @@ from django.utils.html import format_html
 
 from ukgrantmaking.admin.csv_upload import CSVUploadModelAdmin
 from ukgrantmaking.admin.funder_financial_year import FunderFinancialYearInline
+from ukgrantmaking.admin.utils import Action, add_admin_actions
 from ukgrantmaking.management.commands.funders.update_financial_year import (
     SQL_QUERIES,
     format_query,
 )
 from ukgrantmaking.models.funder import FunderNote
-from ukgrantmaking.models.funder_utils import RecordStatus
+from ukgrantmaking.models.funder_utils import (
+    FunderSegment,
+    RecordStatus,
+)
 
 
 class FunderTagAdmin(admin.ModelAdmin):
@@ -106,6 +110,12 @@ class FunderAdmin(CSVUploadModelAdmin):
             },
         ),
     )
+    actions = [
+        "set_as_included",
+        "set_as_excluded",
+        "set_as_makes_grants_to_individuals",
+        "set_as_not_makes_grants_to_individuals",
+    ]
 
     @admin.display(description="Latest grantmaking")
     def size(self, obj):
@@ -146,6 +156,58 @@ class FunderAdmin(CSVUploadModelAdmin):
             '<a href="https://findthatcharity.uk/orgid/{}" target="_blank">Find that Charity</a>',
             obj.org_id,
         )
+
+    @admin.action(description="Mark as included")
+    def set_as_included(self, request, queryset):
+        """Set the included status of the selected funders to True."""
+        queryset.update(included=True)
+        self.message_user(
+            request,
+            f"{queryset.count()} funders have been set as included.",
+            messages.SUCCESS,
+        )
+
+    @admin.action(description="Mark as excluded")
+    def set_as_excluded(self, request, queryset):
+        """Set the included status of the selected funders to False."""
+        queryset.update(included=False)
+        self.message_user(
+            request,
+            f"{queryset.count()} funders have been set as included.",
+            messages.SUCCESS,
+        )
+
+    @admin.action(description="Mark as making grants to individuals")
+    def set_as_makes_grants_to_individuals(self, request, queryset):
+        """Set the makes_grants_to_individuals of the selected funders to True."""
+        queryset.update(makes_grants_to_individuals=True)
+        self.message_user(
+            request,
+            f"{queryset.count()} funders have been set as making grants to individuals.",
+            messages.SUCCESS,
+        )
+
+    @admin.action(description="Mark as not making grants to individuals")
+    def set_as_not_makes_grants_to_individuals(self, request, queryset):
+        """Set the makes_grants_to_individuals of the selected funders to False."""
+        queryset.update(makes_grants_to_individuals=False)
+        self.message_user(
+            request,
+            f"{queryset.count()} funders have been set as not making grants to individuals.",
+            messages.SUCCESS,
+        )
+
+    def get_actions(self, request):
+        actions = super().get_actions(request)
+
+        action_fields = [
+            Action("Segment", "segment", FunderSegment, False),
+        ]
+
+        return {
+            **actions,
+            **add_admin_actions(action_fields),
+        }
 
     def handle_file_upload(
         self, file, pk_fields, fields, request, skip_blanks=False, add_new_rows=True

@@ -5,6 +5,7 @@ from django.db.models.functions import ExtractYear
 from django.utils.html import format_html
 
 from ukgrantmaking.admin.csv_upload import CSVUploadModelAdmin
+from ukgrantmaking.admin.utils import Action, add_admin_actions
 from ukgrantmaking.models.grant import Grant, GrantRecipientYear
 
 
@@ -285,6 +286,25 @@ class GrantAdmin(CSVUploadModelAdmin):
 
     amount_text.admin_order_field = "amount_awarded"
 
+    def get_actions(self, request):
+        actions = super().get_actions(request)
+
+        action_fields = [
+            Action("Included", "inclusion", Grant.InclusionStatus, False),
+            Action(
+                "Recipient type", "recipient_type_manual", Grant.RecipientType, True
+            ),
+            Action(
+                "Lottery Grant type", "lottery_grant_type", Grant.LotteryGrantType, True
+            ),
+            Action("Regrant", "regrant_type_manual", Grant.RegrantType, True),
+        ]
+
+        return {
+            **actions,
+            **add_admin_actions(action_fields),
+        }
+
 
 class GrantRecipientYearAdminInline(admin.TabularInline):
     model = GrantRecipientYear
@@ -321,6 +341,18 @@ class GrantRecipientAdmin(CSVUploadModelAdmin):
     list_filter = ("type", "org_id_schema")
     list_editable = ("type",)
     inlines = (GrantRecipientYearAdminInline,)
+
+    def get_actions(self, request):
+        actions = super().get_actions(request)
+
+        action_fields = [
+            Action("Type", "type", Grant.RecipientType, False),
+        ]
+
+        return {
+            **actions,
+            **add_admin_actions(action_fields),
+        }
 
 
 class GrantRecipientYearAdmin(CSVUploadModelAdmin):
