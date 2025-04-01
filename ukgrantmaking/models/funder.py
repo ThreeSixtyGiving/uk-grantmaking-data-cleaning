@@ -10,7 +10,10 @@ from django.urls import reverse
 from django.utils.text import slugify
 from markdownx.models import MarkdownxField
 
-from ukgrantmaking.management.commands.funders.fetch_ftc import do_ftc_finance
+from ukgrantmaking.management.commands.funders.fetch_ftc import (
+    do_ftc_finance,
+    do_ftc_funders,
+)
 from ukgrantmaking.models.financial_years import FinancialYear, FinancialYearStatus
 from ukgrantmaking.models.funder_financial_year import FunderFinancialYear
 from ukgrantmaking.models.funder_utils import (
@@ -374,6 +377,11 @@ class Funder(models.Model):
         return reverse("grantmakers:detail", kwargs={"org_id": self.pk})
 
     def update_from_ftc(self):
+        do_ftc_funders(
+            db_con=os.environ.get("FTC_DB_URL"),
+            org_ids=(self.org_id,),
+            debug=True,
+        )
         do_ftc_finance(
             db_con=os.environ.get("FTC_DB_URL"),
             org_ids=(self.org_id,),
