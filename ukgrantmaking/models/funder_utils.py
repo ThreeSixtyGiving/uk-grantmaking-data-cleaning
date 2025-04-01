@@ -14,14 +14,14 @@ class FunderSegment(models.TextChoices):
     CORPORATE_FOUNDATION = "Corporate Foundation", _("Corporate Foundation")
     FAMILY_FOUNDATION = "Family Foundation", _("Family Foundation")
     FUNDRAISING_GRANTMAKER = "Fundraising Grantmaker", _("Fundraising Grantmaker")
-    GENERAL_FOUNDATION = "General foundation", _("General foundation")
+    GENERAL_FOUNDATION = "General Foundation", _("General Foundation")
     MEMBER_TRADE_FUNDED = "Member/Trade Funded", _("Member/Trade Funded")
     NHS_HOSPITAL_FOUNDATION = "NHS/Hospital Foundation", _("NHS/Hospital Foundation")
     GOVERNMENT_LOTTERY_ENDOWED = (
         "Government/Lottery Endowed",
         _("Government/Lottery Endowed"),
     )
-    SMALL_GRANTMAKER = "Small grantmaker", _("Small grantmaker")
+    SMALL_GRANTMAKER = "Small Grantmaker", _("Small Grantmaker")
     COMMUNITY_FOUNDATION = "Community Foundation", _("Community Foundation")
     LOCAL = "Local", _("Local")
     CENTRAL = "Central", _("Central")
