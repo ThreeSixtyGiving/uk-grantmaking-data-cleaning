@@ -236,9 +236,22 @@ def upload_csv(request):
             ).first()
 
             for tag_name, tag in tag_cache.items():
-                tag["tag"].funders.add(*tag["orgs"])
+                # get funders that exist
+                funders = Funder.objects.filter(org_id__in=tag["orgs"]).values_list(
+                    "org_id", flat=True
+                )
+
+                for org_id in tag["orgs"]:
+                    if org_id not in funders:
+                        messages.warning(
+                            request,
+                            f"Funder with org_id {org_id} not found. Tag '{tag_name}' not applied.",
+                        )
+                        continue
+
+                tag["tag"].funders.add(*funders)
                 messages.success(
-                    request, f"{tag_name}: {len(tag['orgs']):,.0f} funders updated."
+                    request, f"{tag_name}: {len(funders):,.0f} funders updated."
                 )
                 if current_fy:
                     tag["tag"].funder_financial_years.add(
@@ -248,7 +261,7 @@ def upload_csv(request):
                     )
                     messages.success(
                         request,
-                        f"{tag_name}: {len(tag['orgs']):,.0f} funder years updated for ({current_fy}).",
+                        f"{tag_name}: {len(funders):,.0f} funder years updated for ({current_fy}).",
                     )
 
             return HttpResponseRedirect(reverse("grantmakers:upload_csv"))
