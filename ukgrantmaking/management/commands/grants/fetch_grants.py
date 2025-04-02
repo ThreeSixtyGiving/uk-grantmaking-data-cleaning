@@ -154,7 +154,7 @@ def grants(db_con):
         nl.rename(columns=nl_column_rename)[nl_column_rename.values()]
         .assign(
             recipient_type="Organisation",
-            funding_oganization_type="Lottery Distributor",
+            funding_oganization_type="National Lottery Distributor",
             publisher_prefix="dcms-nationallottery",
             publisher_name="The National Lottery",
             license="https://www.nationalarchives.gov.uk/doc/open-government-licence/version/3/",

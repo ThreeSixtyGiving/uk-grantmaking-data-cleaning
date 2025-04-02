@@ -30,7 +30,7 @@ SEGMENT_ORDER = [
     # ("Grantmaker", "Small grantmaker"),
     ("Grantmaker", "Wellcome Trust"),
     ("Grantmaker", "Total"),
-    ("Lottery", "Lottery Distributor"),
+    ("National Lottery", "National Lottery Distributor"),
     ("Charity", "Charity"),
     ("Charity", "NHS/Hospital Foundation"),
     ("Charity", "Total"),

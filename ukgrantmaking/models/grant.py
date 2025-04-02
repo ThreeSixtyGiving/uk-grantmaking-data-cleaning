@@ -33,7 +33,10 @@ class Grant(models.Model):
             "Grantmaking Organisation",
             "Grantmaking Organisation",
         )
-        LOTTERY_DISTRIBUTOR = "Lottery Distributor", "Lottery Distributor"
+        NATIONAL_LOTTERY_DISTRIBUTOR = (
+            "National Lottery Distributor",
+            "National Lottery Distributor",
+        )
         CENTRAL_GOVERNMENT = "Central Government", "Central Government"
         LOCAL_GOVERNMENT = "Local Government", "Local Government"
         DEVOLVED_GOVERNMENT = "Devolved Government", "Devolved Government"
@@ -53,7 +56,7 @@ class Grant(models.Model):
 
     class LotteryGrantType(models.TextChoices):
         EXCHEQUER = "Exchequer", "Exchequer"
-        LOTTERY = "Lottery", "Lottery"
+        NATIONAL_LOTTERY = "National Lottery", "National Lottery"
         OTHER = "Other", "Other"
 
     class RegrantType(models.TextChoices):

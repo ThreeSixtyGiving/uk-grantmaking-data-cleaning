@@ -58,7 +58,10 @@ def for_flourish(grants, categories=None, simple_segments=None):
         categories = {
             "Charity": ("Charity", "Total"),
             "Grantmaker": ("Grantmaker", "Total"),
-            "Lottery Distributor": ("Lottery", "Lottery Distributor"),
+            "National Lottery Distributor": (
+                "National Lottery",
+                "National Lottery Distributor",
+            ),
             "Government": ("Government", "Total"),
             "Other": ("Other", "Donor Advised Fund"),
         }
@@ -72,7 +75,10 @@ def for_flourish(grants, categories=None, simple_segments=None):
             "General grantmaker": ("Grantmaker", "General grantmaker"),
             "Government/Lottery Endowed": ("Grantmaker", "Government/Lottery Endowed"),
             "Member/Trade Funded": ("Grantmaker", "Member/Trade Funded"),
-            "Lottery Distributors": ("Lottery", "Lottery Distributor"),
+            "National Lottery Distributors": (
+                "National Lottery",
+                "National Lottery Distributor",
+            ),
             "Charity": ("Charity", "Total"),
             "All grantmakers": ("Total", "Total"),
         }

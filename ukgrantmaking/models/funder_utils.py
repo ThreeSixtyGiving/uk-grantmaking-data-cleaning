@@ -9,7 +9,10 @@ class FunderSegment(models.TextChoices):
     DONOR_ADVISED_FUND = "Donor Advised Fund", _("Donor Advised Fund")
     WELLCOME_TRUST = "Wellcome Trust", _("Wellcome Trust")
     CHARITY = "Charity", _("Charity")
-    LOTTERY_DISTRIBUTOR = "Lottery Distributor", _("Lottery Distributor")
+    NATIONAL_LOTTERY_DISTRIBUTOR = (
+        "National Lottery Distributor",
+        _("National Lottery Distributor"),
+    )
     ARMS_LENGTH_BODY = "Arms Length Body", _("Arms Length Body")
     CORPORATE_FOUNDATION = "Corporate Foundation", _("Corporate Foundation")
     FAMILY_FOUNDATION = "Family Foundation", _("Family Foundation")
@@ -34,7 +37,7 @@ class FunderSegment(models.TextChoices):
 
 class FunderCategory(models.TextChoices):
     TRUSTS_FOUNDATIONS = "Trusts and Foundations", _("Trusts and Foundations")
-    LOTTERY = "Lottery", _("Lottery")
+    NATIONAL_LOTTERY = "National Lottery", _("National Lottery")
     CHARITY = "Charity", _("Charity")
     GOVERNMENT = "Government", _("Government")
     OTHER = "Other", _("Other")
@@ -50,7 +53,7 @@ FUNDER_CATEGORIES = {
     FunderSegment.MEMBER_TRADE_FUNDED: FunderCategory.TRUSTS_FOUNDATIONS,
     FunderSegment.SMALL_GRANTMAKER: FunderCategory.TRUSTS_FOUNDATIONS,
     FunderSegment.WELLCOME_TRUST: FunderCategory.TRUSTS_FOUNDATIONS,
-    FunderSegment.LOTTERY_DISTRIBUTOR: FunderCategory.LOTTERY,
+    FunderSegment.NATIONAL_LOTTERY_DISTRIBUTOR: FunderCategory.NATIONAL_LOTTERY,
     FunderSegment.CHARITY: FunderCategory.CHARITY,
     FunderSegment.NHS_HOSPITAL_FOUNDATION: FunderCategory.CHARITY,
     FunderSegment.LOCAL: FunderCategory.GOVERNMENT,
