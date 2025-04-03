@@ -96,19 +96,19 @@ SQL_QUERIES = {
         SELECT
             *,
             case when (
-                abs(coalesce(funds_endowment, 0)) + 
-                abs(coalesce(funds_restricted, 0)) + 
-                abs(coalesce(funds_unrestricted, 0))
-            ) > 0 then (
+                funds_endowment IS NOT NULL OR  
+                funds_restricted IS NOT NULL OR  
+                funds_unrestricted IS NOT NULL
+            ) then (
                 coalesce(funds_endowment, 0) + 
                 coalesce(funds_restricted, 0) + 
                 coalesce(funds_unrestricted, 0)
             ) else null end as funds_calculated,
             case when (
-                coalesce(employees_permanent, 0) + 
-                coalesce(employees_fixedterm, 0) + 
-                coalesce(employees_selfemployed, 0)
-            ) > 0 then (
+                employees_permanent IS NOT NULL OR  
+                employees_fixedterm IS NOT NULL OR  
+                employees_selfemployed IS NOT NULL
+            ) then (
                 coalesce(employees_permanent, 0) + 
                 coalesce(employees_fixedterm, 0) + 
                 coalesce(employees_selfemployed, 0)
