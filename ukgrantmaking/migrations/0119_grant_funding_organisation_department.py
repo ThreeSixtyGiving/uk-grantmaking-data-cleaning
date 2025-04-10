@@ -4,15 +4,16 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('ukgrantmaking', '0118_auto_20250403_1012'),
+        ("ukgrantmaking", "0118_auto_20250403_1012"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='grant',
-            name='funding_organisation_department',
-            field=models.CharField(blank=True, db_index=True, max_length=255, null=True),
+            model_name="grant",
+            name="funding_organisation_department",
+            field=models.CharField(
+                blank=True, db_index=True, max_length=255, null=True
+            ),
         ),
     ]
