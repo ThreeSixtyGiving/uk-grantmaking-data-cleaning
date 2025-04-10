@@ -157,8 +157,8 @@ def grants():
                         )
                         funder_year = FunderYear(
                             funder_financial_year=funder_financial_year,
-                            financial_year_start=year.grants_end_date,
-                            financial_year_end=year.grants_start_date,
+                            financial_year_start=year.grants_start_date,
+                            financial_year_end=year.grants_end_date,
                         )
                         logger.info(
                             f"Creating {funder_financial_year.funder} {funder_year.financial_year_end}",
