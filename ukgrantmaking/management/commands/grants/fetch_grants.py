@@ -55,6 +55,10 @@ def grants(db_con):
             g.data->'fundingOrganization'->0->>'id' as "funding_organization_id",
             g.data->'fundingOrganization'->0->>'name' as "funding_organization_name",
             g.additional_data->>'TSGFundingOrgType' as "funding_organization_type",
+            COALESCE(
+            	g.data->'Managed by'->>'Organisation Name',
+            	g.data->'fundingOrganization'->0->>'department'
+            ) AS "funding_organization_department",
             g.data->>'regrantType' as "regrant_type",
             g.data->>'locationScope' as "location_scope",
             g.data->'grantProgramme'->0->>'title' as "grant_programme_title",
@@ -331,6 +335,7 @@ def grants(db_con):
                         recipient_type_registered=grant.recipient_type,
                         funding_organisation_id=grant.funding_organization_id,
                         funding_organisation_name=grant.funding_organization_name,
+                        funding_organisation_department=grant.funding_organization_department,
                         funding_organisation_type=grant.funding_organization_type,
                         regrant_type_registered=grant.regrant_type,
                         location_scope=grant.location_scope,
@@ -367,6 +372,7 @@ def grants(db_con):
                     "recipient_type_registered",
                     "funding_organisation_id",
                     "funding_organisation_name",
+                    "funding_organisation_department",
                     "funding_organisation_type",
                     "regrant_type_registered",
                     "location_scope",

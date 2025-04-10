@@ -144,6 +144,7 @@ class GrantAdmin(CSVUploadModelAdmin):
         "recipient_organisation_name",
         "recipient_individual_name",
         "funding_organisation_name",
+        "funding_organisation_department",
     )
     list_filter = (
         "inclusion",
@@ -182,6 +183,7 @@ class GrantAdmin(CSVUploadModelAdmin):
         "funding_organisation_id",
         "funding_organisation_name",
         "funding_organisation_type",
+        "funding_organisation_department",
         "regrant_type",
         "location_scope",
         "grant_programme_title",
@@ -208,6 +210,7 @@ class GrantAdmin(CSVUploadModelAdmin):
             {
                 "fields": [
                     ("funding_organisation_id", "funding_organisation_name"),
+                    "funding_organisation_department",
                     "funding_organisation_type",
                     "funder",
                 ]

@@ -284,6 +284,9 @@ class Grant(models.Model):
     funding_organisation_name = models.CharField(
         max_length=255, null=True, blank=True, db_index=True
     )
+    funding_organisation_department = models.CharField(
+        max_length=255, null=True, blank=True, db_index=True
+    )
     funding_organisation_type = models.CharField(
         max_length=50,
         choices=FunderType.choices,
