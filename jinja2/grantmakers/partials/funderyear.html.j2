@@ -227,7 +227,8 @@
                 </td>
                 <td class="tr">
                     <input x-mask:dynamic="$money($input, '.', ',', 0)" type="text" name="{{ field.name }}-cy"
-                        class="funder-year-edit" placeholder="-" value="{{ funder_year[field.manual.name] or '' }}" />
+                        class="funder-year-edit" placeholder="-"
+                        value="{% if funder_year[field.manual.name] is not none %}{{ funder_year[field.manual.name] }}{% endif %}" />
                 </td>
                 {% if funder_year_py %}
                 <td class="tr">
@@ -243,7 +244,7 @@
                 <td class="tr">
                     <input x-mask:dynamic="$money($input, '.', ',', 0)" type="text" name="{{ field.name }}-py"
                         class="funder-year-edit" placeholder="-"
-                        value="{{ funder_year_py[field.manual.name] or '' }}" />
+                        value="{% if funder_year_py[field.manual.name] is not none %}{{ funder_year_py[field.manual.name] }}{% endif %}" />
                 </td>
                 {% endif %}
             </tr>
