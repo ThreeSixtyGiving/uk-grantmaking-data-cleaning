@@ -88,6 +88,10 @@ class Grant(models.Model):
             "FRG070",
             "Multipurpose",
         )  # Grant to recipient for activities that include making onward grants, as well as funding other activities not related to the distribution of grants.
+        NOT_REGRANT = (
+            "NOT_REGRANT",
+            "Not regrant",
+        )  # A grant that is not a regrant
 
     class LocationScope(models.TextChoices):
         GLS010 = "GLS010", "Global"  # The location scope is global.
