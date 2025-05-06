@@ -180,6 +180,7 @@ def get_all_grants(current_fy: FinancialYear):
         "recipient__ctry_aoo",
         "recipient__london_hq",
         "recipient__london_aoo",
+        "recipient_type",
     ]
     result = (
         pd.DataFrame(
@@ -194,10 +195,6 @@ def get_all_grants(current_fy: FinancialYear):
             )
             .values(*columns)
             .annotate(
-                recipient_type=models.functions.Coalesce(
-                    "recipient_type_manual",
-                    "recipient_type",
-                ),
                 recipient_id=models.functions.Coalesce(
                     "recipient_id",
                     "recipient_organisation_id",

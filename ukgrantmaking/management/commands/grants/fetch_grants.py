@@ -20,7 +20,7 @@ logger.setLevel(logging.INFO)
 def grants(db_con):
     current_fy = FinancialYear.objects.current()
     datastore_query = """
-        with g as materialized (select * from view_latest_grant),
+        WITH g AS materialized (SELECT * FROM view_latest_grant),
         location_source AS (
             SELECT g.grant_id,
                 jsonb_array_elements(g.additional_data->'locationLookup') AS location
@@ -34,46 +34,53 @@ def grants(db_con):
                 array_agg(DISTINCT "location"->>'ctrycd') FILTER (WHERE "location"->>'source' like 'beneficiary%%' AND "location"->>'ctrycd' IS NOT NULL) AS beneficiary_location_ctry
             FROM location_source
             GROUP BY grant_id
+        ),
+        a AS (
+            SELECT g.data->>'id' AS "grant_id",
+                g.data->>'title' AS "title",
+                g.data->>'description' AS "description",
+                g.data->>'currency' AS "currency",
+                g.data->>'amountAwarded' AS "amount_awarded",
+                to_date(
+                    CASE WHEN g.source_data->>'identifier' = 'a00P400000RKHBiIAP' THEN '2023-04-01'
+                    ELSE g.data->>'awardDate' END,
+                    'YYYY-MM-DD'
+                ) AS "award_date",
+                g.data->'plannedDates'->0->>'duration' AS "planned_dates_duration",
+                to_date(g.data->'plannedDates'->0->>'startDate', 'YYYY-MM-DD') AS "planned_dates_startDate",
+                to_date(g.data->'plannedDates'->0->>'endDate', 'YYYY-MM-DD') AS "planned_dates_endDate",
+                g.data->'recipientOrganization'->0->>'id' AS "recipient_organization_id",
+                g.data->'recipientOrganization'->0->>'name' AS "recipient_organization_name",
+                g.data->'recipientIndividual'->>'id' AS "recipient_individual_id",
+                g.data->'recipientIndividual'->>'name' AS "recipient_individual_name",
+                g.data->'toIndividualsDetails'->>'primaryGrantReason' AS "recipient_individual_primary_grant_reason",
+                g.data->'toIndividualsDetails'->>'secondaryGrantReason' AS "recipient_individual_secondary_grant_reason",
+                g.data->'toIndividualsDetails'->>'grantPurpose' AS "recipient_individual_grant_purpose",
+                CASE WHEN g.data->>'recipientOrganization' IS NOT NULL THEN 'Organisation' ELSE 'Individual' END AS "recipient_type",
+                g.data->'fundingOrganization'->0->>'id' AS "funding_organization_id",
+                g.data->'fundingOrganization'->0->>'name' AS "funding_organization_name",
+                g.additional_data->>'TSGFundingOrgType' AS "funding_organization_type",
+                COALESCE(
+                    g.data->'Managed by'->>'Organisation Name',
+                    g.data->'fundingOrganization'->0->>'department'
+                ) AS "funding_organization_department",
+                g.data->>'regrantType' AS "regrant_type",
+                g.data->>'locationScope' AS "location_scope",
+                g.data->'grantProgramme'->0->>'title' AS "grant_programme_title",
+                g.source_data->'publisher'->>'prefix' AS "publisher_prefix",
+                g.source_data->'publisher'->>'name' AS "publisher_name",
+                g.source_data->>'license' AS "license",
+                recipient_location_rgn[1] AS "recipient_location_rgn",
+                recipient_location_ctry[1] AS "recipient_location_ctry",
+                beneficiary_location_rgn[1] AS "beneficiary_location_rgn",
+                beneficiary_location_ctry[1] AS "beneficiary_location_ctry"
+            FROM g
+                LEFT OUTER JOIN location
+                    ON g.grant_id = location.grant_id
         )
-        select g.data->>'id' as "grant_id",
-            g.data->>'title' as "title",
-            g.data->>'description' as "description",
-            g.data->>'currency' as "currency",
-            g.data->>'amountAwarded' as "amount_awarded",
-            g.data->>'awardDate' as "award_date",
-            g.data->'plannedDates'->0->>'duration' as "planned_dates_duration",
-            to_date(g.data->'plannedDates'->0->>'startDate', 'YYYY-MM-DD') as "planned_dates_startDate",
-            to_date(g.data->'plannedDates'->0->>'endDate', 'YYYY-MM-DD') as "planned_dates_endDate",
-            g.data->'recipientOrganization'->0->>'id' as "recipient_organization_id",
-            g.data->'recipientOrganization'->0->>'name' as "recipient_organization_name",
-            g.data->'recipientIndividual'->>'id' as "recipient_individual_id",
-            g.data->'recipientIndividual'->>'name' as "recipient_individual_name",
-            g.data->'toIndividualsDetails'->>'primaryGrantReason' as "recipient_individual_primary_grant_reason",
-            g.data->'toIndividualsDetails'->>'secondaryGrantReason' as "recipient_individual_secondary_grant_reason",
-            g.data->'toIndividualsDetails'->>'grantPurpose' as "recipient_individual_grant_purpose",
-            case when g.data->>'recipientOrganization' is not null then 'Organisation' else 'Individual' end as "recipient_type",
-            g.data->'fundingOrganization'->0->>'id' as "funding_organization_id",
-            g.data->'fundingOrganization'->0->>'name' as "funding_organization_name",
-            g.additional_data->>'TSGFundingOrgType' as "funding_organization_type",
-            COALESCE(
-            	g.data->'Managed by'->>'Organisation Name',
-            	g.data->'fundingOrganization'->0->>'department'
-            ) AS "funding_organization_department",
-            g.data->>'regrantType' as "regrant_type",
-            g.data->>'locationScope' as "location_scope",
-            g.data->'grantProgramme'->0->>'title' as "grant_programme_title",
-            g.source_data->'publisher'->>'prefix' as "publisher_prefix",
-            g.source_data->'publisher'->>'name' as "publisher_name",
-            g.source_data->>'license' as "license",
-            recipient_location_rgn[1] as "recipient_location_rgn",
-            recipient_location_ctry[1] as "recipient_location_ctry",
-            beneficiary_location_rgn[1] as "beneficiary_location_rgn",
-            beneficiary_location_ctry[1] as "beneficiary_location_ctry"
-        from g
-            LEFT OUTER JOIN location
-                ON g.grant_id = location.grant_id
-        where to_date(g.data->>'awardDate', 'YYYY-MM-DD') >= %(start_date)s
-        and to_date(g.data->>'awardDate', 'YYYY-MM-DD') <= %(end_date)s
+        SELECT * FROM a
+        WHERE a.award_date >= %(start_date)s
+            AND a.award_date <= %(end_date)s
     """
 
     # get updated names and date of registration from FTC
