@@ -404,6 +404,7 @@ def grants(db_con):
             .exclude(
                 funding_organisation_type__in=[
                     Grant.FunderType.CENTRAL_GOVERNMENT,
+                    Grant.FunderType.LOCAL_GOVERNMENT,
                     Grant.FunderType.DEVOLVED_GOVERNMENT,
                 ]
             )

@@ -304,7 +304,13 @@ def recipient_type(db_con, company_batch_size):
         for inclusion, filter in exclusions:
             updated = Grant.objects.filter(
                 Q(inclusion=Grant.InclusionStatus.UNSURE)
-                & Q(funding_organisation_type=Grant.FunderType.CENTRAL_GOVERNMENT)
+                & Q(
+                    funding_organisation_type__in=[
+                        Grant.FunderType.CENTRAL_GOVERNMENT,
+                        Grant.FunderType.LOCAL_GOVERNMENT,
+                        Grant.FunderType.DEVOLVED_GOVERNMENT,
+                    ]
+                )
                 & filter
             ).update(
                 inclusion=inclusion,
@@ -313,7 +319,11 @@ def recipient_type(db_con, company_batch_size):
 
         progress = (
             Grant.objects.filter(
-                funding_organisation_type=Grant.FunderType.CENTRAL_GOVERNMENT
+                funding_organisation_type__in=[
+                    Grant.FunderType.CENTRAL_GOVERNMENT,
+                    Grant.FunderType.LOCAL_GOVERNMENT,
+                    Grant.FunderType.DEVOLVED_GOVERNMENT,
+                ]
             )
             .values("inclusion")
             .annotate(count=Count("grant_id"))
