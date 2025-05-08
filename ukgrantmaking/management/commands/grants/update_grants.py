@@ -17,7 +17,9 @@ logger.setLevel(logging.INFO)
 
 
 @click.command()
-def grants():
+@click.option("--financial-year", type=str, required=False)
+@click.argument("funder_ids", type=str, required=False, nargs=-1)
+def grants(financial_year, funder_ids):
     with transaction.atomic():
         logger.info("Updating amount awarded not in GBP")
         currencies = {
@@ -36,7 +38,8 @@ def grants():
             logger.info(f"   - {key}: {value:,.0f} grants updated")
 
         logger.info("Match funders to funder records")
-        funder_ids = Funder.objects.values_list("org_id", flat=True)
+        if not funder_ids:
+            funder_ids = Funder.objects.values_list("org_id", flat=True)
         result = Grant.objects.filter(
             funder_id__isnull=True,
             funding_organisation_id__in=funder_ids,
@@ -62,14 +65,24 @@ def grants():
 
         # update funder years
         logger.info("Updating funder years")
-        funders = (
-            Grant.objects.filter(funder_id__isnull=False)
-            .values_list("funder_id", flat=True)
-            .distinct()
-        )
-        financial_years = FinancialYear.objects.filter(
-            current=True, status=FinancialYearStatus.OPEN
-        )
+        if funder_ids:
+            funders = (
+                Grant.objects.filter(funder_id__in=funder_ids)
+                .values_list("funder_id", flat=True)
+                .distinct()
+            )
+        else:
+            funders = (
+                Grant.objects.filter(funder_id__isnull=False)
+                .values_list("funder_id", flat=True)
+                .distinct()
+            )
+        if financial_year:
+            financial_years = FinancialYear.objects.filter(fy=financial_year)
+        else:
+            financial_years = FinancialYear.objects.filter(
+                current=True, status=FinancialYearStatus.OPEN
+            )
         bulk_update = []
         results = defaultdict(lambda: 0)
         for funder_id in funders:
