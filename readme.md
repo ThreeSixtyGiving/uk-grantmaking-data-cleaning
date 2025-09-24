@@ -14,7 +14,6 @@ pip-sync
 
 ```sh
 uv venv
-uv pip compile requirements.in -o requirements.txt
 uv pip sync requirements.txt
 ```
 
@@ -216,6 +215,14 @@ Used to import data from the back catalogue of Foundation Giving Trends.
 
 ## Export data as backup
 
+Run on the server
+
 ```sh
 dokku postgres:export uk-grantmaking-data-db > ~/uk-grantmaking-data-db-20251701.export
+```
+
+### Import the backup into your local database
+
+```sh
+pg_restore -U postgres "/path/to/uk-grantmaking-data-db-20251701.export"
 ```

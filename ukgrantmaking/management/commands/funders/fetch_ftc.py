@@ -227,6 +227,17 @@ def do_ftc_finance(db_con: str, org_ids: tuple[str, ...], debug: bool = False):
         )
 
 
+def run_sql_queries(cursor, queries: list[str], all_queries: dict[str, str]):
+    for query_name in queries:
+        if query_name not in all_queries:
+            logger.warning(f"Query '{query_name}' not found in SQL_QUERIES")
+            continue
+        logger.info(f"[Query] Started:  {query_name}")
+        cursor.execute(format_query(all_queries[query_name]))
+        logger.info(f"[Query] Completed: {query_name}")
+        logger.info(f"[Query] Rows affected: {cursor.rowcount:,.0f}")
+
+
 @click.command()
 @click.argument("db_con", envvar="FTC_DB_URL")
 @click.option("--debug", is_flag=True, default=False)
@@ -249,14 +260,19 @@ def ftc(db_con: str, debug: bool, do_funders: bool, do_financial: bool):
             return
 
         # check that we've got a financial year for every funder
-        query_keys = [
-            "Ensure every funder has a funder financial year for the current financial year",
-        ]
-        queries = {query_name: SQL_QUERIES[query_name] for query_name in query_keys}
-        for query_name, query in queries.items():
-            logger.info(f"[Query] Started:  {query_name}")
-            cursor.execute(format_query(query))
-            logger.info(f"[Query] Completed: {query_name}")
-            logger.info(f"[Query] Rows affected: {cursor.rowcount:,.0f}")
+        run_sql_queries(
+            cursor,
+            [
+                "Ensure every funder has a funder financial year for the current financial year",
+            ],
+            SQL_QUERIES,
+        )
 
         do_ftc_finance(db_con, org_ids, debug)
+
+        # Recompute the aggregated financials for all funders
+        run_sql_queries(
+            cursor,
+            ["Recalculate aggregate values for funder financial years"],
+            SQL_QUERIES,
+        )
