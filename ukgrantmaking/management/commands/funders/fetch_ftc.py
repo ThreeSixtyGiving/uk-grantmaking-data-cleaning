@@ -25,7 +25,7 @@ def do_ftc_funders(db_con: str, org_ids: tuple[str, ...], debug: bool = False):
     # get updated names and date of registration from FTC
     logging.info("Fetching organisations from FTC")
     org_records = pd.read_sql(
-            """
+        """
             WITH c AS (
                 SELECT 'GB-CHC-' || registered_charity_number AS org_id,
                     array_agg(classification_description) FILTER (WHERE classification_type = 'How') AS how,
@@ -80,9 +80,9 @@ def do_ftc_funders(db_con: str, org_ids: tuple[str, ...], debug: bool = False):
                     ON o.org_id = s.org_id
             WHERE o.org_id IN %(org_id)s
             """,
-            params={"org_id": org_ids},
-            con=db_con,
-        )
+        params={"org_id": org_ids},
+        con=db_con,
+    )
     logger.info(f"Fetched {len(org_records):,.0f} organisations from FTC")
     with click.progressbar(
         org_records.itertuples(),
