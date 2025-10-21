@@ -73,6 +73,13 @@ class FunderNote(models.Model):
 
 
 class Funder(models.Model):
+    class FunderScale(models.TextChoices):
+        LOCAL = "Local", "Local"
+        REGIONAL = "Regional", "Regional"
+        NATIONAL = "National", "National"
+        OVERSEAS = "Overseas", "Overseas"
+        NATIONAL_OVERSEAS = "National and Overseas", "National and Overseas"
+
     org_id = models.CharField(max_length=255, primary_key=True)
     charity_number = models.CharField(max_length=255, null=True, blank=True)
     name_registered = models.CharField(max_length=255)
@@ -125,6 +132,31 @@ class Funder(models.Model):
     active = models.BooleanField(null=True, blank=True)
     activities = models.TextField(null=True, blank=True)
     website = models.URLField(null=True, blank=True)
+
+    how = models.JSONField(null=True, blank=True)
+    what = models.JSONField(null=True, blank=True)
+    who = models.JSONField(null=True, blank=True)
+    rgn_hq = models.CharField(max_length=254, null=True, blank=True)
+    rgn_aoo = models.JSONField(null=True, blank=True)
+    ctry_hq = models.CharField(max_length=254, null=True, blank=True)
+    ctry_aoo = models.JSONField(null=True, blank=True)
+    london_hq = models.BooleanField(null=True, blank=True)
+    london_aoo = models.BooleanField(null=True, blank=True)
+
+    scale_registered = models.CharField(
+        max_length=50, null=True, blank=True, choices=FunderScale.choices
+    )
+    scale_manual = models.CharField(
+        max_length=50, null=True, blank=True, choices=FunderScale.choices
+    )
+    scale = models.GeneratedField(
+        expression=Coalesce("scale_manual", "scale_registered"),
+        output_field=models.CharField(
+            max_length=50, null=True, blank=True, choices=FunderScale.choices
+        ),
+        db_persist=True,
+    )
+
     current_year = models.ForeignKey(
         FunderFinancialYear,
         on_delete=models.SET_NULL,
