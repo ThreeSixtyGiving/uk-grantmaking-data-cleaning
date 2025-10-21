@@ -75,6 +75,7 @@ class FunderNote(models.Model):
 class Funder(models.Model):
     class FunderScale(models.TextChoices):
         LOCAL = "Local", "Local"
+        REGIONAL = "Regional", "Regional"
         NATIONAL = "National", "National"
         OVERSEAS = "Overseas", "Overseas"
         NATIONAL_OVERSEAS = "National and Overseas", "National and Overseas"

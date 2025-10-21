@@ -98,6 +98,16 @@ def do_ftc_funders(db_con: str, org_ids: tuple[str, ...], debug: bool = False):
                     date_of_registration=org_record.dateRegistered,
                     date_of_removal=org_record.dateRemoved,
                     active=org_record.active,
+                    how=org_record.how,
+                    what=org_record.what,
+                    who=org_record.who,
+                    rgn_hq=org_record.rgn_hq,
+                    rgn_aoo=org_record.rgn_aoo,
+                    ctry_hq=org_record.ctry_hq,
+                    ctry_aoo=org_record.ctry_aoo,
+                    london_hq=org_record.london_hq,
+                    london_aoo=org_record.london_aoo,
+                    scale_registered=org_record.scale_registered,
                 )
 
         do_batched_update(
@@ -111,6 +121,16 @@ def do_ftc_funders(db_con: str, org_ids: tuple[str, ...], debug: bool = False):
                 "date_of_registration",
                 "date_of_removal",
                 "active",
+                "how",
+                "what",
+                "who",
+                "rgn_hq",
+                "rgn_aoo",
+                "ctry_hq",
+                "ctry_aoo",
+                "london_hq",
+                "london_aoo",
+                "scale_registered",
             ],
         )
     logger.info(f"Updated {len(org_records):,.0f} organisations in DB")

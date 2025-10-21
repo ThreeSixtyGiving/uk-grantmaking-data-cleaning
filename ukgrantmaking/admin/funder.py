@@ -93,6 +93,17 @@ class FunderAdmin(CSVUploadModelAdmin):
         "current_scaling",
         "latest_year",
         "current_year",
+        "how",
+        "what",
+        "who",
+        "rgn_hq",
+        "rgn_aoo",
+        "ctry_hq",
+        "ctry_aoo",
+        "london_hq",
+        "london_aoo",
+        "scale_registered",
+        "scale",
     )
     autocomplete_fields = ("successor",)
     fieldsets = (
@@ -112,6 +123,23 @@ class FunderAdmin(CSVUploadModelAdmin):
                     "activities",
                     ("latest_year", "latest_scaling"),
                     ("current_year", "current_scaling"),
+                ]
+            },
+        ),
+        (
+            "Regulator fields",
+            {
+                "fields": [
+                    "how",
+                    "what",
+                    "who",
+                    "rgn_hq",
+                    "rgn_aoo",
+                    "ctry_hq",
+                    "ctry_aoo",
+                    "london_hq",
+                    "london_aoo",
+                    ("scale_registered", "scale_manual", "scale"),
                 ]
             },
         ),
