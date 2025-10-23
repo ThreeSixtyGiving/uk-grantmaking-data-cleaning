@@ -256,8 +256,8 @@ class FunderAdmin(CSVUploadModelAdmin):
                         format_html(
                             "<td><strong>{}</strong></td><td>{}</td><td><code>{}</code></td>",
                             field_name,
-                            field,
                             name_field if name_field else "",
+                            field,
                         ),
                     )
                 )
