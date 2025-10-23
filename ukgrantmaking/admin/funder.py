@@ -3,7 +3,7 @@ import os
 from django.contrib import admin, messages
 from django.contrib.contenttypes.admin import GenericTabularInline
 from django.db import connection, transaction
-from django.utils.html import format_html
+from django.utils.html import format_html, format_html_join
 
 from ukgrantmaking.admin.csv_upload import CSVUploadModelAdmin
 from ukgrantmaking.admin.funder_financial_year import FunderFinancialYearInline
@@ -93,13 +93,27 @@ class FunderAdmin(CSVUploadModelAdmin):
         "current_scaling",
         "latest_year",
         "current_year",
+        "postcode",
         "how",
+        "how_",
         "what",
+        "what_",
         "who",
+        "who_",
+        "hq",
+        "aoo",
+        "la_hq",
+        "la_hq_name",
+        "la_aoo",
+        "la_aoo_name",
         "rgn_hq",
+        "rgn_hq_name",
         "rgn_aoo",
+        "rgn_aoo_name",
         "ctry_hq",
+        "ctry_hq_name",
         "ctry_aoo",
+        "ctry_aoo_name",
         "london_hq",
         "london_aoo",
         "scale_registered",
@@ -130,15 +144,12 @@ class FunderAdmin(CSVUploadModelAdmin):
             "Regulator fields",
             {
                 "fields": [
-                    "how",
-                    "what",
-                    "who",
-                    "rgn_hq",
-                    "rgn_aoo",
-                    "ctry_hq",
-                    "ctry_aoo",
-                    "london_hq",
-                    "london_aoo",
+                    "how_",
+                    "what_",
+                    "who_",
+                    "postcode",
+                    "hq",
+                    "aoo",
                     ("scale_registered", "scale_manual", "scale"),
                 ]
             },
@@ -190,6 +201,141 @@ class FunderAdmin(CSVUploadModelAdmin):
         return format_html(
             '<a href="https://findthatcharity.uk/orgid/{}" target="_blank">Find that Charity</a>',
             obj.org_id,
+        )
+
+    @admin.display(description="How the charity operates")
+    def how_(self, obj):
+        if not obj.how:
+            return "-"
+        return format_html(
+            "<table>{}</table>",
+            format_html_join(
+                "\n",
+                "<tr><td>{0}</td></tr>",
+                [(item,) for item in obj.how],
+            ),
+        )
+
+    @admin.display(description="What the charity does")
+    def what_(self, obj):
+        if not obj.what:
+            return "-"
+        return format_html(
+            "<table>{}</table>",
+            format_html_join(
+                "\n",
+                "<tr><td>{0}</td></tr>",
+                [(item,) for item in obj.what],
+            ),
+        )
+
+    @admin.display(description="Who the charity helps")
+    def who_(self, obj):
+        if not obj.who:
+            return "-"
+        return format_html(
+            "<table>{}</table>",
+            format_html_join(
+                "\n",
+                "<tr><td>{0}</td></tr>",
+                [(item,) for item in obj.who],
+            ),
+        )
+
+    @admin.display(description="Registered office")
+    def hq(self, obj):
+        rows = []
+        for field_name, field, name_field in [
+            ("Local Authority", obj.la_hq, obj.la_hq_name),
+            ("Region", obj.rgn_hq, obj.rgn_hq_name),
+            ("Country", obj.ctry_hq, obj.ctry_hq_name),
+        ]:
+            if field:
+                rows.append(
+                    (
+                        format_html(
+                            "<td><strong>{}</strong></td><td>{}</td><td><code>{}</code></td>",
+                            field_name,
+                            field,
+                            name_field if name_field else "",
+                        ),
+                    )
+                )
+        if obj.london_hq is not None:
+            rows.append(
+                (
+                    format_html(
+                        '<td><strong>HQ in London</strong></td><td colspan="2"><img src="/static/admin/img/icon-{}.svg" alt="{}"></td>',
+                        "yes" if obj.london_hq else "no",
+                        "True" if obj.london_hq else "False",
+                    ),
+                )
+            )
+
+        if not rows:
+            return "-"
+        return format_html(
+            "<table>{}</table>",
+            format_html_join(
+                "\n",
+                "<tr>{}</tr>",
+                rows,
+            ),
+        )
+
+    @admin.display(description="Area of operation")
+    def aoo(self, obj):
+        rows = []
+        for field_name, field in [
+            ("Local Authority", obj.la_aoo_name),
+            ("Region", obj.rgn_aoo_name),
+            ("Country", obj.ctry_aoo_name),
+        ]:
+            if field:
+                for index, (code, name) in enumerate(field.items()):
+                    if index == 0:
+                        rows.append(
+                            (
+                                format_html(
+                                    '<td rowspan="{}"><strong>{}</strong></td><td>{}</td><td><code>{}</code></td>',
+                                    len(field),
+                                    field_name,
+                                    name,
+                                    code,
+                                ),
+                            )
+                        )
+                    else:
+                        rows.append(
+                            (
+                                format_html(
+                                    "<td>{}</td><td><code>{}</code></td>",
+                                    name,
+                                    code,
+                                ),
+                            )
+                        )
+
+        if obj.london_aoo is not None:
+            rows.append(
+                (
+                    format_html(
+                        '<td><strong>AOO in London</strong></td><td colspan="2"><img src="/static/admin/img/icon-{}.svg" alt="{}"></td>',
+                        "yes" if obj.london_aoo else "no",
+                        "True" if obj.london_aoo else "False",
+                    ),
+                )
+            )
+
+        if not rows:
+            return "-"
+        return format_html(
+            "<table>{}</table>",
+            format_html_join(
+                "\n",
+                "<tr>{}</tr>",
+                rows,
+            ),
         )
 
     @admin.action(description="Refresh from Find that Charity")

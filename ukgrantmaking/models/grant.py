@@ -437,13 +437,25 @@ class GrantRecipient(models.Model):
     date_of_registration = models.DateField(null=True, blank=True)
     date_of_removal = models.DateField(null=True, blank=True)
     active = models.BooleanField(null=True, blank=True)
-    how = models.JSONField(null=True, blank=True)
-    what = models.JSONField(null=True, blank=True)
-    who = models.JSONField(null=True, blank=True)
+    postcode = models.CharField(max_length=254, null=True, blank=True)
+
+    how = models.JSONField(
+        null=True, blank=True, verbose_name="How the charity operates"
+    )
+    what = models.JSONField(null=True, blank=True, verbose_name="What the charity does")
+    who = models.JSONField(null=True, blank=True, verbose_name="Who the charity helps")
+    la_hq = models.CharField(max_length=254, null=True, blank=True)
+    la_hq_name = models.CharField(max_length=254, null=True, blank=True)
+    la_aoo = models.JSONField(null=True, blank=True)
+    la_aoo_name = models.JSONField(null=True, blank=True)
     rgn_hq = models.CharField(max_length=254, null=True, blank=True)
+    rgn_hq_name = models.CharField(max_length=254, null=True, blank=True)
     rgn_aoo = models.JSONField(null=True, blank=True)
+    rgn_aoo_name = models.JSONField(null=True, blank=True)
     ctry_hq = models.CharField(max_length=254, null=True, blank=True)
+    ctry_hq_name = models.CharField(max_length=254, null=True, blank=True)
     ctry_aoo = models.JSONField(null=True, blank=True)
+    ctry_aoo_name = models.JSONField(null=True, blank=True)
     london_hq = models.BooleanField(null=True, blank=True)
     london_aoo = models.BooleanField(null=True, blank=True)
 

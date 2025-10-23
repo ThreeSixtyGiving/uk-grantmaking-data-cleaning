@@ -80,10 +80,18 @@ class Funder(models.Model):
         OVERSEAS = "Overseas", "Overseas"
         NATIONAL_OVERSEAS = "National and Overseas", "National and Overseas"
 
-    org_id = models.CharField(max_length=255, primary_key=True)
-    charity_number = models.CharField(max_length=255, null=True, blank=True)
-    name_registered = models.CharField(max_length=255)
-    name_manual = models.CharField(max_length=255, null=True, blank=True)
+    org_id = models.CharField(
+        max_length=255, primary_key=True, verbose_name="Organisation Identifier"
+    )
+    charity_number = models.CharField(
+        max_length=255, null=True, blank=True, verbose_name="Charity Number"
+    )
+    name_registered = models.CharField(
+        max_length=255, verbose_name="Name (from regulator)"
+    )
+    name_manual = models.CharField(
+        max_length=255, null=True, blank=True, verbose_name="Name (manual override)"
+    )
     segment = models.CharField(
         max_length=50,
         choices=FunderSegment.choices,
@@ -91,6 +99,7 @@ class Funder(models.Model):
         null=True,
         blank=True,
         db_index=True,
+        verbose_name="Funder segment",
     )
     category = models.GeneratedField(
         expression=models.Case(
@@ -102,14 +111,17 @@ class Funder(models.Model):
         ),
         output_field=models.CharField(max_length=255),
         db_persist=True,
+        verbose_name="Funder category (derived from segment)",
     )
     included = models.BooleanField(
         default=True,
         db_index=True,
+        verbose_name="Included as a funder",
     )
     makes_grants_to_individuals = models.BooleanField(
         default=False,
         db_index=True,
+        verbose_name="Makes grants to individuals",
     )
 
     successor = models.ForeignKey(
@@ -118,6 +130,7 @@ class Funder(models.Model):
         null=True,
         blank=True,
         related_name="predecessors",
+        verbose_name="Organisation Identifier of successor organisation",
     )
 
     status = models.CharField(
@@ -125,6 +138,7 @@ class Funder(models.Model):
         choices=RecordStatus.choices,
         default=RecordStatus.UNCHECKED,
         db_index=True,
+        verbose_name="Record status",
     )
 
     date_of_registration = models.DateField(null=True, blank=True)
@@ -132,14 +146,25 @@ class Funder(models.Model):
     active = models.BooleanField(null=True, blank=True)
     activities = models.TextField(null=True, blank=True)
     website = models.URLField(null=True, blank=True)
+    postcode = models.CharField(max_length=254, null=True, blank=True)
 
-    how = models.JSONField(null=True, blank=True)
-    what = models.JSONField(null=True, blank=True)
-    who = models.JSONField(null=True, blank=True)
+    how = models.JSONField(
+        null=True, blank=True, verbose_name="How the charity operates"
+    )
+    what = models.JSONField(null=True, blank=True, verbose_name="What the charity does")
+    who = models.JSONField(null=True, blank=True, verbose_name="Who the charity helps")
+    la_hq = models.CharField(max_length=254, null=True, blank=True)
+    la_hq_name = models.CharField(max_length=254, null=True, blank=True)
+    la_aoo = models.JSONField(null=True, blank=True)
+    la_aoo_name = models.JSONField(null=True, blank=True)
     rgn_hq = models.CharField(max_length=254, null=True, blank=True)
+    rgn_hq_name = models.CharField(max_length=254, null=True, blank=True)
     rgn_aoo = models.JSONField(null=True, blank=True)
+    rgn_aoo_name = models.JSONField(null=True, blank=True)
     ctry_hq = models.CharField(max_length=254, null=True, blank=True)
+    ctry_hq_name = models.CharField(max_length=254, null=True, blank=True)
     ctry_aoo = models.JSONField(null=True, blank=True)
+    ctry_aoo_name = models.JSONField(null=True, blank=True)
     london_hq = models.BooleanField(null=True, blank=True)
     london_aoo = models.BooleanField(null=True, blank=True)
 
