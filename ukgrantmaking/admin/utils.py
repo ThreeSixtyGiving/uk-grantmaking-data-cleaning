@@ -1,6 +1,11 @@
 from dataclasses import dataclass
 
-from django.contrib import messages
+from django.contrib import admin, messages
+from django.contrib.admin.utils import (
+    quote,
+)
+from django.contrib.admin.views.main import ChangeList
+from django.urls import reverse
 
 
 @dataclass
@@ -42,3 +47,30 @@ def add_admin_actions(action_fields: list[Action]):
                 )
 
     return actions
+
+
+class AdminViewChangeList(ChangeList):
+    def url_for_result(self, result):
+        pk = getattr(result, "pk")
+        return reverse(
+            "admin:%s_%s_change" % (self.opts.app_label, self.opts.model_name),
+            args=(quote(pk),),
+            current_app=self.model_admin.admin_site.name,
+        )
+
+
+class DBViewAdmin(admin.ModelAdmin):
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    def has_add_permission(self, request, obj=None):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+    def get_changelist(self, request, **kwargs):
+        """
+        Return the ChangeList class for use on the changelist page.
+        """
+        return AdminViewChangeList

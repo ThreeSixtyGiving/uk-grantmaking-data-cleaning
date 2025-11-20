@@ -1,19 +1,14 @@
 import os
 
 from django.contrib import admin, messages
-from django.contrib.admin.utils import (
-    quote,
-)
-from django.contrib.admin.views.main import ChangeList
 from django.contrib.contenttypes.admin import GenericTabularInline
 from django.core.exceptions import ValidationError
 from django.db import connection, transaction
-from django.urls import reverse
 from django.utils.html import format_html, format_html_join
 
 from ukgrantmaking.admin.csv_upload import CSVUploadModelAdmin
 from ukgrantmaking.admin.funder_financial_year import FunderFinancialYearInline
-from ukgrantmaking.admin.utils import Action, add_admin_actions
+from ukgrantmaking.admin.utils import Action, DBViewAdmin, add_admin_actions
 from ukgrantmaking.management.commands.funders.fetch_ftc import (
     do_ftc_finance,
     do_ftc_funders,
@@ -29,17 +24,7 @@ from ukgrantmaking.models.funder_utils import (
 )
 
 
-class FunderViewChangeList(ChangeList):
-    def url_for_result(self, result):
-        pk = getattr(result, "pk")
-        return reverse(
-            "admin:%s_%s_change" % (self.opts.app_label, self.opts.model_name),
-            args=(quote(pk),),
-            current_app=self.model_admin.admin_site.name,
-        )
-
-
-class FunderViewAdmin(admin.ModelAdmin):
+class FundersViewAdmin(DBViewAdmin):
     list_display = ("org_id", "pk", "name", "fy")
     fieldsets = (
         (
@@ -115,15 +100,6 @@ class FunderViewAdmin(admin.ModelAdmin):
         ),
     )
 
-    def has_change_permission(self, request, obj=None):
-        return False
-
-    def has_add_permission(self, request, obj=None):
-        return False
-
-    def has_delete_permission(self, request, obj=None):
-        return False
-
     def get_object(self, request, object_id, from_field=None):
         queryset = self.get_queryset(request)
         model = queryset.model
@@ -135,12 +111,6 @@ class FunderViewAdmin(admin.ModelAdmin):
             return queryset.get(org_id=org_id, fy=fy)
         except (model.DoesNotExist, ValidationError, ValueError):
             return None
-
-    def get_changelist(self, request, **kwargs):
-        """
-        Return the ChangeList class for use on the changelist page.
-        """
-        return FunderViewChangeList
 
 
 class FunderTagAdmin(admin.ModelAdmin):

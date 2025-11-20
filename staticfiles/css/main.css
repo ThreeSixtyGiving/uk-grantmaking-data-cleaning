@@ -913,6 +913,11 @@ data.number {
         background-color: var(--color-green-lighter);
         border-radius: 0.5rem;
         overflow-x: auto;
+
+        > code {
+            background-color: transparent;
+            color: inherit;
+        }
     }
 
     code {
