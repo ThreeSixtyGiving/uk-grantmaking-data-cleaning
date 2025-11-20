@@ -51,6 +51,9 @@ won't be picked up if you just run the normal `python manage.py makemigrations` 
 If using the field outside of the django site then you can make a note of the name used for
 the view, which appears in the migration file.
 
+You also need to run the `python manage.py makemigrations` command to generate a dummy migration
+for the view.
+
 ## 3. Run the migration
 
 Run the normal `python manage.py migrate` command to add the view to the database.
