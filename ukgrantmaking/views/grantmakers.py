@@ -8,7 +8,6 @@ from django.conf import settings
 from django.contrib import messages
 from django.contrib.admin.models import CHANGE, LogEntry
 from django.contrib.auth.decorators import login_required
-from django.contrib.contenttypes.models import ContentType
 from django.core.paginator import Paginator
 from django.http import (
     Http404,
@@ -128,11 +127,9 @@ def detail(request, org_id):
             form = FunderForm(request.POST)
             if form.is_valid():
                 funder = form.save()
-                LogEntry.objects.log_action(
+                LogEntry.objects.log_actions(
                     user_id=request.user.id,
-                    content_type_id=ContentType.objects.get_for_model(funder).pk,
-                    object_id=funder.pk,
-                    object_repr=funder.name,
+                    queryset=[funder],
                     action_flag=CHANGE,
                     change_message="Created funder",
                 )
@@ -279,21 +276,17 @@ def htmx_edit_note(request, org_id, note_id=None):
             note = funder.notes.get(id=note_id)
             note.note = note_content
             note.save()
-            LogEntry.objects.log_action(
+            LogEntry.objects.log_actions(
                 user_id=request.user.id,
-                content_type_id=ContentType.objects.get_for_model(funder).pk,
-                object_id=funder.pk,
-                object_repr=funder.name,
+                queryset=[funder],
                 action_flag=CHANGE,
                 change_message=f"Updated note {note.id}",
             )
         else:
             note = funder.notes.create(note=note_content, added_by=request.user)
-            LogEntry.objects.log_action(
+            LogEntry.objects.log_actions(
                 user_id=request.user.id,
-                content_type_id=ContentType.objects.get_for_model(funder).pk,
-                object_id=funder.pk,
-                object_repr=funder.name,
+                queryset=[funder],
                 action_flag=CHANGE,
                 change_message=f"Added note {note.id}",
             )
@@ -317,11 +310,9 @@ def htmx_tags_edit(request, org_id):
             new_tags.append(new_tag)
         funder.tags.set(new_tags)
         funder.save()
-        LogEntry.objects.log_action(
+        LogEntry.objects.log_actions(
             user_id=request.user.id,
-            content_type_id=ContentType.objects.get_for_model(funder).pk,
-            object_id=funder.pk,
-            object_repr=funder.name,
+            queryset=[funder],
             action_flag=CHANGE,
             change_message="Updated tags",
         )
@@ -397,11 +388,9 @@ def htmx_edit_funder(request, org_id):
         funder.name_manual = new_name
         change_message = f"Updated name from '{old_name}' to '{new_name}'"
     if change_message:
-        LogEntry.objects.log_action(
+        LogEntry.objects.log_actions(
             user_id=request.user.id,
-            content_type_id=ContentType.objects.get_for_model(funder).pk,
-            object_id=funder.pk,
-            object_repr=funder.name,
+            queryset=[funder],
             action_flag=CHANGE,
             change_message=change_message,
         )
@@ -452,11 +441,9 @@ def edit_funderyear(funder_year: FunderYear, request, suffix: str = "cy"):
         funder_year.funder_financial_year.checked_by = request.user
         funder_year.save()
 
-        LogEntry.objects.log_action(
+        LogEntry.objects.log_actions(
             user_id=request.user.id,
-            content_type_id=ContentType.objects.get_for_model(funder).pk,
-            object_id=funder.pk,
-            object_repr=f"{funder.name} {funder_year.financial_year_end}",
+            queryset=[funder],
             action_flag=CHANGE,
             change_message=(
                 [f"Edited funder year {funder_year.financial_year_end}"]
@@ -491,11 +478,9 @@ def htmx_edit_funderyear(request, org_id, funderyear_id=None):
 
         if request.method == "DELETE":
             funder_year.delete()
-            LogEntry.objects.log_action(
+            LogEntry.objects.log_actions(
                 user_id=request.user.id,
-                content_type_id=ContentType.objects.get_for_model(funder).pk,
-                object_id=funder.pk,
-                object_repr=f"{funder.name} {funder_year.financial_year_end}",
+                queryset=[funder],
                 action_flag=CHANGE,
                 change_message=f"Deleted funder year {funder_year.financial_year_end}",
             )
@@ -508,11 +493,9 @@ def htmx_edit_funderyear(request, org_id, funderyear_id=None):
             funder_year = funder_financial_year.funder_years.create(
                 financial_year_end=funder_financial_year.financial_year.grants_end_date
             )
-            LogEntry.objects.log_action(
+            LogEntry.objects.log_actions(
                 user_id=request.user.id,
-                content_type_id=ContentType.objects.get_for_model(funder).pk,
-                object_id=funder.pk,
-                object_repr=f"{funder.name} {funder_year.financial_year_end}",
+                queryset=[funder],
                 action_flag=CHANGE,
                 change_message=f"Deleted funder year {funder_year.financial_year_end}",
             )
