@@ -5,6 +5,8 @@ create database views that show the data in different ways.
 
 To create a new view, follow these steps:
 
+(The views use the [`django-db-views`](https://pypi.org/project/django-db-views/) library)
+
 ## 1. Create a new model
 
 Create the model in the `ukgrantmaking/models/views/` directory.
