@@ -12,6 +12,7 @@ from django.urls import reverse
         "funderfinancialyear",
         "funderyear",
         "financialyear",
+        "fundersview",
     ],
 )
 def test_admin_list_pages(client_logged_in, funder_with_py, model):
@@ -68,3 +69,14 @@ def test_admin_cleaningstatus_page(client_logged_in, complex_task):
     response = client_logged_in.get(url)
     assert response.status_code == 200
     assert complex_task.name in response.content.decode()
+
+
+def test_admin_fundersview_page(client_logged_in, funder_with_py):
+    funder = funder_with_py
+    fy = funder.current_year.financial_year
+    url = reverse(
+        "admin:ukgrantmaking_fundersview_change", args=[f"{funder.org_id}-{fy.fy}"]
+    )
+    response = client_logged_in.get(url)
+    assert response.status_code == 200
+    assert funder.name_registered in response.content.decode()

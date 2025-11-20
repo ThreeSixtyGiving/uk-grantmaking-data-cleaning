@@ -78,7 +78,7 @@ django==5.2.8
     #   django-htmx
     #   django-markdownx
     #   django-storages
-django-admin-sortable2==2.2.4
+django-admin-sortable2==2.2.8
     # via -r requirements.in
 django-click==2.4.0
     # via -r requirements.in
