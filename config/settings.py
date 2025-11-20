@@ -52,6 +52,7 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "django.contrib.postgres",
     "django.contrib.humanize",
+    "django_db_views",
     "django_htmx",
     "debug_toolbar",
     "charity_django.utils",

@@ -27,6 +27,7 @@ from ukgrantmaking.models.grant import (
     GrantRecipient,
     GrantRecipientYear,
 )
+from ukgrantmaking.models.views.funders import FundersView
 
 __all__ = [
     "FinancialYears",
@@ -35,6 +36,7 @@ __all__ = [
     "FunderFinancialYear",
     "FunderTag",
     "FunderNote",
+    "FundersView",
     "FUNDER_CATEGORIES",
     "DEFAULT_FINANCIAL_YEAR",
     "DEFAULT_BREAK_MONTH",

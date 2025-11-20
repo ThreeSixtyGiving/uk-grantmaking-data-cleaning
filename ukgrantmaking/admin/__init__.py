@@ -4,7 +4,7 @@ from django.urls.exceptions import NoReverseMatch
 
 from ukgrantmaking.admin.cleaningstatus import CleaningStatusAdmin
 from ukgrantmaking.admin.financial_year import FinancialYearAdmin
-from ukgrantmaking.admin.funder import FunderAdmin, FunderTagAdmin
+from ukgrantmaking.admin.funder import FunderAdmin, FunderTagAdmin, FunderViewAdmin
 from ukgrantmaking.admin.funder_financial_year import FunderFinancialYearAdmin
 from ukgrantmaking.admin.funder_year import FunderYearAdmin
 from ukgrantmaking.admin.grants import (
@@ -24,6 +24,7 @@ from ukgrantmaking.models.grant import (
     GrantRecipient,
     GrantRecipientYear,
 )
+from ukgrantmaking.models.views.funders import FundersView
 
 
 class UKGrantmakingAdminSite(admin.AdminSite):
@@ -65,6 +66,7 @@ admin_site.register(Funder, FunderAdmin)
 admin_site.register(FunderTag, FunderTagAdmin)
 admin_site.register(FunderYear, FunderYearAdmin)
 admin_site.register(FunderFinancialYear, FunderFinancialYearAdmin)
+admin_site.register(FundersView, FunderViewAdmin)
 
 admin_site.register(Grant, GrantAdmin)
 admin_site.register(CurrencyConverter, CurrencyConverterAdmin)

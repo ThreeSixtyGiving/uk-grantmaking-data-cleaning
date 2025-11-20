@@ -1,8 +1,14 @@
 import os
 
 from django.contrib import admin, messages
+from django.contrib.admin.utils import (
+    quote,
+)
+from django.contrib.admin.views.main import ChangeList
 from django.contrib.contenttypes.admin import GenericTabularInline
+from django.core.exceptions import ValidationError
 from django.db import connection, transaction
+from django.urls import reverse
 from django.utils.html import format_html, format_html_join
 
 from ukgrantmaking.admin.csv_upload import CSVUploadModelAdmin
@@ -21,6 +27,120 @@ from ukgrantmaking.models.funder_utils import (
     FunderSegment,
     RecordStatus,
 )
+
+
+class FunderViewChangeList(ChangeList):
+    def url_for_result(self, result):
+        pk = getattr(result, "pk")
+        return reverse(
+            "admin:%s_%s_change" % (self.opts.app_label, self.opts.model_name),
+            args=(quote(pk),),
+            current_app=self.model_admin.admin_site.name,
+        )
+
+
+class FunderViewAdmin(admin.ModelAdmin):
+    list_display = ("org_id", "pk", "name", "fy")
+    fieldsets = (
+        (
+            None,
+            {
+                "fields": [
+                    ("org_id", "fy"),
+                    ("name", "financial_year_end"),
+                    ("segment", "segment_year"),
+                    ("category", "category_year"),
+                    (
+                        "makes_grants_to_individuals",
+                        "makes_grants_to_individuals_year",
+                        "included_year",
+                    ),
+                    ("checked", "checked_by_id", "checked_on"),
+                ]
+            },
+        ),
+        (
+            "Tags",
+            {
+                "fields": [
+                    "tags",
+                    "tags_list_year",
+                ]
+            },
+        ),
+        (
+            "Income",
+            {
+                "fields": [
+                    "income",
+                    "income_investment",
+                ]
+            },
+        ),
+        (
+            "Spending",
+            {
+                "fields": [
+                    "spending",
+                    "spending_investment",
+                    "spending_charitable",
+                    "spending_grant_making",
+                    "spending_grant_making_individuals",
+                    "spending_grant_making_institutions",
+                ]
+            },
+        ),
+        (
+            "Balance Sheet",
+            {
+                "fields": [
+                    "total_net_assets",
+                    "funds",
+                    "funds_endowment",
+                    "funds_restricted",
+                    "funds_unrestricted",
+                ]
+            },
+        ),
+        (
+            "Employees",
+            {
+                "fields": [
+                    "employees",
+                    "employees_permanent",
+                    "employees_fixedterm",
+                    "employees_selfemployed",
+                ]
+            },
+        ),
+    )
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    def has_add_permission(self, request, obj=None):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+    def get_object(self, request, object_id, from_field=None):
+        queryset = self.get_queryset(request)
+        model = queryset.model
+
+        fy = "-".join(object_id.split("-")[-2:])
+        org_id = "-".join(object_id.split("-")[:-2])
+
+        try:
+            return queryset.get(org_id=org_id, fy=fy)
+        except (model.DoesNotExist, ValidationError, ValueError):
+            return None
+
+    def get_changelist(self, request, **kwargs):
+        """
+        Return the ChangeList class for use on the changelist page.
+        """
+        return FunderViewChangeList
 
 
 class FunderTagAdmin(admin.ModelAdmin):
