@@ -41,42 +41,42 @@ class FundersTagsView(DBView):
         SELECT
             org_id,
             name,
-            -- OUTPUT: TRUE/NULL for Boolean fields with snake_case aliases
-            MAX(CASE WHEN tag = '360Giving Publisher' THEN TRUE ELSE NULL END) AS funders_360_giving_publisher,
-            MAX(CASE WHEN tag = 'Living Wage Funder' THEN TRUE ELSE NULL END) AS living_wage_funder,
-            MAX(CASE WHEN tag = 'ACO' THEN TRUE ELSE NULL END) AS aco,
-            MAX(CASE WHEN tag = 'ACF Current' THEN TRUE ELSE NULL END) AS acf_current,
-            MAX(CASE WHEN tag = 'London Funders' THEN TRUE END) AS london_funders,
-            MAX(CASE WHEN tag = 'Yorkshire Funders' THEN TRUE END) AS yorkshire_funders,
-            MAX(CASE WHEN tag = 'West Midlands Funders Network' THEN TRUE END) AS west_midlands_funders_network,
-            MAX(CASE WHEN tag = 'VONNE' THEN TRUE END) AS vonne,
-            MAX(CASE WHEN tag = 'Open & Trusting' THEN TRUE END) AS open_trusting,
-            MAX(CASE WHEN tag = 'Postcode Lottery' THEN TRUE END) AS postcode_lottery,
-            MAX(CASE WHEN tag = 'Sainsburys Family Charitable Trusts' THEN TRUE END) AS sainsburys_family_charitable_trusts,
-            MAX(CASE WHEN tag = 'Funders Forum for NI' THEN TRUE END) AS funders_forum_for_ni,
-            MAX(CASE WHEN tag = 'UKCF' THEN TRUE END) AS ukcf,
-            MAX(CASE WHEN tag = 'Community Foundation' THEN TRUE END) AS community_foundation,
-            MAX(CASE WHEN tag = 'Livery Company' THEN TRUE END) AS livery_company,
-            MAX(CASE WHEN tag = 'CCEW' THEN TRUE END) AS ccew,
-            MAX(CASE WHEN tag = 'OSCR' THEN TRUE END) AS oscr,
-            MAX(CASE WHEN tag = 'CCNI' THEN TRUE END) AS ccni
+            SUM(CASE WHEN tag = '360Giving Publisher' THEN 1 ELSE 0 END) > 0 AS funders_360_giving_publisher,
+            SUM(CASE WHEN tag = 'Living Wage Funder' THEN 1 ELSE 0 END) > 0 AS living_wage_funder,
+            SUM(CASE WHEN tag = 'ACO' THEN 1 ELSE 0 END) > 0 AS aco,
+            SUM(CASE WHEN tag = 'ACF Current' THEN 1 ELSE 0 END) > 0 AS acf_current,
+            SUM(CASE WHEN tag = 'London Funders' THEN 1 ELSE 0 END) > 0 AS london_funders,
+            SUM(CASE WHEN tag = 'Yorkshire Funders' THEN 1 ELSE 0 END) > 0 AS yorkshire_funders,
+            SUM(CASE WHEN tag = 'West Midlands Funders Network' THEN 1 ELSE 0 END) > 0 AS west_midlands_funders_network,
+            SUM(CASE WHEN tag = 'VONNE' THEN 1 ELSE 0 END) > 0 AS vonne,
+            SUM(CASE WHEN tag = 'Open & Trusting' THEN 1 ELSE 0 END) > 0 AS open_trusting,
+            SUM(CASE WHEN tag = 'Postcode Lottery' THEN 1 ELSE 0 END) > 0 AS postcode_lottery,
+            SUM(CASE WHEN tag = 'Sainsburys Family Charitable Trusts' THEN 1 ELSE 0 END) > 0 AS sainsburys_family_charitable_trusts,
+            SUM(CASE WHEN tag = 'Funders Forum for NI' THEN 1 ELSE 0 END) > 0 AS funders_forum_for_ni,
+            SUM(CASE WHEN tag = 'UKCF' THEN 1 ELSE 0 END) > 0 AS ukcf,
+            SUM(CASE WHEN tag = 'Community Foundation' THEN 1 ELSE 0 END) > 0 AS community_foundation,
+            SUM(CASE WHEN tag = 'Livery Company' THEN 1 ELSE 0 END) > 0 AS livery_company,
+            SUM(CASE WHEN tag = 'CCEW' THEN 1 ELSE 0 END) > 0 AS ccew,
+            SUM(CASE WHEN tag = 'OSCR' THEN 1 ELSE 0 END) > 0 AS oscr,
+            SUM(CASE WHEN tag = 'CCNI' THEN 1 ELSE 0 END) > 0 AS ccni
         FROM
             (
                 SELECT DISTINCT
                     ukgfv.org_id,
+                    ukgfv.name,
                     unnest(string_to_array(ukgfv.tags_list,';')) AS "tag"
                 FROM
                     ukgrantmaking_funders_view ukgfv
                 JOIN
                     ukgrantmaking_financialyear ukgfy ON ukgfv.fy = ukgfy.fy
                 WHERE
-                    ukgfy.current = TRUE -- Filter to the fy marked current
+                    ukgfy.current = TRUE
             ) AS unnested_tags
         GROUP BY
-            org_id
+            org_id, name
         """
     }
 
     class Meta:
-        managed = False  # Managed must be set to False!
+        managed = False
         db_table = "ukgrantmaking_funders_tags_view"
