@@ -308,7 +308,7 @@ class GrantsAnalysisView(DBView):
         ON g.funder_id = f.org_id
         JOIN ukgrantmaking_financialyear ukgfy
         ON g.financial_year_id = ukgfy.fy
-        WHERE ukgfy.current = TRUE;
+        WHERE ukgfy.current = TRUE
         """
     }
 

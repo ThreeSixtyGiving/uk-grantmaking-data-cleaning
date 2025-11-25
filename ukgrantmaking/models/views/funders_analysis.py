@@ -642,7 +642,7 @@ class FundersAnalysisView(DBView):
             ufv.name,
             ufv.makes_grants_to_individuals
         ORDER BY 
-            MAX(spending_grant_making) FILTER (WHERE fy = fya[1]) DESC NULLS LAST;
+            MAX(spending_grant_making) FILTER (WHERE fy = fya[1]) DESC NULLS LAST
         """
     }
 
