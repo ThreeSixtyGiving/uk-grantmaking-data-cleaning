@@ -1,8 +1,6 @@
 from django.db import models
 from django_db_views.db_view import DBView
 
-from ukgrantmaking.models.funder_utils import FunderCategory, FunderSegment
-
 
 class FundersTagsView(DBView):
     org_id = models.CharField(max_length=50, primary_key=True)

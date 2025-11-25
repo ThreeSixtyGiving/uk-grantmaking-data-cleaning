@@ -1,8 +1,6 @@
 from django.db import models
 from django_db_views.db_view import DBView
 
-from ukgrantmaking.models.funder_utils import FunderCategory, FunderSegment
-
 
 class GrantsAnalysisView(DBView):
     # --- Primary Key / Grant Details ---
@@ -10,78 +8,197 @@ class GrantsAnalysisView(DBView):
     title = models.CharField(max_length=512, verbose_name="Grant Title")
     description = models.TextField(verbose_name="Grant Description", null=True)
     currency = models.CharField(max_length=10, verbose_name="Currency")
-    amount_awarded = models.DecimalField(max_digits=18, decimal_places=2, verbose_name="Amount Awarded")
-    
+    amount_awarded = models.DecimalField(
+        max_digits=18, decimal_places=2, verbose_name="Amount Awarded"
+    )
+
     amount_awarded_gbp = models.DecimalField(
-        max_digits=18, decimal_places=2, db_column="amount_awarded_GBP", verbose_name="Amount Awarded (GBP)"
+        max_digits=18,
+        decimal_places=2,
+        db_column="amount_awarded_GBP",
+        verbose_name="Amount Awarded (GBP)",
     )
     award_date = models.DateField(verbose_name="Award Date", null=True)
-    regrant_type = models.CharField(max_length=50, verbose_name="Regrant Type", null=True)
-    
+    regrant_type = models.CharField(
+        max_length=50, verbose_name="Regrant Type", null=True
+    )
+
     # --- Duration Details ---
-    planned_dates_duration = models.IntegerField(verbose_name="Planned Duration (Months)", null=True)
+    planned_dates_duration = models.IntegerField(
+        verbose_name="Planned Duration (Months)", null=True
+    )
     planned_dates_start_date = models.DateField(
-        db_column="planned_dates_startDate", verbose_name="Planned Start Date", null=True
+        db_column="planned_dates_startDate",
+        verbose_name="Planned Start Date",
+        null=True,
     )
     planned_dates_end_date = models.DateField(
         db_column="planned_dates_endDate", verbose_name="Planned End Date", null=True
     )
-    inclusion = models.CharField(max_length=50, verbose_name="Inclusion Status", null=True)
+    inclusion = models.CharField(
+        max_length=50, verbose_name="Inclusion Status", null=True
+    )
 
     # --- Derived Bands ---
     duration_band = models.CharField(max_length=50, verbose_name="Duration Band")
-    grant_amount_band = models.CharField(max_length=50, verbose_name="Grant Amount Band")
+    grant_amount_band = models.CharField(
+        max_length=50, verbose_name="Grant Amount Band"
+    )
 
     # --- Recipient Details ---
     recipient_id = models.CharField(max_length=50, verbose_name="Recipient ID")
-    recipient_organisation_id = models.CharField(max_length=50, verbose_name="Recipient Org ID", null=True)
-    recipient_organisation_name = models.CharField(max_length=255, verbose_name="Recipient Org Name")
-    recipient_type = models.CharField(max_length=50, verbose_name="Recipient Type", null=True)
-    regulator_name = models.CharField(max_length=255, verbose_name="Regulator Name", db_column="regulator_name")
-    regulator_type = models.CharField(max_length=50, verbose_name="Regulator Type", db_column="regulator_type")
-    regulator_date_of_registration = models.DateField(verbose_name="Regulator Registration Date", db_column="regulator_date_of_registration", null=True)
-    regulator_scale = models.CharField(max_length=50, verbose_name="Regulator Scale", db_column="regulator_scale", null=True)
-    regulator_how = models.CharField(max_length=255, verbose_name="Regulator How", db_column="regulator_how", null=True)
-    regulator_who = models.CharField(max_length=255, verbose_name="Regulator Who", db_column="regulator_who", null=True)
-    regulator_what = models.CharField(max_length=255, verbose_name="Regulator What", db_column="regulator_what", null=True)
+    recipient_organisation_id = models.CharField(
+        max_length=50, verbose_name="Recipient Org ID", null=True
+    )
+    recipient_organisation_name = models.CharField(
+        max_length=255, verbose_name="Recipient Org Name"
+    )
+    recipient_type = models.CharField(
+        max_length=50, verbose_name="Recipient Type", null=True
+    )
+    regulator_name = models.CharField(
+        max_length=255, verbose_name="Regulator Name", db_column="regulator_name"
+    )
+    regulator_type = models.CharField(
+        max_length=50, verbose_name="Regulator Type", db_column="regulator_type"
+    )
+    regulator_date_of_registration = models.DateField(
+        verbose_name="Regulator Registration Date",
+        db_column="regulator_date_of_registration",
+        null=True,
+    )
+    regulator_scale = models.CharField(
+        max_length=50,
+        verbose_name="Regulator Scale",
+        db_column="regulator_scale",
+        null=True,
+    )
+    regulator_how = models.CharField(
+        max_length=255,
+        verbose_name="Regulator How",
+        db_column="regulator_how",
+        null=True,
+    )
+    regulator_who = models.CharField(
+        max_length=255,
+        verbose_name="Regulator Who",
+        db_column="regulator_who",
+        null=True,
+    )
+    regulator_what = models.CharField(
+        max_length=255,
+        verbose_name="Regulator What",
+        db_column="regulator_what",
+        null=True,
+    )
 
     # Regulator London/Location Details
-    regulator_london_aoo = models.BooleanField(verbose_name="Regulator AOO is London", db_column="regulator_london_aoo", null=True)
-    regulator_london_hq = models.BooleanField(verbose_name="Regulator HQ is London", db_column="regulator_london_hq", null=True)
-    
-    regulator_ctry_hq_name = models.CharField(max_length=255, verbose_name="Regulator HQ Country Name", db_column="regulator_ctry_hq_name", null=True)
-    regulator_rgn_hq_name = models.CharField(max_length=255, verbose_name="Regulator HQ Region Name", db_column="regulator_rgn_hq_name", null=True)
-    regulator_la_hq_name = models.CharField(max_length=255, verbose_name="Regulator HQ LA Name", db_column="regulator_la_hq_name", null=True)
-    regulator_ctry_aoo_name = models.CharField(max_length=255, verbose_name="Regulator AOO Country Name", db_column="regulator_ctry_aoo_name", null=True)
-    regulator_rgn_aoo_name = models.CharField(max_length=255, verbose_name="Regulator AOO Region Name", db_column="regulator_rgn_aoo_name", null=True)
-    regulator_la_aoo_name = models.CharField(max_length=255, verbose_name="Regulator AOO LA Name", db_column="regulator_la_aoo_name", null=True)
+    regulator_london_aoo = models.BooleanField(
+        verbose_name="Regulator AOO is London",
+        db_column="regulator_london_aoo",
+        null=True,
+    )
+    regulator_london_hq = models.BooleanField(
+        verbose_name="Regulator HQ is London",
+        db_column="regulator_london_hq",
+        null=True,
+    )
 
+    regulator_ctry_hq_name = models.CharField(
+        max_length=255,
+        verbose_name="Regulator HQ Country Name",
+        db_column="regulator_ctry_hq_name",
+        null=True,
+    )
+    regulator_rgn_hq_name = models.CharField(
+        max_length=255,
+        verbose_name="Regulator HQ Region Name",
+        db_column="regulator_rgn_hq_name",
+        null=True,
+    )
+    regulator_la_hq_name = models.CharField(
+        max_length=255,
+        verbose_name="Regulator HQ LA Name",
+        db_column="regulator_la_hq_name",
+        null=True,
+    )
+    regulator_ctry_aoo_name = models.CharField(
+        max_length=255,
+        verbose_name="Regulator AOO Country Name",
+        db_column="regulator_ctry_aoo_name",
+        null=True,
+    )
+    regulator_rgn_aoo_name = models.CharField(
+        max_length=255,
+        verbose_name="Regulator AOO Region Name",
+        db_column="regulator_rgn_aoo_name",
+        null=True,
+    )
+    regulator_la_aoo_name = models.CharField(
+        max_length=255,
+        verbose_name="Regulator AOO LA Name",
+        db_column="regulator_la_aoo_name",
+        null=True,
+    )
 
     # --- Recipient Year Regulator Data ---
-    financial_year_end = models.DateField(verbose_name="Recipient Financial Year End", null=True)
-    income = models.DecimalField(max_digits=18, decimal_places=2, verbose_name="Recipient Income", null=True)
-    spending = models.DecimalField(max_digits=18, decimal_places=2, verbose_name="Recipient Spending", null=True)
+    financial_year_end = models.DateField(
+        verbose_name="Recipient Financial Year End", null=True
+    )
+    income = models.DecimalField(
+        max_digits=18, decimal_places=2, verbose_name="Recipient Income", null=True
+    )
+    spending = models.DecimalField(
+        max_digits=18, decimal_places=2, verbose_name="Recipient Spending", null=True
+    )
     employees = models.IntegerField(verbose_name="Recipient Employees", null=True)
-    income_band = models.CharField(max_length=50, verbose_name="Income Band (Org Size)", null=True)
+    income_band = models.CharField(
+        max_length=50, verbose_name="Income Band (Org Size)", null=True
+    )
 
     # --- Funder Details ---
-    funding_organisation_id = models.CharField(max_length=50, verbose_name="Funding Org ID")
-    funding_organisation_name = models.CharField(max_length=255, verbose_name="Funding Org Name")
-    funding_organisation_department = models.CharField(max_length=255, verbose_name="Funding Org Department", null=True)
+    funding_organisation_id = models.CharField(
+        max_length=50, verbose_name="Funding Org ID"
+    )
+    funding_organisation_name = models.CharField(
+        max_length=255, verbose_name="Funding Org Name"
+    )
+    funding_organisation_department = models.CharField(
+        max_length=255, verbose_name="Funding Org Department", null=True
+    )
     funder_id = models.CharField(max_length=50, verbose_name="Funder ID")
-    funding_organisation_type = models.CharField(max_length=50, verbose_name="Funding Org Type")
-    funder_segment = models.CharField(max_length=50, db_column="segment", verbose_name="Funder Segment")
-    funder_category = models.CharField(max_length=50, db_column="category", verbose_name="Funder Category")
-    funder_name = models.CharField(max_length=255, db_column="funder_name", verbose_name="Funder Name")
+    funding_organisation_type = models.CharField(
+        max_length=50, verbose_name="Funding Org Type"
+    )
+    funder_segment = models.CharField(
+        max_length=50, db_column="segment", verbose_name="Funder Segment"
+    )
+    funder_category = models.CharField(
+        max_length=50, db_column="category", verbose_name="Funder Category"
+    )
+    funder_name = models.CharField(
+        max_length=255, db_column="funder_name", verbose_name="Funder Name"
+    )
 
     # Funder Location Details
-    funder_la_hq_name = models.CharField(max_length=255, verbose_name="Funder HQ LA Name", null=True)
-    funder_rgn_hq_name = models.CharField(max_length=255, verbose_name="Funder HQ Region Name", null=True)
-    funder_ctry_hq_name = models.CharField(max_length=255, verbose_name="Funder HQ Country Name", null=True)
-    funder_la_aoo_name = models.CharField(max_length=255, verbose_name="Funder AOO LA Name", null=True)
-    funder_rgn_aoo_name = models.CharField(max_length=255, verbose_name="Funder AOO Region Name", null=True)
-    funder_ctry_aoo_name = models.CharField(max_length=255, verbose_name="Funder AOO Country Name", null=True)
-
+    funder_la_hq_name = models.CharField(
+        max_length=255, verbose_name="Funder HQ LA Name", null=True
+    )
+    funder_rgn_hq_name = models.CharField(
+        max_length=255, verbose_name="Funder HQ Region Name", null=True
+    )
+    funder_ctry_hq_name = models.CharField(
+        max_length=255, verbose_name="Funder HQ Country Name", null=True
+    )
+    funder_la_aoo_name = models.CharField(
+        max_length=255, verbose_name="Funder AOO LA Name", null=True
+    )
+    funder_rgn_aoo_name = models.CharField(
+        max_length=255, verbose_name="Funder AOO Region Name", null=True
+    )
+    funder_ctry_aoo_name = models.CharField(
+        max_length=255, verbose_name="Funder AOO Country Name", null=True
+    )
 
     # --- View SQL Definition ---
     view_definition = {
@@ -194,7 +311,6 @@ class GrantsAnalysisView(DBView):
         WHERE ukgfy.current = TRUE;
         """
     }
-
 
     class Meta:
         managed = False
