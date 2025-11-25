@@ -525,7 +525,7 @@ class FundersAnalysisView(DBView):
             ufv.name,
             -- Create HTML name with 360Giving logo for publishers based on the 360Giving publisher tag
         MAX(CASE
-                WHEN tags_list_year ILIKE '%360Giving Publisher%'
+                WHEN tags_list_year ILIKE '%%360Giving Publisher%%'
                 THEN CONCAT(ufv.name, '<small><img decoding="async" src="https://cdn.threesixtygiving.org/components/preview/assets/images/360-logos/icon/360giving-icon.svg" style="width: 24px;"></small>')
                 ELSE ufv.name
             END) AS "HTML_name",
