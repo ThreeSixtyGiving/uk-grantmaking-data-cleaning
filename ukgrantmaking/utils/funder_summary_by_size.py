@@ -131,7 +131,7 @@ def funder_summary_by_size(current_fy: FinancialYear, effective_date: datetime):
         )
         .set_index(["Category", "Segment"])
         .sort_index()
-        .replace({False: pd.NA, np.nan: pd.NA, True: 1, 0: pd.NA})
+        .replace({False: pd.NA, np.nan: pd.NA, True: 1, 0: pd.NA})  # noqa: F601
         .replace({pd.NA: None})
     )
     return result
