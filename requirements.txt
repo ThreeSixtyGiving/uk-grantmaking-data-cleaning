@@ -227,7 +227,7 @@ requests-cache==1.2.1
     # via charity-django
 requests-html==0.10.0
     # via charity-django
-ruff==0.4.3
+ruff==0.14.6
     # via -r requirements.in
 s3transfer==0.10.1
     # via boto3

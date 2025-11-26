@@ -62,7 +62,7 @@ def funder_trend_over_time(
         )
         .set_index(["Category", "Segment"])
         .sort_index()
-        .replace({False: pd.NA, np.nan: pd.NA, True: 1, 0: pd.NA})
+        .replace({False: pd.NA, np.nan: pd.NA, True: 1, 0: pd.NA})  # noqa: F601
         .replace({pd.NA: None})
     )
     for year in years:
