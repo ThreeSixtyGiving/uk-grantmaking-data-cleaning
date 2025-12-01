@@ -181,7 +181,7 @@ FIELD_DEFINITIONS = [
         CleaningStatusType.GRANTMAKER,
         str,
     ),
-    ("notes", "Notes", CleaningStatusType.GRANTMAKER, str),
+    # ("notes", "Notes", CleaningStatusType.GRANTMAKER, str),
     (
         "date_added",
         "Date added",
@@ -298,7 +298,7 @@ FIELD_DEFINITIONS = [
     ("recipient", "Recipient", CleaningStatusType.GRANT, str),
     ("recipient_type_manual", "Recipient type manual", CleaningStatusType.GRANT, str),
     ("inclusion", "Inclusion", CleaningStatusType.GRANT, str),
-    ("notes", "Notes", CleaningStatusType.GRANT, str),
+    # ("notes", "Notes", CleaningStatusType.GRANT, str),
     ("checked_by", "Checked by", CleaningStatusType.GRANT, str),
     ("annual_amount", "Annual amount", CleaningStatusType.GRANT, int),
 ]
