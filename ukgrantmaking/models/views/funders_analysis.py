@@ -629,7 +629,18 @@ class FundersAnalysisView(DBView):
             (COUNT(*) FILTER (WHERE fy IN (fya[1], fya[2]) AND spending IS NOT NULL) = 2) AS "has_2yrs_Spending",
             (COUNT(*) FILTER (WHERE fy IN (fya[1], fya[2]) AND total_net_assets IS NOT NULL) = 2) AS "has_2yrs_Net_Assets",
             (COUNT(*) FILTER (WHERE fy IN (fya[1], fya[2]) AND employees IS NOT NULL) = 2) AS "has_2yrs_Employees",
-            (MAX(income) FILTER (WHERE fy = fya[1]) IS NOT NULL AND MAX(spending_grant_making) FILTER (WHERE fy = fya[1]) IS NOT NULL) AS "include_in_analysis",
+            
+            (CASE
+            WHEN MAX(income) FILTER (WHERE fy = fya[1]) IS NULL 
+            AND MAX(spending_grant_making) FILTER (WHERE fy = fya[1]) IS NULL 
+            THEN 0
+
+            WHEN MAX(income) FILTER (WHERE fy = fya[1]) < 5000 
+            AND MAX(spending_grant_making) FILTER (WHERE fy = fya[1]) < 5000 
+            THEN 0
+
+            ELSE 1
+            END) > 0 AS "include_in_analysis",
             ufv.makes_grants_to_individuals
         FROM
             ufv
