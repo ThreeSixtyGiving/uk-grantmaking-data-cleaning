@@ -626,6 +626,8 @@ class FundersAnalysisView(DBView):
             MAX(fd.rgn_aoo_name::text) AS rgn_aoo_name,  
             MAX(fd.ctry_aoo::text) AS ctry_aoo,
             MAX(fd.ctry_aoo_name::text) AS ctry_aoo_name,  
+            MAX(fd.overseas_aoo::text) AS overseas_aoo,
+            MAX(fd.overseas_aoo_name::text) AS overseas_aoo_name,  
             
             MAX(fd.london_aoo::text) AS london_aoo, 
             MAX(fd.london_hq::text) AS london_hq,  
