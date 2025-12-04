@@ -204,6 +204,8 @@ class FunderAdmin(CSVUploadModelAdmin):
         "ctry_hq_name",
         "ctry_aoo",
         "ctry_aoo_name",
+        "overseas_aoo",
+        "overseas_aoo_name",
         "london_hq",
         "london_aoo",
         "scale_registered",

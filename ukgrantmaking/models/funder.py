@@ -165,6 +165,8 @@ class Funder(models.Model):
     ctry_hq_name = models.CharField(max_length=254, null=True, blank=True)
     ctry_aoo = models.JSONField(null=True, blank=True)
     ctry_aoo_name = models.JSONField(null=True, blank=True)
+    overseas_aoo = models.JSONField(null=True, blank=True)
+    overseas_aoo_name = models.JSONField(null=True, blank=True)
     london_hq = models.BooleanField(null=True, blank=True)
     london_aoo = models.BooleanField(null=True, blank=True)
 

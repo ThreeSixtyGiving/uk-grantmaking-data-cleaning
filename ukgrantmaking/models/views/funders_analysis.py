@@ -382,6 +382,12 @@ class FundersAnalysisView(DBView):
     ctry_aoo_name = models.CharField(
         max_length=255, null=True, verbose_name="AOO Country Name"
     )
+    overseas_aoo = models.CharField(
+        max_length=50, null=True, verbose_name="AOO Overseas Country Code"
+    )
+    overseas_aoo_name = models.CharField(
+        max_length=255, null=True, verbose_name="AOO Overseas Country Name"
+    )
 
     london_aoo = models.BooleanField(
         null=False, db_column="london_aoo", verbose_name="Area of Operation is London"
@@ -494,6 +500,8 @@ class FundersAnalysisView(DBView):
                 rgn_aoo_name,
                 ctry_aoo,
                 ctry_aoo_name,
+                overseas_aoo,
+                overseas_aoo_name,
                 -- London Analysis
                 london_aoo,
                 london_hq

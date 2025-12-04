@@ -49,15 +49,19 @@ def do_ftc_funders(db_con: str, org_ids: tuple[str, ...], debug: bool = False):
                     json_object_agg(DISTINCT l.geo_ctry, ctry."name") FILTER (WHERE "locationType" = 'HQ' AND l.geo_ctry IS NOT NULL) AS ctry_hq_name,
                     array_agg(DISTINCT l.geo_ctry) FILTER (WHERE "locationType" = 'AOO' AND l.geo_ctry IS NOT NULL) AS ctry_aoo,
                     json_object_agg(DISTINCT l.geo_ctry, ctry."name") FILTER (WHERE "locationType" = 'AOO' AND l.geo_ctry IS NOT NULL) AS ctry_aoo_name,
+                    array_agg(DISTINCT l.geo_iso) FILTER (WHERE "locationType" = 'AOO' AND l.geo_iso IS NOT NULL AND l.geo_iso != 'GB') AS overseas_aoo,
+                    json_object_agg(DISTINCT l.geo_iso, iso."name") FILTER (WHERE "locationType" = 'AOO' AND l.geo_iso IS NOT NULL AND l.geo_iso != 'GB') AS overseas_aoo_name,
                     SUM(CASE WHEN l.geo_rgn = 'E12000007' AND "locationType" = 'HQ' THEN 1 ELSE 0 END) > 0 AS london_hq,
                     SUM(CASE WHEN l.geo_rgn = 'E12000007' AND "locationType" = 'AOO' THEN 1 ELSE 0 END) > 0 AS london_aoo
                 FROM ftc_organisationlocation l
-                    INNER JOIN geo_geolookup rgn
+                    LEFT OUTER JOIN geo_geolookup rgn
                         ON l.geo_rgn = rgn."geoCode" 
-                    INNER JOIN geo_geolookup ctry
+                    LEFT OUTER JOIN geo_geolookup ctry
                         ON l.geo_ctry = ctry."geoCode" 
-                    INNER JOIN geo_geolookup la
+                    LEFT OUTER JOIN geo_geolookup la
                         ON l.geo_laua = la."geoCode" 
+                    LEFT OUTER JOIN geo_geolookup iso
+                        ON l.geo_iso = iso."geoCode"
                 GROUP BY 1
             ),
             s AS (
@@ -91,6 +95,8 @@ def do_ftc_funders(db_con: str, org_ids: tuple[str, ...], debug: bool = False):
                 ctry_hq_name->>ctry_hq[1] as ctry_hq_name,
                 ctry_aoo,
                 ctry_aoo_name,
+                overseas_aoo,
+                overseas_aoo_name,
                 london_hq,
                 london_aoo,
                 s.scale as scale_registered
@@ -137,6 +143,8 @@ def do_ftc_funders(db_con: str, org_ids: tuple[str, ...], debug: bool = False):
                     ctry_hq_name=org_record.ctry_hq_name,
                     ctry_aoo=org_record.ctry_aoo,
                     ctry_aoo_name=org_record.ctry_aoo_name,
+                    overseas_aoo=org_record.overseas_aoo,
+                    overseas_aoo_name=org_record.overseas_aoo_name,
                     london_hq=org_record.london_hq,
                     london_aoo=org_record.london_aoo,
                     scale_registered=org_record.scale_registered,
@@ -169,6 +177,8 @@ def do_ftc_funders(db_con: str, org_ids: tuple[str, ...], debug: bool = False):
                 "ctry_hq_name",
                 "ctry_aoo",
                 "ctry_aoo_name",
+                "overseas_aoo",
+                "overseas_aoo_name",
                 "london_hq",
                 "london_aoo",
                 "scale_registered",
