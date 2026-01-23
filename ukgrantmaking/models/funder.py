@@ -467,5 +467,3 @@ class Funder(models.Model):
         if self.predecessors.exists():
             for predecessor in self.predecessors.all():
                 predecessor.save()
-
-        super().save(*args, **kwargs)

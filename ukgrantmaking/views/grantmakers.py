@@ -135,6 +135,7 @@ def detail(request, org_id):
                 )
                 funder.update_from_ftc()
                 funder.save()
+                funder.save()  # to ensure funder financial years are created
                 return HttpResponseRedirect(
                     reverse("grantmakers:detail", args=[org_id])
                 )
