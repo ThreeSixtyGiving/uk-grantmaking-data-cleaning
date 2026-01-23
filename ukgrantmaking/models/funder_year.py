@@ -608,6 +608,42 @@ class FunderYear(models.Model):
             self.new_funder_financial_year.update_fields()
             self.new_funder_financial_year.save()
 
+    @property
+    def funds_calc(self):
+        if self.funds is not None:
+            return self.funds
+        if (
+            self.funds_endowment is not None
+            or self.funds_restricted is not None
+            or self.funds_unrestricted is not None
+        ):
+            return sum(
+                [
+                    (self.funds_endowment or 0),
+                    (self.funds_restricted or 0),
+                    (self.funds_unrestricted or 0),
+                ]
+            )
+        return None
+
+    @property
+    def funds_calc_manual(self):
+        if self.funds_manual is not None:
+            return self.funds_manual
+        if (
+            self.funds_endowment_manual is not None
+            or self.funds_restricted_manual is not None
+            or self.funds_unrestricted_manual is not None
+        ):
+            return sum(
+                [
+                    (self.funds_endowment_manual or 0),
+                    (self.funds_restricted_manual or 0),
+                    (self.funds_unrestricted_manual or 0),
+                ]
+            )
+        return None
+
     def editable_fields(self) -> list[EditableField]:
         fields = [
             "income",
