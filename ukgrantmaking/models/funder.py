@@ -309,6 +309,20 @@ class Funder(models.Model):
                 return "Checked"
         return False
 
+    def all_notes(self):
+        funder_year_ids = [
+            str(id) for id in self.funder_years().values_list("id", flat=True)
+        ]
+        return FunderNote.objects.filter(
+            models.Q(
+                content_type=ContentType.objects.get_for_model(self), object_id=self.pk
+            )
+            | models.Q(
+                content_type=ContentType.objects.get_for_model(FunderYear),
+                object_id__in=funder_year_ids,
+            )
+        ).order_by("-date_added")
+
     def funder_years(self):
         return (
             FunderYear.objects.filter(

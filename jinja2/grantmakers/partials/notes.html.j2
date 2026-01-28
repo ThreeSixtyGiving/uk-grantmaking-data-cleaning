@@ -1,35 +1,33 @@
-<ul class="notes" id="funder-notes">
-    {% for note in object.notes.all() %}
-    <li class="note">
-        <header>
-            <time value="{{ note.date_added }}">{{ note.date_added|naturalday }}</time>
-            by <strong>{{ note.added_by }}</strong>
-        </header>
-        {{ note.note|markdownify|safe }}
-    </li>
-    {% endfor %}
-    {% for funder_financial_year in object.funder_financial_years.all() %}
-    {% for funder_year in funder_financial_year.funder_years.all() %}
-    {% for note in funder_year.notes.all() %}
-    <li class="note">
-        <header>
-            <strong>FY{{ funder_financial_year.financial_year_id }}</strong>
-            <time value="{{ note.date_added }}">{{ note.date_added|naturalday }}</time>
-            by <strong>{{ note.added_by }}</strong>
-        </header>
-        {{ note.note|markdownify|safe }}
-    </li>
-    {% endfor %}
-    {% endfor %}
-    {% endfor %}
-    <li class="note">
-        <header>Add note</header>
-        <form action="{{ url_for('grantmakers:add_note', org_id=object.org_id) }}" method="post"
-            hx-target="#funder-notes" hx-swap="outerHTML" class="flex-column"
-            hx-post="{{ url_for('grantmakers:add_note', org_id=object.org_id) }}">
-            <textarea name="note" id="note" rows="5" style="width: 100%;"></textarea>
-            <button type="submit" class="button">Add note</button>
-        </form>
-    </li>
-</ul>
+<div id="funder-notes">
+    <ul class="notes" x-data="{ expand: false }">
+        {% for note in object.all_notes() %}
+        <li class="note" {% if loop.index > 7 %}x-show="expand" x-transition{% endif %}>
+            <header>
+                {% if note.content_object.funder_financial_year %}
+                <strong>FY{{ note.content_object.funder_financial_year.financial_year_id }}</strong>
+                {% endif %}
+                <time value="{{ note.date_added }}">{{ note.date_added|naturalday }}</time>
+                {% if note.added_by %}
+                by <strong>{{ note.added_by }}</strong>
+                {% endif %}
+            </header>
+            {{ note.note|markdownify|safe }}
+        </li>
+        {% endfor %}
+        {% if object.all_notes().count() > 7 %}
+        <li class="expand-notes">
+            <button @click="expand = !expand" x-text="expand ? 'Show less' : 'Show all notes'" class="button"></button>
+        </li>
+        {% endif %}
+        <li class="note">
+            <header>Add note</header>
+            <form action="{{ url_for('grantmakers:add_note', org_id=object.org_id) }}" method="post"
+                hx-target="#funder-notes" hx-swap="outerHTML" class="flex-column"
+                hx-post="{{ url_for('grantmakers:add_note', org_id=object.org_id) }}">
+                <textarea name="note" id="note" rows="5" style="width: 100%;"></textarea>
+                <button type="submit" class="button">Add note</button>
+            </form>
+        </li>
+    </ul>
+</div>
 {% if request.htmx %}{% include 'grantmakers/partials/audittrail.html.j2'%}{% endif %}
