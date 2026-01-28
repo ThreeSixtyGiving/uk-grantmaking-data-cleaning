@@ -425,6 +425,36 @@ class FundersAnalysisView(DBView):
         db_column="has_2yrs_Employees",
         verbose_name="Has 2 Yrs Employee Data",
     )
+
+    has_3yrs_grantmaking = models.BooleanField(
+        null=False,
+        db_column="has_3yrs_Grantmaking",
+        verbose_name="Has 3 Yrs Grantmaking Data",
+    )
+    has_3yrs_grantmaking_individuals = models.BooleanField(
+        null=False,
+        db_column="has_3yrs_Grantmaking_Individuals",
+        verbose_name="Has 3 Yrs Individuals Grantmaking Data",
+    )
+    has_3yrs_income = models.BooleanField(
+        null=False, db_column="has_3yrs_Income", verbose_name="Has 3 Yrs Income Data"
+    )
+    has_3yrs_spending = models.BooleanField(
+        null=False,
+        db_column="has_3yrs_Spending",
+        verbose_name="Has 3 Yrs Spending Data",
+    )
+    has_3yrs_net_assets = models.BooleanField(
+        null=False,
+        db_column="has_3yrs_Net_Assets",
+        verbose_name="Has 3 Yrs Net Assets Data",
+    )
+    has_3yrs_employees = models.BooleanField(
+        null=False,
+        db_column="has_3yrs_Employees",
+        verbose_name="Has 3 Yrs Employee Data",
+    )
+
     include_in_analysis = models.BooleanField(
         null=False, db_column="include_in_analysis", verbose_name="Include In Analysis"
     )
@@ -640,6 +670,13 @@ class FundersAnalysisView(DBView):
             (COUNT(*) FILTER (WHERE fy IN (fya[1], fya[2]) AND total_net_assets IS NOT NULL) = 2) AS "has_2yrs_Net_Assets",
             (COUNT(*) FILTER (WHERE fy IN (fya[1], fya[2]) AND employees IS NOT NULL) = 2) AS "has_2yrs_Employees",
             
+            COUNT(*) FILTER (WHERE fy IN (fya[1], fya[2], fya[3]) AND spending_grant_making IS NOT NULL) = 3 AS "has_3yrs_Grantmaking",
+            COUNT(*) FILTER (WHERE fy IN (fya[1], fya[2], fya[3]) AND spending_grant_making_individuals IS NOT NULL) = 3 AS "has_3yrs_Grantmaking_Individuals",
+            COUNT(*) FILTER (WHERE fy IN (fya[1], fya[2], fya[3]) AND income IS NOT NULL) = 3 AS "has_3yrs_Income",
+            COUNT(*) FILTER (WHERE fy IN (fya[1], fya[2], fya[3]) AND spending IS NOT NULL) = 3 AS "has_3yrs_Spending",
+            COUNT(*) FILTER (WHERE fy IN (fya[1], fya[2], fya[3]) AND total_net_assets IS NOT NULL) = 3 AS "has_3yrs_Net_Assets",
+            COUNT(*) FILTER (WHERE fy IN (fya[1], fya[2], fya[3]) AND employees IS NOT NULL) = 3 AS "has_3yrs_Employees",
+
             (CASE
             WHEN MAX(income) FILTER (WHERE fy = fya[1]) IS NULL 
             AND MAX(spending_grant_making) FILTER (WHERE fy = fya[1]) IS NULL 
