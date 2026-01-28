@@ -36,6 +36,9 @@ ALLOWED_HOSTS = (
     if os.environ.get("ALLOWED_HOSTS")
     else []
 )
+CSRF_TRUSTED_ORIGINS = [f"http://{host}" for host in ALLOWED_HOSTS] + [
+    f"https://{host}" for host in ALLOWED_HOSTS
+]
 INTERNAL_IPS = [
     "127.0.0.1",
 ]
