@@ -433,7 +433,7 @@ def edit_funderyear(funder_year: FunderYear, request, suffix: str = "cy"):
         if current_value != new_value:
             changed_values.append(f"{field.name} from {current_value} to {new_value}")
 
-    if "note" in request.POST and request.POST.get("note"):
+    if (suffix == "cy") and ("note" in request.POST) and request.POST.get("note"):
         funder_year.notes.create(
             added_by=request.user,
             note=request.POST.get("note"),
