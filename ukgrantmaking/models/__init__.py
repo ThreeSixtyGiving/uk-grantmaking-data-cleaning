@@ -29,6 +29,7 @@ from ukgrantmaking.models.grant import (
 )
 from ukgrantmaking.models.views.funders import FundersView
 from ukgrantmaking.models.views.funders_analysis import FundersAnalysisView
+from ukgrantmaking.models.views.funders_regional import FundersRegionalView
 from ukgrantmaking.models.views.funders_tags import FundersTagsView
 from ukgrantmaking.models.views.grants_analysis import GrantsAnalysisView
 
@@ -41,6 +42,7 @@ __all__ = [
     "FunderNote",
     "FundersView",
     "FundersAnalysisView",
+    "FundersRegionalView",
     "FundersTagsView",
     "GrantsAnalysisView",
     "FUNDER_CATEGORIES",
