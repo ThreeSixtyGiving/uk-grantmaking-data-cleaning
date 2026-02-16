@@ -504,38 +504,113 @@ class FundersAnalysisView(DBView):
             END AS grantmaking_band
         FROM ukgrantmaking_funders_view
         ),
+        -- Add country / region details based on AOO and manual overrides
+        ctryrgn_a AS (
+            SELECT org_id,
+                to_jsonb(
+                    array_remove(
+                        ARRAY[
+                            CASE WHEN ctry_rgn_aoo_manual->'E92000001' IS NOT NULL 
+                                THEN CASE WHEN JSON_VALUE(ctry_rgn_aoo_manual, '$.E92000001' RETURNING BOOLEAN ) THEN 'E92000001' ELSE NULL END
+                                WHEN ctry_aoo ? 'E92000001' THEN 'E92000001' END,
+                            CASE WHEN ctry_rgn_aoo_manual->'N92000002' IS NOT NULL 
+                                THEN CASE WHEN JSON_VALUE(ctry_rgn_aoo_manual, '$.N92000002' RETURNING BOOLEAN ) THEN 'N92000002' ELSE NULL END
+                                WHEN ctry_aoo ? 'N92000002' THEN 'N92000002' END,
+                            CASE WHEN ctry_rgn_aoo_manual->'S92000003' IS NOT NULL 
+                                THEN CASE WHEN JSON_VALUE(ctry_rgn_aoo_manual, '$.S92000003' RETURNING BOOLEAN ) THEN 'S92000003' ELSE NULL END
+                                WHEN ctry_aoo ? 'S92000003' THEN 'S92000003' END,
+                            CASE WHEN ctry_rgn_aoo_manual->'W92000004' IS NOT NULL 
+                                THEN CASE WHEN JSON_VALUE(ctry_rgn_aoo_manual, '$.W92000004' RETURNING BOOLEAN ) THEN 'W92000004' ELSE NULL END
+                                WHEN ctry_aoo ? 'W92000004' THEN 'W92000004' END
+                        ],
+                        NULL
+                    )
+                ) AS ctry_aoo,
+                to_jsonb(
+                    array_remove(
+                        ARRAY[
+                            CASE WHEN ctry_rgn_aoo_manual->'E12000001' IS NOT NULL 
+                                THEN CASE WHEN JSON_VALUE(ctry_rgn_aoo_manual, '$.E12000001' RETURNING BOOLEAN ) THEN 'E12000001' ELSE NULL END
+                                WHEN rgn_aoo ? 'E12000001' THEN 'E12000001' END,
+                            CASE WHEN ctry_rgn_aoo_manual->'E12000002' IS NOT NULL 
+                                THEN CASE WHEN JSON_VALUE(ctry_rgn_aoo_manual, '$.E12000002' RETURNING BOOLEAN ) THEN 'E12000002' ELSE NULL END
+                                WHEN rgn_aoo ? 'E12000002' THEN 'E12000002' END,
+                            CASE WHEN ctry_rgn_aoo_manual->'E12000003' IS NOT NULL 
+                                THEN CASE WHEN JSON_VALUE(ctry_rgn_aoo_manual, '$.E12000003' RETURNING BOOLEAN ) THEN 'E12000003' ELSE NULL END
+                                WHEN rgn_aoo ? 'E12000003' THEN 'E12000003' END,
+                            CASE WHEN ctry_rgn_aoo_manual->'E12000004' IS NOT NULL 
+                                THEN CASE WHEN JSON_VALUE(ctry_rgn_aoo_manual, '$.E12000004' RETURNING BOOLEAN ) THEN 'E12000004' ELSE NULL END
+                                WHEN rgn_aoo ? 'E12000004' THEN 'E12000004' END,
+                            CASE WHEN ctry_rgn_aoo_manual->'E12000005' IS NOT NULL 
+                                THEN CASE WHEN JSON_VALUE(ctry_rgn_aoo_manual, '$.E12000005' RETURNING BOOLEAN ) THEN 'E12000005' ELSE NULL END
+                                WHEN rgn_aoo ? 'E12000005' THEN 'E12000005' END,
+                            CASE WHEN ctry_rgn_aoo_manual->'E12000006' IS NOT NULL 
+                                THEN CASE WHEN JSON_VALUE(ctry_rgn_aoo_manual, '$.E12000006' RETURNING BOOLEAN ) THEN 'E12000006' ELSE NULL END
+                                WHEN rgn_aoo ? 'E12000006' THEN 'E12000006' END,
+                            CASE WHEN ctry_rgn_aoo_manual->'E12000007' IS NOT NULL 
+                                THEN CASE WHEN JSON_VALUE(ctry_rgn_aoo_manual, '$.E12000007' RETURNING BOOLEAN ) THEN 'E12000007' ELSE NULL END
+                                WHEN rgn_aoo ? 'E12000007' THEN 'E12000007' END,
+                            CASE WHEN ctry_rgn_aoo_manual->'E12000008' IS NOT NULL 
+                                THEN CASE WHEN JSON_VALUE(ctry_rgn_aoo_manual, '$.E12000008' RETURNING BOOLEAN ) THEN 'E12000008' ELSE NULL END
+                                WHEN rgn_aoo ? 'E12000008' THEN 'E12000008' END,
+                            CASE WHEN ctry_rgn_aoo_manual->'E12000009' IS NOT NULL 
+                                THEN CASE WHEN JSON_VALUE(ctry_rgn_aoo_manual, '$.E12000009' RETURNING BOOLEAN ) THEN 'E12000009' ELSE NULL END
+                                WHEN rgn_aoo ? 'E12000009' THEN 'E12000009' END
+                        ],
+                        NULL
+                    )
+                ) AS rgn_aoo
+            FROM ukgrantmaking_funder
+        ),
         -- add funder regulator details from funder table
         funder_details AS (
             SELECT
-                org_id,
-                charity_number,
-                active,
-                date_of_registration,
-                how,
-                what,
-                who,
-                scale,
-                postcode,
+                f.org_id,
+                f.charity_number,
+                f.active,
+                f.date_of_registration,
+                f.how,
+                f.what,
+                f.who,
+                f.scale,
+                f.postcode,
                 -- HQ
-                la_hq,
-                la_hq_name,
-                rgn_hq,
-                rgn_hq_name,
-                ctry_hq,
-                ctry_hq_name,
+                f.la_hq,
+                f.la_hq_name,
+                f.rgn_hq,
+                f.rgn_hq_name,
+                f.ctry_hq,
+                f.ctry_hq_name,
                 -- AOO
-                la_aoo,
-                la_aoo_name,
-                rgn_aoo,
-                rgn_aoo_name,
-                ctry_aoo,
-                ctry_aoo_name,
-                overseas_aoo,
-                overseas_aoo_name,
+                f.la_aoo,
+                f.la_aoo_name,
+                ctryrgn_a.rgn_aoo,
+                jsonb_strip_nulls(jsonb_build_object(
+                    'E12000001', CASE WHEN ctryrgn_a.rgn_aoo ? 'E12000001' THEN 'North East' ELSE NULL END,
+                    'E12000002', CASE WHEN ctryrgn_a.rgn_aoo ? 'E12000002' THEN 'North West' ELSE NULL END,
+                    'E12000003', CASE WHEN ctryrgn_a.rgn_aoo ? 'E12000003' THEN 'Yorkshire and The Humber' ELSE NULL END,
+                    'E12000004', CASE WHEN ctryrgn_a.rgn_aoo ? 'E12000004' THEN 'East Midlands' ELSE NULL END,
+                    'E12000005', CASE WHEN ctryrgn_a.rgn_aoo ? 'E12000005' THEN 'West Midlands' ELSE NULL END,
+                    'E12000006', CASE WHEN ctryrgn_a.rgn_aoo ? 'E12000006' THEN 'East of England' ELSE NULL END,
+                    'E12000007', CASE WHEN ctryrgn_a.rgn_aoo ? 'E12000007' THEN 'London' ELSE NULL END,
+                    'E12000008', CASE WHEN ctryrgn_a.rgn_aoo ? 'E12000008' THEN 'South East' ELSE NULL END,
+                    'E12000009', CASE WHEN ctryrgn_a.rgn_aoo ? 'E12000009' THEN 'South West' ELSE NULL END
+                )) AS rgn_aoo_name,
+                ctryrgn_a.ctry_aoo,
+                jsonb_strip_nulls(jsonb_build_object(
+                    'E92000001', CASE WHEN ctryrgn_a.ctry_aoo ? 'E92000001' THEN 'England' ELSE NULL END,
+                    'N92000002', CASE WHEN ctryrgn_a.ctry_aoo ? 'N92000002' THEN 'Northern Ireland' ELSE NULL END,
+                    'S92000003', CASE WHEN ctryrgn_a.ctry_aoo ? 'S92000003' THEN 'Scotland' ELSE NULL END,
+                    'W92000004', CASE WHEN ctryrgn_a.ctry_aoo ? 'W92000004' THEN 'Wales' ELSE NULL END
+                )) AS ctry_aoo_name,
+                f.overseas_aoo,
+                f.overseas_aoo_name,
                 -- London Analysis
-                london_aoo,
-                london_hq
-            FROM ukgrantmaking_funder
+                f.london_aoo,
+                f.london_hq
+            FROM ukgrantmaking_funder f
+                LEFT OUTER JOIN ctryrgn_a
+                    ON f.org_id = ctryrgn_a.org_id
         ),
         financial_year_base AS (
             SELECT ukgrantmaking_financialyear.fy,
