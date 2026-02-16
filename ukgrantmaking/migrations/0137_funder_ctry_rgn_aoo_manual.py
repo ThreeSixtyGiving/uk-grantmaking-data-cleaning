@@ -4,15 +4,18 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('ukgrantmaking', '0136_auto_20260205_1040'),
+        ("ukgrantmaking", "0136_auto_20260205_1040"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='funder',
-            name='ctry_rgn_aoo_manual',
-            field=models.JSONField(blank=True, null=True, verbose_name='Country/Region AOO (manual override)'),
+            model_name="funder",
+            name="ctry_rgn_aoo_manual",
+            field=models.JSONField(
+                blank=True,
+                null=True,
+                verbose_name="Country/Region AOO (manual override)",
+            ),
         ),
     ]
