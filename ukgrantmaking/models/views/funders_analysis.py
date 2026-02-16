@@ -511,16 +511,16 @@ class FundersAnalysisView(DBView):
                     array_remove(
                         ARRAY[
                             CASE WHEN ctry_rgn_aoo_manual->'E92000001' IS NOT NULL 
-                                THEN CASE WHEN JSON_VALUE(ctry_rgn_aoo_manual, '$.E92000001' RETURNING BOOLEAN ) THEN 'E92000001' ELSE NULL END
+                                THEN CASE WHEN ctry_rgn_aoo_manual->'E92000001' = 'true'::jsonb THEN 'E92000001' ELSE NULL END
                                 WHEN ctry_aoo ? 'E92000001' THEN 'E92000001' END,
                             CASE WHEN ctry_rgn_aoo_manual->'N92000002' IS NOT NULL 
-                                THEN CASE WHEN JSON_VALUE(ctry_rgn_aoo_manual, '$.N92000002' RETURNING BOOLEAN ) THEN 'N92000002' ELSE NULL END
+                                THEN CASE WHEN ctry_rgn_aoo_manual->'N92000002' = 'true'::jsonb THEN 'N92000002' ELSE NULL END
                                 WHEN ctry_aoo ? 'N92000002' THEN 'N92000002' END,
                             CASE WHEN ctry_rgn_aoo_manual->'S92000003' IS NOT NULL 
-                                THEN CASE WHEN JSON_VALUE(ctry_rgn_aoo_manual, '$.S92000003' RETURNING BOOLEAN ) THEN 'S92000003' ELSE NULL END
+                                THEN CASE WHEN ctry_rgn_aoo_manual->'S92000003' = 'true'::jsonb THEN 'S92000003' ELSE NULL END
                                 WHEN ctry_aoo ? 'S92000003' THEN 'S92000003' END,
                             CASE WHEN ctry_rgn_aoo_manual->'W92000004' IS NOT NULL 
-                                THEN CASE WHEN JSON_VALUE(ctry_rgn_aoo_manual, '$.W92000004' RETURNING BOOLEAN ) THEN 'W92000004' ELSE NULL END
+                                THEN CASE WHEN ctry_rgn_aoo_manual->'W92000004' = 'true'::jsonb THEN 'W92000004' ELSE NULL END
                                 WHEN ctry_aoo ? 'W92000004' THEN 'W92000004' END
                         ],
                         NULL
@@ -530,31 +530,31 @@ class FundersAnalysisView(DBView):
                     array_remove(
                         ARRAY[
                             CASE WHEN ctry_rgn_aoo_manual->'E12000001' IS NOT NULL 
-                                THEN CASE WHEN JSON_VALUE(ctry_rgn_aoo_manual, '$.E12000001' RETURNING BOOLEAN ) THEN 'E12000001' ELSE NULL END
+                                THEN CASE WHEN ctry_rgn_aoo_manual->'E12000001' = 'true'::jsonb THEN 'E12000001' ELSE NULL END
                                 WHEN rgn_aoo ? 'E12000001' THEN 'E12000001' END,
                             CASE WHEN ctry_rgn_aoo_manual->'E12000002' IS NOT NULL 
-                                THEN CASE WHEN JSON_VALUE(ctry_rgn_aoo_manual, '$.E12000002' RETURNING BOOLEAN ) THEN 'E12000002' ELSE NULL END
+                                THEN CASE WHEN ctry_rgn_aoo_manual->'E12000002' = 'true'::jsonb THEN 'E12000002' ELSE NULL END
                                 WHEN rgn_aoo ? 'E12000002' THEN 'E12000002' END,
                             CASE WHEN ctry_rgn_aoo_manual->'E12000003' IS NOT NULL 
-                                THEN CASE WHEN JSON_VALUE(ctry_rgn_aoo_manual, '$.E12000003' RETURNING BOOLEAN ) THEN 'E12000003' ELSE NULL END
+                                THEN CASE WHEN ctry_rgn_aoo_manual->'E12000003' = 'true'::jsonb THEN 'E12000003' ELSE NULL END
                                 WHEN rgn_aoo ? 'E12000003' THEN 'E12000003' END,
                             CASE WHEN ctry_rgn_aoo_manual->'E12000004' IS NOT NULL 
-                                THEN CASE WHEN JSON_VALUE(ctry_rgn_aoo_manual, '$.E12000004' RETURNING BOOLEAN ) THEN 'E12000004' ELSE NULL END
+                                THEN CASE WHEN ctry_rgn_aoo_manual->'E12000004' = 'true'::jsonb THEN 'E12000004' ELSE NULL END
                                 WHEN rgn_aoo ? 'E12000004' THEN 'E12000004' END,
                             CASE WHEN ctry_rgn_aoo_manual->'E12000005' IS NOT NULL 
-                                THEN CASE WHEN JSON_VALUE(ctry_rgn_aoo_manual, '$.E12000005' RETURNING BOOLEAN ) THEN 'E12000005' ELSE NULL END
+                                THEN CASE WHEN ctry_rgn_aoo_manual->'E12000005' = 'true'::jsonb THEN 'E12000005' ELSE NULL END
                                 WHEN rgn_aoo ? 'E12000005' THEN 'E12000005' END,
                             CASE WHEN ctry_rgn_aoo_manual->'E12000006' IS NOT NULL 
-                                THEN CASE WHEN JSON_VALUE(ctry_rgn_aoo_manual, '$.E12000006' RETURNING BOOLEAN ) THEN 'E12000006' ELSE NULL END
+                                THEN CASE WHEN ctry_rgn_aoo_manual->'E12000006' = 'true'::jsonb THEN 'E12000006' ELSE NULL END
                                 WHEN rgn_aoo ? 'E12000006' THEN 'E12000006' END,
                             CASE WHEN ctry_rgn_aoo_manual->'E12000007' IS NOT NULL 
-                                THEN CASE WHEN JSON_VALUE(ctry_rgn_aoo_manual, '$.E12000007' RETURNING BOOLEAN ) THEN 'E12000007' ELSE NULL END
+                                THEN CASE WHEN ctry_rgn_aoo_manual->'E12000007' = 'true'::jsonb THEN 'E12000007' ELSE NULL END
                                 WHEN rgn_aoo ? 'E12000007' THEN 'E12000007' END,
                             CASE WHEN ctry_rgn_aoo_manual->'E12000008' IS NOT NULL 
-                                THEN CASE WHEN JSON_VALUE(ctry_rgn_aoo_manual, '$.E12000008' RETURNING BOOLEAN ) THEN 'E12000008' ELSE NULL END
+                                THEN CASE WHEN ctry_rgn_aoo_manual->'E12000008' = 'true'::jsonb THEN 'E12000008' ELSE NULL END
                                 WHEN rgn_aoo ? 'E12000008' THEN 'E12000008' END,
                             CASE WHEN ctry_rgn_aoo_manual->'E12000009' IS NOT NULL 
-                                THEN CASE WHEN JSON_VALUE(ctry_rgn_aoo_manual, '$.E12000009' RETURNING BOOLEAN ) THEN 'E12000009' ELSE NULL END
+                                THEN CASE WHEN ctry_rgn_aoo_manual->'E12000009' = 'true'::jsonb THEN 'E12000009' ELSE NULL END
                                 WHEN rgn_aoo ? 'E12000009' THEN 'E12000009' END
                         ],
                         NULL
