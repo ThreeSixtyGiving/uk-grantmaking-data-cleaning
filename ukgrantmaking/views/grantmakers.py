@@ -327,6 +327,58 @@ def htmx_tags_edit(request, org_id):
 
 
 @login_required
+def htmx_ctry_rgn_edit(request, org_id):
+    if not request.htmx:
+        return HttpResponseBadRequest("This view is only accessible via htmx")
+    funder = get_object_or_404(Funder, org_id=org_id)
+    context = {"object": funder}
+    if request.method == "POST":
+        check_code = request.POST.get("ctry_rgn")
+        ctry_rgn_code = request.POST.get("code")
+        if funder.ctry_rgn_aoo_manual is None:
+            funder.ctry_rgn_aoo_manual = {}
+        funder.ctry_rgn_aoo_manual[ctry_rgn_code] = (
+            check_code and ctry_rgn_code and (check_code == ctry_rgn_code)
+        )
+        funder.save()
+        LogEntry.objects.log_actions(
+            user_id=request.user.id,
+            queryset=[funder],
+            action_flag=CHANGE,
+            change_message="Changed country/region of operation",
+        )
+    return render(
+        request,
+        "grantmakers/partials/country_region_aoo.html.j2",
+        context,
+    )
+
+
+@login_required
+def htmx_scale_edit(request, org_id):
+    if not request.htmx:
+        return HttpResponseBadRequest("This view is only accessible via htmx")
+    funder = get_object_or_404(Funder, org_id=org_id)
+    context = {"object": funder}
+    if request.method == "POST":
+        scale = request.POST.get("scale")
+        funder.scale_manual = scale
+        funder.save()
+        funder.refresh_from_db()
+        LogEntry.objects.log_actions(
+            user_id=request.user.id,
+            queryset=[funder],
+            action_flag=CHANGE,
+            change_message=f"Updated scale to {scale}",
+        )
+    return render(
+        request,
+        "grantmakers/partials/scale.html.j2",
+        context,
+    )
+
+
+@login_required
 def htmx_edit_funder(request, org_id):
     if not request.htmx:
         return HttpResponseBadRequest("This view is only accessible via htmx")

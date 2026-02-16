@@ -170,6 +170,10 @@ class Funder(models.Model):
     london_hq = models.BooleanField(null=True, blank=True)
     london_aoo = models.BooleanField(null=True, blank=True)
 
+    ctry_rgn_aoo_manual = models.JSONField(
+        null=True, blank=True, verbose_name="Country/Region AOO (manual override)"
+    )
+
     scale_registered = models.CharField(
         max_length=50, null=True, blank=True, choices=FunderScale.choices
     )
@@ -445,6 +449,43 @@ class Funder(models.Model):
                         )
                     )
                     funder_year.save()
+
+    @property
+    def country_aoo_display(self):
+        areas = [
+            ("E92000001", "England"),
+            ("N92000002", "Northern Ireland"),
+            ("S92000003", "Scotland"),
+            ("W92000004", "Wales"),
+        ]
+        for code, name in areas:
+            if self.ctry_rgn_aoo_manual and code in self.ctry_rgn_aoo_manual:
+                yield code, name, self.ctry_rgn_aoo_manual[code]
+            elif self.ctry_aoo and code in self.ctry_aoo:
+                yield code, name, True
+            else:
+                yield code, name, False
+
+    @property
+    def region_aoo_display(self):
+        areas = [
+            ("E12000001", "North East"),
+            ("E12000002", "North West"),
+            ("E12000003", "Yorkshire and The Humber"),
+            ("E12000004", "East Midlands"),
+            ("E12000005", "West Midlands"),
+            ("E12000006", "East of England"),
+            ("E12000007", "London"),
+            ("E12000008", "South East"),
+            ("E12000009", "South West"),
+        ]
+        for code, name in areas:
+            if self.ctry_rgn_aoo_manual and code in self.ctry_rgn_aoo_manual:
+                yield code, name, self.ctry_rgn_aoo_manual[code]
+            elif self.rgn_aoo and code in self.rgn_aoo:
+                yield code, name, True
+            else:
+                yield code, name, False
 
     def get_absolute_url(self):
         return reverse("grantmakers:detail", kwargs={"org_id": self.pk})

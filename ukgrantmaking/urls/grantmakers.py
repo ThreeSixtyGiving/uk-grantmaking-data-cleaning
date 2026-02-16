@@ -2,9 +2,11 @@ from django.urls import path
 
 from ukgrantmaking.views.grantmakers import (
     detail,
+    htmx_ctry_rgn_edit,
     htmx_edit_funder,
     htmx_edit_funderyear,
     htmx_edit_note,
+    htmx_scale_edit,
     htmx_tags_edit,
     index,
     task_detail,
@@ -60,6 +62,16 @@ urlpatterns = [
         "funder/<path:org_id>/tags",
         htmx_tags_edit,
         name="edit_tags",
+    ),
+    path(
+        "funder/<path:org_id>/ctry_rgn",
+        htmx_ctry_rgn_edit,
+        name="edit_ctry_rgn",
+    ),
+    path(
+        "funder/<path:org_id>/scale",
+        htmx_scale_edit,
+        name="edit_scale",
     ),
     path(
         "funder/<path:org_id>/note",

@@ -16,54 +16,56 @@
     <tbody>
         <tr>
             <th class="tr" style="width: 200px;">Tags</th>
-            <td>
+            <td colspan="5">
                 {% include 'grantmakers/partials/tags.html.j2' %}
             </td>
         </tr>
         <tr>
-            <th class="tr">Website</th>
-            <td>
+            <th class="tr">Country / Region<br>of operation</th>
+            <td colspan="5">
+                {% include 'grantmakers/partials/country_region_aoo.html.j2' %}
+            </td>
+        </tr>
+        <tr>
+            <th class="tr">Scale</th>
+            <td colspan="5">
+                {% include 'grantmakers/partials/scale.html.j2' %}
+            </td>
+        </tr>
+        <tr>
+            <th class="tr">Links</th>
+            <td colspan="2">
+                <a href="{{ url_for('admin:ukgrantmaking_funder_change', args=object.org_id) }}"
+                    target="_blank">Admin</a>
+            </td>
+            <td colspan="2">
                 {% if object.website %}
                 <a href="{{ object.website|working_url }}" target="_blank">{{ object.website|clean_url }}</a>
                 {% endif %}
             </td>
-        </tr>
-        <tr>
-            <th class="tr">Find that Charity</th>
-            <td>
+            <td colspan="1">
                 {% set ftc_url = 'https://findthatcharity.uk/orgid/{}'.format(object.org_id) %}
                 <a href="{{ ftc_url|working_url }}" target="_blank">{{ ftc_url|clean_url }}</a>
             </td>
         </tr>
         <tr>
-            <th class="tr">Admin link</th>
-            <td>
-                <a href="{{ url_for('admin:ukgrantmaking_funder_change', args=object.org_id) }}"
-                    target="_blank">Admin</a>
-            </td>
-        </tr>
-        <tr>
+            <th class="tr">Active</th>
+            <td>{{ display_boolean(object.active) }}</td>
             <th class="tr">Date of registration</th>
             <td>{{ display_date(object.date_of_registration) }}</td>
-        </tr>
-        <tr>
             <th class="tr">Date of removal</th>
             <td>{{ display_date(object.date_of_removal) }}</td>
         </tr>
         <tr>
-            <th class="tr">Active</th>
-            <td>{{ display_boolean(object.active) }}</td>
-        </tr>
-        <tr>
             <th class="tr">Activities</th>
-            <td>
+            <td colspan="5">
                 <p>{{ display_text(object.activities) }}</p>
             </td>
         </tr>
         {% if object.predecessors.exists() %}
         <tr>
             <th class="tr">Predecessors</th>
-            <td>
+            <td colspan="5">
                 <ul>
                     {% for predecessor in object.predecessors.all() %}
                     <li>
@@ -81,7 +83,7 @@
         {% if object.successor %}
         <tr>
             <th class="tr">Succeeded by</th>
-            <td>
+            <td colspan="5">
                 <a href="{{ url_for('grantmakers:detail', org_id=object.successor.org_id) }}"
                     title="{{ object.successor.name }}">
                     {{ object.successor.name }}

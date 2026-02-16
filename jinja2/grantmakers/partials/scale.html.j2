@@ -1,0 +1,12 @@
+<div id="funder-scale">
+    <select hx-target="#funder-scale" hx-swap="outerHTML" name="scale" id="scale" autocomplete="off"
+        hx-post="{{ url_for('grantmakers:edit_scale', org_id=object.org_id) }}" hx-vals='{"action": "update_scale"}'>
+        <option>No scale</option>
+        {% for option in scales %}
+        <option value="{{ option }}" {% if option == object.scale %}selected="selected" {% endif %}>
+            {{ option }}
+        </option>
+        {% endfor %}
+    </select>
+</div>
+{% if request.htmx %}{% include 'grantmakers/partials/audittrail.html.j2'%}{% endif %}

@@ -482,6 +482,8 @@ ul.tags {
         padding: 0.25rem 0.5rem;
 
         &:has(label) {
+            display: block;
+            padding: 0;
 
             &:has(input:checked) {
                 background-color: var(--color-positive);
@@ -489,6 +491,8 @@ ul.tags {
             }
 
             >label {
+                display: block;
+                padding: 0.25rem 0.5rem;
                 cursor: pointer;
 
                 input[type="checkbox"] {
@@ -914,7 +918,7 @@ data.number {
         border-radius: 0.5rem;
         overflow-x: auto;
 
-        > code {
+        >code {
             background-color: transparent;
             color: inherit;
         }

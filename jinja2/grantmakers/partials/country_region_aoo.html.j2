@@ -1,0 +1,27 @@
+<div id="country-region-aoo">
+    <ul class="tags" style="margin-bottom: 0.5rem;">
+        {% for code, name, selected in object.country_aoo_display %}
+        <li>
+            <label>
+                <input autocomplete="off" type="checkbox" name="ctry_rgn" value="{{ code }}"
+                    hx-vals='{{ {"code": code}|tojson }}'
+                    hx-post="{{ url_for('grantmakers:edit_ctry_rgn', org_id=object.org_id) }}"
+                    hx-target="#country-region-aoo" {% if selected %}checked="checked" {% endif %} />{{ name }}
+            </label>
+        </li>
+        {% endfor %}
+    </ul>
+    <ul class="tags">
+        {% for code, name, selected in object.region_aoo_display %}
+        <li>
+            <label>
+                <input autocomplete="off" type="checkbox" name="ctry_rgn" value="{{ code }}"
+                    hx-vals='{{ {"code": code}|tojson }}'
+                    hx-post="{{ url_for('grantmakers:edit_ctry_rgn', org_id=object.org_id) }}"
+                    hx-target="#country-region-aoo" {% if selected %}checked="checked" {% endif %} />{{ name }}
+            </label>
+        </li>
+        {% endfor %}
+    </ul>
+</div>
+{% if request.htmx %}{% include 'grantmakers/partials/audittrail.html.j2'%}{% endif %}
