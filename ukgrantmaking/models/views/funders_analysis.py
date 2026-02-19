@@ -74,6 +74,10 @@ class FundersAnalysisView(DBView):
         null=True, db_column="year1_Employees", verbose_name="Year 1 Employees"
     )
 
+    year1_inclusion = models.BooleanField(
+        null=False, db_column="year1_inclusion", verbose_name="Year1 Inclusion"
+    )
+
     # --- Financial Year 2 ---
     year2_fy = models.CharField(
         max_length=10,
@@ -137,6 +141,9 @@ class FundersAnalysisView(DBView):
     )
     year2_employees = models.IntegerField(
         null=True, db_column="year2_Employees", verbose_name="Year 2 Employees"
+    )
+    year2_inclusion = models.BooleanField(
+        null=False, db_column="year2_inclusion", verbose_name="Year2 Inclusion"
     )
 
     # --- Financial Year 3 ---
@@ -203,6 +210,9 @@ class FundersAnalysisView(DBView):
     year3_employees = models.IntegerField(
         null=True, db_column="year3_Employees", verbose_name="Year 3 Employees"
     )
+    year3_inclusion = models.BooleanField(
+        null=False, db_column="year3_inclusion", verbose_name="Year3 Inclusion"
+    )
 
     # --- Financial Year 4 ---
     year4_fy = models.CharField(
@@ -268,6 +278,9 @@ class FundersAnalysisView(DBView):
     year4_employees = models.IntegerField(
         null=True, db_column="year4_Employees", verbose_name="Year 4 Employees"
     )
+    year4_inclusion = models.BooleanField(
+        null=False, db_column="year4_inclusion", verbose_name="Year4 Inclusion"
+    )
 
     # --- Financial Year 5 ---
     year5_fy = models.CharField(
@@ -332,6 +345,9 @@ class FundersAnalysisView(DBView):
     )
     year5_employees = models.IntegerField(
         null=True, db_column="year5_Employees", verbose_name="Year 5 Employees"
+    )
+    year5_inclusion = models.BooleanField(
+        null=False, db_column="year5_inclusion", verbose_name="Year5 Inclusion"
     )
 
     # --- Funder Location/Regulator Details ---
@@ -490,18 +506,25 @@ class FundersAnalysisView(DBView):
             -- Define grantmaking bands
             CASE 
                 WHEN spending_grant_making IS NULL OR spending_grant_making = 0 
-                THEN 'Zero/Unknown Spend'
-                WHEN spending_grant_making > 0 AND spending_grant_making < 100000 
-                THEN 'Under £100k'
-                WHEN spending_grant_making >= 100000 AND spending_grant_making <= 1000000 
-                THEN '£100k-£1m'
-                WHEN spending_grant_making > 1000000 AND spending_grant_making <= 10000000 
-                THEN '£1m-£10m'
-                WHEN spending_grant_making > 10000000 AND spending_grant_making <= 100000000 
-                THEN '£10m-£100m'
-                WHEN spending_grant_making > 100000000 
-                THEN 'Over £100m'
-            END AS grantmaking_band
+                    THEN 'Zero/Unknown Spend'
+                WHEN spending_grant_making < 100000 
+                    THEN 'Under £100k'
+                WHEN spending_grant_making < 1000000 
+                    THEN '£100k-£1m'
+                WHEN spending_grant_making < 10000000 
+                    THEN '£1m-£10m'
+                WHEN spending_grant_making < 100000000 
+                    THEN '£10m-£100m'
+                ELSE 'Over £100m'
+            END AS grantmaking_band,
+            -- Define inclusion status
+            CASE
+                WHEN (income IS NULL OR income < 5000) 
+                AND (spending_grant_making IS NULL OR spending_grant_making < 5000) 
+                THEN 0
+                ELSE 1
+            END AS included_in_year
+
         FROM ukgrantmaking_funders_view
         ),
         -- Add country / region details based on AOO and manual overrides
@@ -654,6 +677,7 @@ class FundersAnalysisView(DBView):
             MAX(spending_m) FILTER (WHERE fy = fya[1]) AS "year1_Spending_GBP_m",
             MAX(net_assets_m) FILTER (WHERE fy = fya[1]) AS "year1_Net_Assets_GBP_m",
             MAX(employees) FILTER (WHERE fy = fya[1]) AS "year1_Employees",
+            MAX(included_in_year) FILTER (WHERE fy = fya[1]) AS "year1_inclusion",
             
             -- year 2 
             MAX(fy) FILTER (WHERE fy = fya[2]) AS "year2_fy",
@@ -667,6 +691,7 @@ class FundersAnalysisView(DBView):
             MAX(spending_m) FILTER (WHERE fy = fya[2]) AS "year2_Spending_GBP_m",
             MAX(net_assets_m) FILTER (WHERE fy = fya[2]) AS "year2_Net_Assets_GBP_m",
             MAX(employees) FILTER (WHERE fy = fya[2]) AS "year2_Employees",
+            MAX(included_in_year) FILTER (WHERE fy = fya[2]) AS "year2_inclusion",
             
             -- year 3
             MAX(fy) FILTER (WHERE fy = fya[3]) AS "year3_fy",
@@ -680,6 +705,7 @@ class FundersAnalysisView(DBView):
             MAX(spending_m) FILTER (WHERE fy = fya[3]) AS "year3_Spending_GBP_m",
             MAX(net_assets_m) FILTER (WHERE fy = fya[3]) AS "year3_Net_Assets_GBP_m",
             MAX(employees) FILTER (WHERE fy = fya[3]) AS "year3_Employees",
+            MAX(included_in_year) FILTER (WHERE fy = fya[3]) AS "year3_inclusion",
             
             -- year 4
             MAX(fy) FILTER (WHERE fy = fya[4]) AS "year4_fy",
@@ -693,6 +719,7 @@ class FundersAnalysisView(DBView):
             MAX(spending_m) FILTER (WHERE fy = fya[4]) AS "year4_Spending_GBP_m",
             MAX(net_assets_m) FILTER (WHERE fy = fya[4]) AS "year4_Net_Assets_GBP_m",
             MAX(employees) FILTER (WHERE fy = fya[4]) AS "year4_Employees",
+            MAX(included_in_year) FILTER (WHERE fy = fya[4]) AS "year4_inclusion",
             
             -- year 5
             MAX(fy) FILTER (WHERE fy = fya[5]) AS "year5_fy",
@@ -706,6 +733,7 @@ class FundersAnalysisView(DBView):
             MAX(spending_m) FILTER (WHERE fy = fya[5]) AS "year5_Spending_GBP_m",
             MAX(net_assets_m) FILTER (WHERE fy = fya[5]) AS "year5_Net_Assets_GBP_m",
             MAX(employees) FILTER (WHERE fy = fya[5]) AS "year5_Employees",
+            MAX(included_in_year) FILTER (WHERE fy = fya[5]) AS "year5_inclusion",
             
             -- Funder location/regulator details 
             MAX(fd.charity_number) AS charity_number,
@@ -752,17 +780,14 @@ class FundersAnalysisView(DBView):
             COUNT(*) FILTER (WHERE fy IN (fya[1], fya[2], fya[3]) AND total_net_assets IS NOT NULL) = 3 AS "has_3yrs_Net_Assets",
             COUNT(*) FILTER (WHERE fy IN (fya[1], fya[2], fya[3]) AND employees IS NOT NULL) = 3 AS "has_3yrs_Employees",
 
+            
             (CASE
-            WHEN MAX(income) FILTER (WHERE fy = fya[1]) IS NULL 
-            AND MAX(spending_grant_making) FILTER (WHERE fy = fya[1]) IS NULL 
-            THEN 0
-
-            WHEN MAX(income) FILTER (WHERE fy = fya[1]) < 5000 
-            AND MAX(spending_grant_making) FILTER (WHERE fy = fya[1]) < 5000 
-            THEN 0
-
-            ELSE 1
-            END) > 0 AS "include_in_analysis",
+            WHEN MAX(included_in_year) FILTER (WHERE fy = fya[1]) = 1
+            OR MAX(included_in_year) FILTER (WHERE fy = fya[2]) = 1 
+            OR MAX(included_in_year) FILTER (WHERE fy = fya[3]) = 1
+            THEN true
+            ELSE false
+            END) AS "include_in_analysis",
             ufv.makes_grants_to_individuals
         FROM
             ufv
