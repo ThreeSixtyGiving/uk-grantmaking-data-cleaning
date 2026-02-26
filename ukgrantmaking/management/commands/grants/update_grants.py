@@ -1,6 +1,6 @@
 import logging
 from collections import defaultdict
-from datetime import timedelta
+from datetime import date, timedelta
 
 import djclick as click
 from django.db import transaction
@@ -147,8 +147,8 @@ def grants(financial_year, funder_ids):
                             results["Funder years updated"] += 1
                             bulk_update.append(funder_year)
 
-                # otherwise check for grants data and add it if it exists
-                else:
+                # otherwise check for grants data and add it if it exists and the funder isn't a charity
+                elif funder.org_id_schema not in ("GB-CHC", "GB-SC", "GB-NIC"):
                     grants_amount_by_recipient = (
                         Grant.objects.filter(
                             funder_id=funder.org_id,
@@ -168,10 +168,46 @@ def grants(financial_year, funder_ids):
                                 funder=funder, financial_year=year
                             )[0]
                         )
+
+                        fystart = year.grants_start_date
+                        fyend = year.grants_end_date
+
+                        # We should first check the latest funder financial data and use the same year end rather than the default
+                        previous_funder_year = funder.funder_years().first()
+                        if previous_funder_year and (
+                            year.contains_date_grant(
+                                previous_funder_year.financial_year_end
+                            )
+                            or year.contains_date_funder(
+                                previous_funder_year.financial_year_end
+                            )
+                        ):
+                            fyend = (
+                                date(
+                                    previous_funder_year.financial_year_end.year + 1,
+                                    previous_funder_year.financial_year_end.month,
+                                    previous_funder_year.financial_year_end.day - 1,
+                                )
+                                if (
+                                    previous_funder_year.financial_year_end.month == 2
+                                    and previous_funder_year.financial_year_end.day
+                                    == 29
+                                )
+                                else date(
+                                    previous_funder_year.financial_year_end.year + 1,
+                                    previous_funder_year.financial_year_end.month,
+                                    previous_funder_year.financial_year_end.day,
+                                )
+                            )
+                            fystart = (
+                                previous_funder_year.financial_year_end
+                                + timedelta(days=1)
+                            )
+
                         funder_year = FunderYear(
                             funder_financial_year=funder_financial_year,
-                            financial_year_start=year.grants_start_date,
-                            financial_year_end=year.grants_end_date,
+                            financial_year_start=fystart,
+                            financial_year_end=fyend,
                         )
                         logger.info(
                             f"Creating {funder_financial_year.funder} {funder_year.financial_year_end}",
@@ -204,6 +240,11 @@ def grants(financial_year, funder_ids):
                             )
                             results["Funder years created"] += 1
                             funder_year.save()
+                else:
+                    logger.info(
+                        f"Skipping {funder.name} [{funder.org_id}] as it's a charity and doesn't have funder years",
+                    )
+                    results["Funders skipped (charities)"] += 1
 
         updated = FunderYear.objects.bulk_update(
             bulk_update,

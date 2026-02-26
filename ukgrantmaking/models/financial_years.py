@@ -83,6 +83,12 @@ class FinancialYear(models.Model):
     def __str__(self):
         return f"FY {self.fy}"
 
+    def contains_date_grant(self, date):
+        return self.grants_start_date <= date <= self.grants_end_date
+
+    def contains_date_funder(self, date):
+        return self.funders_start_date <= date <= self.funders_end_date
+
     def save(self, *args, **kwargs):
         if not self.funders_start_date:
             self.funders_start_date = f"{self.first_year}-05-01"
