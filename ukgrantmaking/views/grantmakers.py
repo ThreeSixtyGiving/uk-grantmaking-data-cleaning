@@ -195,6 +195,8 @@ def upload_csv(request):
             csv_file = form.cleaned_data["file"]
             tag_defaults = {}
             tag_cache = {}
+            tag_to_delete = None
+
             if form.cleaned_data.get("parent_tag"):
                 parent_tag_name = form.cleaned_data.get("parent_tag").strip()
                 parent_tag, parent_tag_created = FunderTag.objects.get_or_create(
@@ -205,30 +207,58 @@ def upload_csv(request):
                 else:
                     messages.info(request, f"Using existing parent tag '{parent_tag}'.")
                 tag_defaults["parent"] = parent_tag
-                tag_cache[parent_tag_name] = {"tag": parent_tag, "orgs": []}
+                tag_cache[parent_tag_name] = {
+                    "tag": parent_tag,
+                    "orgs": [],
+                    "orgs_to_delete": [],
+                }
+
+            if form.cleaned_data.get("delete_tag"):
+                tag_to_delete_name = form.cleaned_data.get("delete_tag").strip()
+                try:
+                    tag_to_delete = FunderTag.objects.get(tag=tag_to_delete_name)
+                    tag_cache[tag_to_delete_name] = {
+                        "tag": tag_to_delete,
+                        "orgs": [],
+                        "orgs_to_delete": [],
+                    }
+                except FunderTag.DoesNotExist:
+                    messages.warning(
+                        request,
+                        f"Tag to delete '{tag_to_delete_name}' not found. No tags will be deleted.",
+                    )
+
             reader = csv.DictReader(TextIOWrapper(csv_file, encoding="utf-8-sig"))
             for row in reader:
                 if "org_id" not in row:
                     messages.error(request, "'org_id' column not found")
                     break
-                if "tag" not in row:
+                if "tag" not in row and not tag_to_delete:
                     messages.error(request, "'tag' column not found")
                     break
                 funder_id = row["org_id"].strip()
                 if not funder_id:
                     messages.warning(request, "funder_id not found")
 
-                tag_name = row["tag"].strip()
+                tag_name = row.get("tag", "").strip()
 
-                if tag_name not in tag_cache:
-                    tag, tag_created = FunderTag.objects.update_or_create(
-                        tag=row["tag"].strip(), defaults=tag_defaults
-                    )
-                    tag_cache[tag_name] = {"tag": tag, "orgs": []}
-                    if tag_created:
-                        messages.info(request, f"Created tag '{tag}'.")
+                if tag_name:
+                    if tag_name not in tag_cache:
+                        tag, tag_created = FunderTag.objects.update_or_create(
+                            tag=row["tag"].strip(), defaults=tag_defaults
+                        )
+                        tag_cache[tag_name] = {
+                            "tag": tag,
+                            "orgs": [],
+                            "orgs_to_delete": [],
+                        }
+                        if tag_created:
+                            messages.info(request, f"Created tag '{tag}'.")
 
-                tag_cache[tag_name]["orgs"].append(funder_id)
+                    tag_cache[tag_name]["orgs"].append(funder_id)
+
+                if tag_to_delete:
+                    tag_cache[tag_to_delete_name]["orgs_to_delete"].append(funder_id)
 
             current_fy = FinancialYear.objects.filter(
                 current=True, status=FinancialYearStatus.OPEN
@@ -236,32 +266,63 @@ def upload_csv(request):
 
             for tag_name, tag in tag_cache.items():
                 # get funders that exist
-                funders = Funder.objects.filter(org_id__in=tag["orgs"]).values_list(
-                    "org_id", flat=True
-                )
+                if tag["orgs"]:
+                    funders_to_add = Funder.objects.filter(
+                        org_id__in=tag["orgs"]
+                    ).values_list("org_id", flat=True)
 
-                for org_id in tag["orgs"]:
-                    if org_id not in funders:
-                        messages.warning(
-                            request,
-                            f"Funder with org_id {org_id} not found. Tag '{tag_name}' not applied.",
-                        )
-                        continue
-
-                tag["tag"].funders.add(*funders)
-                messages.success(
-                    request, f"{tag_name}: {len(funders):,.0f} funders updated."
-                )
-                if current_fy:
-                    tag["tag"].funder_financial_years.add(
-                        *FunderFinancialYear.objects.filter(
-                            funder_id__in=tag["orgs"], financial_year=current_fy
-                        ).values_list("id", flat=True)
-                    )
+                    for org_id in tag["orgs"]:
+                        if org_id not in funders_to_add:
+                            messages.warning(
+                                request,
+                                f"Funder with org_id {org_id} not found. Tag '{tag_name}' not applied.",
+                            )
+                            continue
+                    tag["tag"].funders.add(*funders_to_add)
                     messages.success(
                         request,
-                        f"{tag_name}: {len(funders):,.0f} funder years updated for ({current_fy}).",
+                        f"{tag_name}: {len(funders_to_add):,.0f} funders updated.",
                     )
+                    if current_fy:
+                        tag["tag"].funder_financial_years.add(
+                            *FunderFinancialYear.objects.filter(
+                                funder_id__in=funders_to_add, financial_year=current_fy
+                            ).values_list("id", flat=True)
+                        )
+                        messages.success(
+                            request,
+                            f"{tag_name}: {len(funders_to_add):,.0f} funder years updated for ({current_fy}).",
+                        )
+
+                if tag["orgs_to_delete"]:
+                    funders_to_remove = Funder.objects.filter(
+                        org_id__in=tag["orgs_to_delete"]
+                    ).values_list("org_id", flat=True)
+
+                    for org_id in tag["orgs_to_delete"]:
+                        if org_id not in funders_to_remove:
+                            messages.warning(
+                                request,
+                                f"Funder with org_id {org_id} not found. Tag '{tag_name}' not removed.",
+                            )
+                            continue
+
+                    tag["tag"].funders.remove(*funders_to_remove)
+                    messages.success(
+                        request,
+                        f"{tag_name}: {len(funders_to_remove):,.0f} funders removed.",
+                    )
+                    if current_fy:
+                        tag["tag"].funder_financial_years.remove(
+                            *FunderFinancialYear.objects.filter(
+                                funder_id__in=funders_to_remove,
+                                financial_year=current_fy,
+                            ).values_list("id", flat=True)
+                        )
+                        messages.success(
+                            request,
+                            f"{tag_name}: {len(funders_to_remove):,.0f} funder years updated for ({current_fy}).",
+                        )
 
             return HttpResponseRedirect(reverse("grantmakers:upload_csv"))
     return render(request, "grantmakers/upload.html.j2", {"form": form})
