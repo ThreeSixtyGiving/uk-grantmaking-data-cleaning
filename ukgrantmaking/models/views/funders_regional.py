@@ -8,6 +8,9 @@ class FundersRegionalView(DBView):
     segment = models.CharField(max_length=50, verbose_name="Segment")
     category = models.CharField(max_length=50, verbose_name="Category")
     scale = models.CharField(max_length=255, null=True, verbose_name="Funder Scale")
+    include_in_analysis = models.BooleanField(
+        null=True, verbose_name="Include in Analysis"
+    )
     grantmaking = models.DecimalField(
         max_digits=18,
         decimal_places=3,
@@ -59,6 +62,7 @@ class FundersRegionalView(DBView):
                 segment,
                 category,
                 "scale",
+                "include_in_analysis",
                 f."year1_Grantmaking_GBP_m" AS "grantmaking",
                 "scale" ILIKE '%%overseas%%' AS "overseas",
                 ctry_aoo::jsonb ? 'E92000001' AS "england",
@@ -82,6 +86,7 @@ class FundersRegionalView(DBView):
             segment,
             category,
             "scale",
+            "include_in_analysis",
             grantmaking,
             CASE WHEN "scale" IN ('National and Overseas', 'Overseas') THEN "scale"
                 WHEN "scale" = 'National' THEN 
