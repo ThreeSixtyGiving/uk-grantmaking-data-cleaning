@@ -243,6 +243,7 @@ class FundersView(DBView):
                 LEFT OUTER JOIN balance_sheet
                     ON balance_sheet.funder_financial_year_id = ffy.id
             WHERE f.included
+                AND f.successor_id IS NULL
             ORDER BY fy.fy DESC, spending_grant_making DESC NULLS LAST
         """
     }
