@@ -253,6 +253,8 @@ class FunderAdmin(CSVUploadModelAdmin):
         "set_as_excluded",
         "set_as_makes_grants_to_individuals",
         "set_as_not_makes_grants_to_individuals",
+        # "add_tag_to_selected_funders",
+        # "remove_tag_from_selected_funders",
     ]
 
     @admin.display(description="Latest grantmaking")
@@ -494,6 +496,26 @@ class FunderAdmin(CSVUploadModelAdmin):
         self.message_user(
             request,
             f"{queryset.count()} funders have been set as not making grants to individuals.",
+            messages.SUCCESS,
+        )
+
+    @admin.action(description="Add a tag to selected funders")
+    def add_tag_to_selected_funders(self, request, queryset):
+        """Add a tag to the selected funders."""
+        # @TODO Implementation for adding a tag goes here
+        self.message_user(
+            request,
+            f"Tags added to {queryset.count()} funders.",
+            messages.SUCCESS,
+        )
+
+    @admin.action(description="Remove a tag from selected funders")
+    def remove_tag_from_selected_funders(self, request, queryset):
+        """Remove a tag from the selected funders."""
+        # @TODO Implementation for removing a tag goes here
+        self.message_user(
+            request,
+            f"Tags removed from {queryset.count()} funders.",
             messages.SUCCESS,
         )
 
