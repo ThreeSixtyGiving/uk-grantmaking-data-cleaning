@@ -64,6 +64,30 @@ def do_ftc_funders(db_con: str, org_ids: tuple[str, ...], debug: bool = False):
                         ON l.geo_iso = iso."geoCode"
                 GROUP BY 1
             ),
+            sc_l AS (
+                SELECT c.id as org_id,
+                    CASE WHEN geographical_spread = 'UK and overseas' THEN '{"E92000001", "N92000002", "S92000003", "W92000004"}'::varchar[]
+                        WHEN geographical_spread = 'Overseas only' THEN '{}'::varchar[]
+                        WHEN geographical_spread = 'A specific local point, community or neighbourhood' THEN '{"S92000003"}'::varchar[]
+                        WHEN geographical_spread = 'More than one local authority area in Scotland' THEN '{"S92000003"}'::varchar[]
+                        WHEN geographical_spread = 'Wider, but within one local authority area' THEN '{"S92000003"}'::varchar[]
+                        WHEN geographical_spread = 'Scotland and other parts of the UK' THEN '{"E92000001", "N92000002", "S92000003", "W92000004"}'::varchar[]
+                        WHEN geographical_spread = 'Operations cover all or most of Scotland' THEN '{"S92000003"}'::varchar[]
+                        WHEN geographical_spread = 'One or a few bases or facilities serving people who come from a broad area' THEN '{"S92000003"}'::varchar[]
+                        ELSE NULL
+                    END AS ctry_aoo,
+                    CASE WHEN geographical_spread = 'UK and overseas' THEN '{"E92000001": "England", "N92000002": "Northern Ireland", "S92000003": "Scotland", "W92000004": "Wales"}'::json
+                        WHEN geographical_spread = 'Overseas only' THEN '{}'::json
+                        WHEN geographical_spread = 'A specific local point, community or neighbourhood' THEN '{"S92000003": "Scotland"}'::json
+                        WHEN geographical_spread = 'More than one local authority area in Scotland' THEN '{"S92000003": "Scotland"}'::json
+                        WHEN geographical_spread = 'Wider, but within one local authority area' THEN '{"S92000003": "Scotland"}'::json
+                        WHEN geographical_spread = 'Scotland and other parts of the UK' THEN '{"E92000001": "England", "N92000002": "Northern Ireland", "S92000003": "Scotland", "W92000004": "Wales"}'::json
+                        WHEN geographical_spread = 'Operations cover all or most of Scotland' THEN '{"S92000003": "Scotland"}'::json
+                        WHEN geographical_spread = 'One or a few bases or facilities serving people who come from a broad area' THEN '{"S92000003": "Scotland"}'::json
+                    ELSE NULL END AS ctry_aoo_name
+                FROM charity_charity c
+                WHERE c."source" = 'oscr'
+            ),
             s AS (
                 SELECT c.org_id,
                     ve.title AS scale
@@ -93,8 +117,8 @@ def do_ftc_funders(db_con: str, org_ids: tuple[str, ...], debug: bool = False):
                 rgn_aoo_name,
                 ctry_hq[1] as ctry_hq,
                 ctry_hq_name->>ctry_hq[1] as ctry_hq_name,
-                ctry_aoo,
-                ctry_aoo_name,
+                coalesce(l.ctry_aoo, sc_l.ctry_aoo) as ctry_aoo,
+                coalesce(l.ctry_aoo_name, sc_l.ctry_aoo_name) as ctry_aoo_name,
                 overseas_aoo,
                 overseas_aoo_name,
                 london_hq,
@@ -107,6 +131,8 @@ def do_ftc_funders(db_con: str, org_ids: tuple[str, ...], debug: bool = False):
                     ON o.org_id = l.org_id
                 LEFT OUTER JOIN s
                     ON o.org_id = s.org_id
+                LEFT OUTER JOIN sc_l
+                    ON o.org_id = sc_l.org_id
             WHERE o.org_id IN %(org_id)s
             """,
         params={"org_id": org_ids},
