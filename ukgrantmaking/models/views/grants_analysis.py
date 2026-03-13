@@ -56,6 +56,12 @@ class GrantsAnalysisView(DBView):
     recipient_type = models.CharField(
         max_length=50, verbose_name="Recipient Type", null=True
     )
+    recipient_type_grouped = models.CharField(
+        max_length=50,
+        verbose_name="Recipient Type Grouped",
+        db_column="recipient_type_grouped",
+        null=True,
+    )
     regulator_name = models.CharField(
         max_length=255, verbose_name="Regulator Name", db_column="regulator_name"
     )
@@ -176,6 +182,11 @@ class GrantsAnalysisView(DBView):
     funder_category = models.CharField(
         max_length=50, db_column="category", verbose_name="Funder Category"
     )
+    funder_type_grouped = models.CharField(
+        max_length=50,
+        db_column="funder_type_grouped",
+        verbose_name="Funder type grouped",
+    )
     funder_name = models.CharField(
         max_length=255, db_column="funder_name", verbose_name="Funder Name"
     )
@@ -246,6 +257,15 @@ class GrantsAnalysisView(DBView):
             g.recipient_organisation_id, 
             g.recipient_organisation_name, 
             g.recipient_type, -- g.recipient_type (original grant field)
+            CASE 
+                WHEN g.recipient_type IN ('Charity', 'Overseas Charity') THEN 'Charity' 
+                WHEN g.recipient_type IN ('Local Authority', 'NHS') THEN 'Government' 
+                WHEN g.recipient_type = 'Individual' THEN 'Individual' 
+                WHEN g.recipient_type IN ('Community Interest Company', 'Mutual', 'Non-profit Company', 'Sports Club', 'Religious Organisation') THEN 'Other non-profit' 
+                WHEN g.recipient_type = 'Private Company' THEN 'Private Company' WHEN recipient_type IN ('Education', 'University') THEN 'University/Education' 
+                WHEN g.recipient_type IN ('Organisation', 'Unknown') THEN 'Unknown' 
+                ELSE 'Unknown' 
+	        END AS recipient_type_grouped,
 
             -- recipient regulator details (from recipient table 'r')
             r.name AS regulator_name, 
@@ -288,7 +308,11 @@ class GrantsAnalysisView(DBView):
             g.funder_id, 
             g.funding_organisation_type, 
             f.segment AS funder_segment, 
-            f.category AS funder_category, 
+            f.category AS funder_category,
+            CASE 
+                WHEN f.category = 'Trusts and Foundations' THEN f.segment 
+                ELSE f.category 
+            END AS funder_type_grouped, 
             f.name AS funder_name,
             f.la_hq_name AS funder_la_hq_name,
             f.rgn_hq_name AS funder_rgn_hq_name,
