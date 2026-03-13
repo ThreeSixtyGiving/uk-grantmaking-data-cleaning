@@ -14,6 +14,7 @@
     --color-red-dark: #b90034;
     --color-red: #f70354;
     --color-red-light: #ffaab7;
+    --color-red-lightest: #FFF0F2;
     --grid-width: 258px;
     --grid-height: 144px;
 }
@@ -698,6 +699,11 @@ form.filters {
         max-width: 100%;
         background-color: var(--color-white);
         border: 1px solid var(--color-green);
+
+
+        &[aria-invalid="true"] {
+            border: 3px solid var(--color-red-dark);
+        }
     }
 
     >div {
@@ -959,6 +965,19 @@ data.number {
         tr:nth-child(even)>td {
             background-color: var(--color-green-lightest);
         }
+    }
+}
+
+form div:has(>.errorlist) {
+    background-color: var(--color-red-lightest);
+    border: 5px solid var(--color-red-dark);
+    padding: 0.5rem;
+
+    .errorlist {
+        list-style-type: none;
+        padding-left: 0;
+        margin: 0;
+        color: var(--color-red-dark);
     }
 }
 
