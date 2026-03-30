@@ -242,7 +242,13 @@ class Grant(models.Model):
     amount_awarded_GBP = models.DecimalField(
         max_digits=16, decimal_places=2, null=True, db_index=True
     )
-    award_date = models.DateField()
+    award_date_registered = models.DateField()
+    award_date_manual = models.DateField(null=True, blank=True)
+    award_date = models.GeneratedField(
+        expression=Coalesce("award_date_manual", "award_date_registered"),
+        output_field=models.DateField(),
+        db_persist=True,
+    )
     planned_dates_duration = models.FloatField(null=True, blank=True)
     planned_dates_startDate = models.DateField(null=True, blank=True)
     planned_dates_endDate = models.DateField(null=True, blank=True)
@@ -315,6 +321,7 @@ class Grant(models.Model):
     grant_programme_title = models.CharField(max_length=255, null=True, blank=True)
     publisher_prefix = models.CharField(max_length=255, null=True, blank=True)
     publisher_name = models.CharField(max_length=255, null=True, blank=True)
+    file_name = models.CharField(max_length=255, null=True, blank=True)
     license = models.CharField(max_length=255, null=True, blank=True)
 
     recipient_location_rgn = models.CharField(max_length=255, null=True, blank=True)
@@ -433,7 +440,17 @@ class GrantRecipient(models.Model):
         db_persist=True,
     )
 
-    type = models.CharField(max_length=50, choices=Grant.RecipientType.choices)
+    type_registered = models.CharField(
+        max_length=50, choices=Grant.RecipientType.choices
+    )
+    type_manual = models.CharField(
+        max_length=50, null=True, blank=True, choices=Grant.RecipientType.choices
+    )
+    type = models.GeneratedField(
+        expression=Coalesce("type_manual", "type_registered"),
+        output_field=models.CharField(max_length=50, null=True, blank=True),
+        db_persist=True,
+    )
     date_of_registration = models.DateField(null=True, blank=True)
     date_of_removal = models.DateField(null=True, blank=True)
     active = models.BooleanField(null=True, blank=True)

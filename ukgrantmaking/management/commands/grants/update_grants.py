@@ -3,7 +3,7 @@ from collections import defaultdict
 from datetime import date, timedelta
 
 import djclick as click
-from django.db import transaction
+from django.db import models, transaction
 from django.db.models import F, Sum
 
 from ukgrantmaking.models.financial_years import FinancialYear, FinancialYearStatus
@@ -21,6 +21,14 @@ logger.setLevel(logging.INFO)
 @click.argument("funder_ids", type=str, required=False, nargs=-1)
 def grants(financial_year, funder_ids):
     with transaction.atomic():
+        logger.info("Update financial year end based on award date")
+        for fy in FinancialYear.objects.all():
+            updated = Grant.objects.filter(
+                award_date__gte=fy.grants_start_date,
+                award_date__lte=fy.grants_end_date,
+            ).update(financial_year=fy)
+            logger.info(f"{updated} grants updated to financial year {fy.fy}")
+
         logger.info("Updating amount awarded not in GBP")
         currencies = {
             (currency.currency, currency.date): currency.rate
@@ -37,13 +45,47 @@ def grants(financial_year, funder_ids):
         for key, value in currency_results.items():
             logger.info(f"   - {key}: {value:,.0f} grants updated")
 
+        logger.info("Update funders based on departments for government grants")
+        funding_department_filter = models.Q(
+            funder_id__isnull=True,
+            publisher_prefix="360G-cabinetoffice",
+            funding_organisation_department__isnull=False,
+        ) & ~models.Q(funding_organisation_name=F("funding_organisation_department"))
+        funding_departments = list(
+            Grant.objects.filter(funding_department_filter)
+            .distinct("funding_organisation_department")
+            .values_list("funding_organisation_department", flat=True)
+        )
+        funding_department_lookup = {
+            funder.name: funder.org_id
+            for funder in Funder.objects.filter(name__in=funding_departments)
+        }
+        for department in funding_departments:
+            if department not in funding_department_lookup:
+                logger.warning(
+                    f"Department {department} not found in funder records, unable to update grants with this department"
+                )
+                continue
+            result = Grant.objects.filter(
+                funder_id__isnull=True,
+                publisher_prefix="360G-cabinetoffice",
+                funding_organisation_department=department,
+            ).update(funder_id=funding_department_lookup[department])
+            logger.info(
+                f"{result} grants updated with funder ID for department {department}"
+            )
+
         logger.info("Match funders to funder records")
         if not funder_ids:
             funder_ids = Funder.objects.values_list("org_id", flat=True)
-        result = Grant.objects.filter(
-            funder_id__isnull=True,
-            funding_organisation_id__in=funder_ids,
-        ).update(funder_id=F("funding_organisation_id"))
+        result = (
+            Grant.objects.filter(
+                funder_id__isnull=True,
+                funding_organisation_id__in=funder_ids,
+            )
+            .exclude(funding_department_filter)
+            .update(funder_id=F("funding_organisation_id"))
+        )
         logger.info(f"{result} grants updated with funder ID")
 
         missing_funder_ids = Grant.objects.filter(funder_id__isnull=True).count()
@@ -54,14 +96,6 @@ def grants(financial_year, funder_ids):
             .distinct()
         ):
             logger.warning(f"   {funder[0]} - {funder[1]}")
-
-        # update financial years on all grants
-        for fy in FinancialYear.objects.all():
-            Grant.objects.filter(
-                financial_year__isnull=True,
-                award_date__gte=fy.grants_start_date,
-                award_date__lte=fy.grants_end_date,
-            ).update(financial_year=fy)
 
         # update funder years
         logger.info("Updating funder years")

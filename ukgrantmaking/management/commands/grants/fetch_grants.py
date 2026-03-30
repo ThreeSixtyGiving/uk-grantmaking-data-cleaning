@@ -17,7 +17,12 @@ logger.setLevel(logging.INFO)
 
 @click.command()
 @click.argument("db_con", envvar="TSG_DATASTORE_URL")
-def grants(db_con):
+@click.option(
+    "--extra-file",
+    multiple=True,
+    help="Additional source files to include in the grants dataset outside of the award dates",
+)
+def grants(db_con: str, extra_file: list[str]):
     current_fy = FinancialYear.objects.current()
     datastore_query = """
         WITH g AS materialized (SELECT * FROM view_latest_grant),
@@ -34,53 +39,50 @@ def grants(db_con):
                 array_agg(DISTINCT "location"->>'ctrycd') FILTER (WHERE "location"->>'source' like 'beneficiary%%' AND "location"->>'ctrycd' IS NOT NULL) AS beneficiary_location_ctry
             FROM location_source
             GROUP BY grant_id
-        ),
-        a AS (
-            SELECT g.data->>'id' AS "grant_id",
-                g.data->>'title' AS "title",
-                g.data->>'description' AS "description",
-                g.data->>'currency' AS "currency",
-                g.data->>'amountAwarded' AS "amount_awarded",
-                to_date(
-                    CASE WHEN g.source_data->>'identifier' = 'a00P400000RKHBiIAP' THEN '2023-04-01'
-                    ELSE g.data->>'awardDate' END,
-                    'YYYY-MM-DD'
-                ) AS "award_date",
-                g.data->'plannedDates'->0->>'duration' AS "planned_dates_duration",
-                to_date(g.data->'plannedDates'->0->>'startDate', 'YYYY-MM-DD') AS "planned_dates_startDate",
-                to_date(g.data->'plannedDates'->0->>'endDate', 'YYYY-MM-DD') AS "planned_dates_endDate",
-                g.data->'recipientOrganization'->0->>'id' AS "recipient_organization_id",
-                g.data->'recipientOrganization'->0->>'name' AS "recipient_organization_name",
-                g.data->'recipientIndividual'->>'id' AS "recipient_individual_id",
-                g.data->'recipientIndividual'->>'name' AS "recipient_individual_name",
-                g.data->'toIndividualsDetails'->>'primaryGrantReason' AS "recipient_individual_primary_grant_reason",
-                g.data->'toIndividualsDetails'->>'secondaryGrantReason' AS "recipient_individual_secondary_grant_reason",
-                g.data->'toIndividualsDetails'->>'grantPurpose' AS "recipient_individual_grant_purpose",
-                CASE WHEN g.data->>'recipientOrganization' IS NOT NULL THEN 'Organisation' ELSE 'Individual' END AS "recipient_type",
-                g.data->'fundingOrganization'->0->>'id' AS "funding_organization_id",
-                g.data->'fundingOrganization'->0->>'name' AS "funding_organization_name",
-                g.additional_data->>'TSGFundingOrgType' AS "funding_organization_type",
-                COALESCE(
-                    g.data->'Managed by'->>'Organisation Name',
-                    g.data->'fundingOrganization'->0->>'department'
-                ) AS "funding_organization_department",
-                g.data->>'regrantType' AS "regrant_type",
-                g.data->>'locationScope' AS "location_scope",
-                g.data->'grantProgramme'->0->>'title' AS "grant_programme_title",
-                g.source_data->'publisher'->>'prefix' AS "publisher_prefix",
-                g.source_data->'publisher'->>'name' AS "publisher_name",
-                g.source_data->>'license' AS "license",
-                recipient_location_rgn[1] AS "recipient_location_rgn",
-                recipient_location_ctry[1] AS "recipient_location_ctry",
-                beneficiary_location_rgn[1] AS "beneficiary_location_rgn",
-                beneficiary_location_ctry[1] AS "beneficiary_location_ctry"
-            FROM g
-                LEFT OUTER JOIN location
-                    ON g.grant_id = location.grant_id
         )
-        SELECT * FROM a
-        WHERE a.award_date >= %(start_date)s
-            AND a.award_date <= %(end_date)s
+        SELECT g.data->>'id' AS "grant_id",
+            g.data->>'title' AS "title",
+            g.data->>'description' AS "description",
+            g.data->>'currency' AS "currency",
+            g.data->>'amountAwarded' AS "amount_awarded",
+            to_date(g.data->>'awardDate', 'YYYY-MM-DD') AS "award_date_registered",
+            g.data->'plannedDates'->0->>'duration' AS "planned_dates_duration",
+            to_date(g.data->'plannedDates'->0->>'startDate', 'YYYY-MM-DD') AS "planned_dates_startDate",
+            to_date(g.data->'plannedDates'->0->>'endDate', 'YYYY-MM-DD') AS "planned_dates_endDate",
+            g.data->'recipientOrganization'->0->>'id' AS "recipient_organization_id",
+            g.data->'recipientOrganization'->0->>'name' AS "recipient_organization_name",
+            g.data->'recipientIndividual'->>'id' AS "recipient_individual_id",
+            g.data->'recipientIndividual'->>'name' AS "recipient_individual_name",
+            g.data->'toIndividualsDetails'->>'primaryGrantReason' AS "recipient_individual_primary_grant_reason",
+            g.data->'toIndividualsDetails'->>'secondaryGrantReason' AS "recipient_individual_secondary_grant_reason",
+            g.data->'toIndividualsDetails'->>'grantPurpose' AS "recipient_individual_grant_purpose",
+            CASE WHEN g.data->>'recipientOrganization' IS NOT NULL THEN 'Organisation' ELSE 'Individual' END AS "recipient_type",
+            g.data->'fundingOrganization'->0->>'id' AS "funding_organization_id",
+            g.data->'fundingOrganization'->0->>'name' AS "funding_organization_name",
+            g.additional_data->>'TSGFundingOrgType' AS "funding_organization_type",
+            COALESCE(
+                g.data->'Managed by'->>'Organisation Name',
+                g.data->'fundingOrganization'->0->>'department'
+            ) AS "funding_organization_department",
+            g.data->>'regrantType' AS "regrant_type",
+            g.data->>'locationScope' AS "location_scope",
+            g.data->'grantProgramme'->0->>'title' AS "grant_programme_title",
+            g.source_data->'publisher'->>'prefix' AS "publisher_prefix",
+            g.source_data->'publisher'->>'name' AS "publisher_name",
+            g.source_data->>'license' AS "license",
+            g.source_data->>'identifier' AS "file_name",
+            recipient_location_rgn[1] AS "recipient_location_rgn",
+            recipient_location_ctry[1] AS "recipient_location_ctry",
+            beneficiary_location_rgn[1] AS "beneficiary_location_rgn",
+            beneficiary_location_ctry[1] AS "beneficiary_location_ctry"
+        FROM g
+            LEFT OUTER JOIN location
+                ON g.grant_id = location.grant_id
+        WHERE (
+                to_date(g.data->>'awardDate', 'YYYY-MM-DD') >= %(start_date)s
+                AND to_date(g.data->>'awardDate', 'YYYY-MM-DD') <= %(end_date)s
+            )
+            OR g.source_data->>'identifier' in %(extra_files)s
     """
 
     # get updated names and date of registration from FTC
@@ -90,6 +92,7 @@ def grants(db_con):
         params={
             "start_date": current_fy.grants_start_date,
             "end_date": current_fy.grants_end_date,
+            "extra_files": tuple(extra_file) if extra_file else tuple(),
         },
         con=db_con,
         index_col="grant_id",
@@ -149,7 +152,7 @@ def grants(db_con):
         "Description": "description",
         "Currency": "currency",
         "Amount Awarded": "amount_awarded",
-        "Award Date": "award_date",
+        "Award Date": "award_date_registered",
         "Recipient Org:Identifier": "recipient_organization_id",
         "Recipient Org:Name": "recipient_organization_name",
         # 'Recipient Org:Ward': "",
@@ -198,21 +201,23 @@ def grants(db_con):
     # set any grants where the index match is the same to exclude
     nl.loc[index_match.isin(df.index), "exclude"] = True
 
-    # Next merge the two datasets together based on `amount_awarded`, `award_date`,
+    # Next merge the two datasets together based on `amount_awarded`, `award_date_registered`,
     # `recipient_organization_name` and `funding_organization_id`.
 
     # Any grants where these fields match are marked as excluded.
     match_fields = [
         "title",
         "amount_awarded",
-        "award_date",
+        "award_date_registered",
         "recipient_organization_name",
         "funding_organization_id",
     ]
     merged = (
         nl.assign(
             amount_awarded=nl.amount_awarded.astype(float),
-            award_date=pd.to_datetime(nl.award_date, utc=True, format="ISO8601"),
+            award_date_registered=pd.to_datetime(
+                nl.award_date_registered, utc=True, format="ISO8601"
+            ),
             grant_id=nl.index,
             title=nl.title.str.strip().str.lower(),
             recipient_organization_name=nl.recipient_organization_name.str.strip().str.lower(),
@@ -220,7 +225,9 @@ def grants(db_con):
         .merge(
             df.assign(
                 amount_awarded=df.amount_awarded.astype(float),
-                award_date=pd.to_datetime(df.award_date, utc=True, format="ISO8601"),
+                award_date_registered=pd.to_datetime(
+                    df.award_date_registered, utc=True, format="ISO8601"
+                ),
                 grant_id=df.index,
                 title=df.title.str.strip().str.lower(),
                 recipient_organization_name=df.recipient_organization_name.str.strip().str.lower(),
@@ -266,7 +273,11 @@ def grants(db_con):
     df["amount_awarded"] = df["amount_awarded"].astype(float)
 
     # Make sure award date is a date
-    for field in ["award_date", "planned_dates_startDate", "planned_dates_endDate"]:
+    for field in [
+        "award_date_registered",
+        "planned_dates_startDate",
+        "planned_dates_endDate",
+    ]:
         df[field] = pd.to_datetime(df[field], utc=True, format="ISO8601").dt.date
 
     # set amount awarded GBP to same as amount awarded where currency is GBP
@@ -274,21 +285,15 @@ def grants(db_con):
         df["currency"] == "GBP", "amount_awarded"
     ]
 
-    # Add in financial year
-    # get all financial years
-    for financial_year in FinancialYear.objects.all():
-        df.loc[
-            (df["award_date"] >= financial_year.grants_start_date)
-            & (df["award_date"] <= financial_year.grants_end_date),
-            "financial_year",
-        ] = financial_year.fy
+    # Add in financial year - set to the current financial year
+    df.loc[:, "financial_year"] = current_fy.fy
 
     with transaction.atomic():
         logger.info("Saving currencies to database")
         currency_result = defaultdict(int)
         for currency, awarddate in (
             df[~df["currency"].eq("GBP")]
-            .groupby(["currency", "award_date"])
+            .groupby(["currency", "award_date_registered"])
             .size()
             .index
         ):
@@ -320,7 +325,7 @@ def grants(db_con):
                         currency=grant.currency,
                         amount_awarded=grant.amount_awarded,
                         amount_awarded_GBP=grant.amount_awarded_gbp,
-                        award_date=grant.award_date,
+                        award_date_registered=grant.award_date_registered,
                         planned_dates_duration=grant.planned_dates_duration,
                         planned_dates_startDate=(
                             None
@@ -350,6 +355,7 @@ def grants(db_con):
                         publisher_prefix=grant.publisher_prefix,
                         publisher_name=grant.publisher_name,
                         license=grant.license,
+                        file_name=grant.file_name,
                         financial_year_id=grant.financial_year,
                     )
 
@@ -365,7 +371,7 @@ def grants(db_con):
                     "currency",
                     "amount_awarded",
                     "amount_awarded_GBP",
-                    "award_date",
+                    "award_date_registered",
                     "planned_dates_duration",
                     "planned_dates_startDate",
                     "planned_dates_endDate",
@@ -387,6 +393,7 @@ def grants(db_con):
                     "publisher_prefix",
                     "publisher_name",
                     "license",
+                    "file_name",
                     "financial_year_id",
                 ],
             )
@@ -427,3 +434,28 @@ def grants(db_con):
             .update(inclusion=Grant.InclusionStatus.INCLUDED)
         )
         logger.info(f"{updated:,.0f} grants updated to included")
+
+        if extra_file:
+            # For any file in the "extra_file" list, set the award date to the start date
+            # of the current financial year if it is earlier, or the end date of the current
+            # financial year if it is later. This is because we want to make sure that any grants
+            # from the extra files are included in the current financial year.
+            logger.info(
+                "Updating award dates for any grants from extra files that are outside the current financial year"
+            )
+            updated_lt = Grant.objects.filter(
+                file_name__in=extra_file,
+                award_date_registered__lt=current_fy.grants_start_date,
+                award_date_manual__isnull=True,
+            ).update(award_date_manual=current_fy.grants_start_date)
+            logger.info(
+                f"{updated_lt:,.0f} grants from extra files updated to current financial year start date"
+            )
+            updated_gt = Grant.objects.filter(
+                file_name__in=extra_file,
+                award_date_registered__gt=current_fy.grants_end_date,
+                award_date_manual__isnull=True,
+            ).update(award_date_manual=current_fy.grants_end_date)
+            logger.info(
+                f"{updated_gt:,.0f} grants from extra files updated to current financial year end date"
+            )

@@ -167,6 +167,7 @@ class GrantAdmin(CSVUploadModelAdmin):
         "currency",
         "amount_awarded",
         "amount_awarded_GBP",
+        "award_date_registered",
         "award_date",
         "planned_dates_duration",
         "planned_dates_startDate",
@@ -200,7 +201,7 @@ class GrantAdmin(CSVUploadModelAdmin):
                     "title",
                     "description",
                     ("amount_awarded", "currency", "amount_awarded_GBP"),
-                    "award_date",
+                    ("award_date_registered", "award_date_manual", "award_date"),
                     "inclusion",
                 ]
             },
@@ -339,17 +340,18 @@ class GrantRecipientAdmin(CSVUploadModelAdmin):
         "recipient_id",
         "name",
         "type",
+        "type_manual",
     )
     search_fields = ("name", "recipient_id")
     list_filter = ("type", "org_id_schema")
-    list_editable = ("type",)
+    list_editable = ("type_manual",)
     inlines = (GrantRecipientYearAdminInline,)
 
     def get_actions(self, request):
         actions = super().get_actions(request)
 
         action_fields = [
-            Action("Type", "type", Grant.RecipientType, False),
+            Action("Type", "type_manual", Grant.RecipientType, False),
         ]
 
         return {

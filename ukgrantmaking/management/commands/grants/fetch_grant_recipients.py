@@ -76,7 +76,7 @@ def grant_recipients(db_con):
                 to_create.append(
                     GrantRecipient(
                         recipient_id=recipient.Index,
-                        type=recipient.recipient_type,
+                        type_registered=recipient.recipient_type,
                         name_registered=recipient.recipient_organisation_name,
                     )
                 )
@@ -107,7 +107,7 @@ def grant_recipients(db_con):
                 for recipient in bar:
                     yield dict(
                         recipient_id=recipient.Index,
-                        type=recipient.recipient_type,
+                        type_registered=recipient.recipient_type,
                         name_registered=recipient.recipient_organisation_name,
                     )
 
@@ -116,7 +116,7 @@ def grant_recipients(db_con):
                 iterate_existing_recipient(),
                 unique_fields=["recipient_id"],
                 update_fields=[
-                    "type",
+                    "type_registered",
                     "name_registered",
                 ],
             )
