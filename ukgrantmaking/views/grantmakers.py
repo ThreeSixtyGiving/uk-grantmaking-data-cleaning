@@ -22,7 +22,7 @@ from django.utils import timezone
 from django.utils.text import slugify
 
 from ukgrantmaking.filters.grantmakers import GrantmakerFilter
-from ukgrantmaking.forms.funder import FunderForm
+from ukgrantmaking.forms.funder import FunderForm, FunderFormNoOrgID
 from ukgrantmaking.forms.funder_upload import FunderUploadForm
 from ukgrantmaking.models.cleaningstatus import CleaningStatus, CleaningStatusType
 from ukgrantmaking.models.financial_years import FinancialYear, FinancialYearStatus
@@ -117,42 +117,54 @@ def task_detail(request, task_id, filetype=None):
 
 
 @login_required
-def detail(request, org_id):
-    org_id = org_id.removesuffix("/")
-    try:
-        funder = Funder.objects.get(org_id=org_id)
-        return render(request, "grantmakers/detail.html.j2", {"object": funder})
-    except Funder.DoesNotExist:
-        if request.method == "POST":
-            form = FunderForm(request.POST)
-            if form.is_valid():
-                funder = form.save()
-                LogEntry.objects.log_actions(
-                    user_id=request.user.id,
-                    queryset=[funder],
-                    action_flag=CHANGE,
-                    change_message="Created funder",
-                )
-                funder.update_from_ftc()
-                funder.save()
-                funder.save()  # to ensure funder financial years are created
-                return HttpResponseRedirect(
-                    reverse("grantmakers:detail", args=[org_id])
-                )
+def detail(request, org_id=None):
+    org_id_from_get = request.GET.get("org_id")
+    if not org_id:
+        if org_id_from_get:
+            return HttpResponseRedirect(
+                reverse("grantmakers:detail", args=[org_id_from_get])
+            )
+        else:
+            form = FunderFormNoOrgID()
             return render(
                 request,
                 "grantmakers/notfound.html.j2",
                 {"org_id": org_id, "object": None, "form": form},
             )
-        try:
-            r = requests.get(
-                "{api_url}/organisations/{organisation_id}".format(
-                    api_url=settings.FTC_API_URL, organisation_id=org_id
-                )
+
+    org_id = org_id.removesuffix("/")
+    try:
+        funder = Funder.objects.get(org_id=org_id)
+        return render(request, "grantmakers/detail.html.j2", {"object": funder})
+    except Funder.DoesNotExist:
+        pass
+
+    if request.method == "POST":
+        form = FunderForm(request.POST)
+        if form.is_valid():
+            funder = form.save()
+            LogEntry.objects.log_actions(
+                user_id=request.user.id,
+                queryset=[funder],
+                action_flag=CHANGE,
+                change_message="Created funder",
             )
-            r.raise_for_status()
-        except requests.HTTPError:
-            raise Http404(f"Funder with org_id {org_id} not found")
+            funder.update_from_ftc()
+            funder.save()
+            funder.save()  # to ensure funder financial years are created
+            return HttpResponseRedirect(reverse("grantmakers:detail", args=[org_id]))
+        return render(
+            request,
+            "grantmakers/notfound.html.j2",
+            {"org_id": org_id, "object": None, "form": form},
+        )
+    try:
+        r = requests.get(
+            "{api_url}/organisations/{organisation_id}".format(
+                api_url=settings.FTC_API_URL, organisation_id=org_id
+            )
+        )
+        r.raise_for_status()
         data = r.json()
         if data.get("success"):
             form = FunderForm(
@@ -178,12 +190,17 @@ def detail(request, org_id):
                 "grantmakers/notfound.html.j2",
                 {"org_id": org_id, "object": data["result"], "form": form},
             )
-        form = FunderForm(initial={"org_id": org_id})
-        return render(
+    except requests.HTTPError:
+        messages.warning(
             request,
-            "grantmakers/notfound.html.j2",
-            {"org_id": org_id, "object": None, "form": form},
+            f"Organisation not found in Find that Charity API for org_id {org_id}",
         )
+    form = FunderForm(initial={"org_id": org_id})
+    return render(
+        request,
+        "grantmakers/notfound.html.j2",
+        {"org_id": org_id, "object": None, "form": form},
+    )
 
 
 @login_required

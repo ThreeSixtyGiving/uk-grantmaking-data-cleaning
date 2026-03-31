@@ -44,6 +44,11 @@ urlpatterns = [
         kwargs={"filetype": "csv"},
     ),
     path(
+        "funder/new",
+        detail,
+        name="new_funder",
+    ),
+    path(
         "funder/<path:org_id>/funderyear/<int:funderyear_id>",
         htmx_edit_funderyear,
         name="edit_funderyear",

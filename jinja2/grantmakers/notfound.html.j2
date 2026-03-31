@@ -1,10 +1,18 @@
 {% extends 'base.html.j2' %}
 {% from 'components/values.html.j2' import display_date, display_number, display_longtext, display_list, display_text, none_wrapper, display_boolean, display_url %}
 
+{% if org_id %}
 {% set title = org_id + ' Not Found | ' + default_title %}
+{% else %}
+{% set title = 'New grantmaker | ' + default_title %}
+{% endif %}
 {% block header %}
 <div id="funder-header" style="margin-bottom: 2rem;">
+    {% if org_id %}
     <h2 class="flex-row">Grantmaker: {{ org_id }} Not Found</h2>
+    {% else %}
+    <h2 class="flex-row">New grantmaker</h2>
+    {% endif %}
 </div>
 {% endblock header %}
 

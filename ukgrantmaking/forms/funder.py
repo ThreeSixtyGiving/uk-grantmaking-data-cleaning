@@ -29,3 +29,7 @@ class FunderForm(forms.ModelForm):
             "activities",
             "website",
         ]
+
+
+class FunderFormNoOrgID(FunderForm):
+    org_id = forms.CharField()

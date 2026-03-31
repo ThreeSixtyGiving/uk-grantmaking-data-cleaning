@@ -84,6 +84,10 @@ def sidebar(request):
                             title="Upload",
                             view="grantmakers:upload_csv",
                         ),
+                        SidebarItem(
+                            title="New grantmaker",
+                            view="grantmakers:new_funder",
+                        ),
                     ],
                 ),
                 SidebarItem(
