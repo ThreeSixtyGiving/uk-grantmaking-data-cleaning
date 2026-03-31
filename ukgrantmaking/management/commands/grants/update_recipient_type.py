@@ -3,9 +3,9 @@ import logging
 import djclick as click
 import pandas as pd
 from django.db import transaction
-from django.db.models import Count, Q
+from django.db.models import Count, OuterRef, Q, Subquery
 
-from ukgrantmaking.models.grant import Grant
+from ukgrantmaking.models.grant import GOVERNMENT_EXCLUSIONS, Grant, GrantRecipient
 from ukgrantmaking.utils import batched
 
 logger = logging.getLogger(__name__)
@@ -20,125 +20,102 @@ def recipient_type(db_con, company_batch_size):
         logging.info("Update recipient types")
 
         logging.info("Updating individuals")
-        updated = Grant.objects.filter(
-            recipient_type_registered=Grant.RecipientType.INDIVIDUAL,
-            recipient_type_manual__isnull=True,
+        updated = GrantRecipient.objects.filter(
+            type_registered=Grant.RecipientType.INDIVIDUAL,
+            type_manual__isnull=True,
         ).update(
-            recipient_type_manual=Grant.RecipientType.INDIVIDUAL,
+            type_manual=Grant.RecipientType.INDIVIDUAL,
         )
         logging.info(f"{updated} grants updated to individual")
 
         filters = [
             (
                 Grant.RecipientType.CHARITY,
-                Q(
-                    Q(recipient_organisation_id__startswith="GB-CHC-")
-                    | Q(recipient_organisation_id__startswith="GB-SC-")
-                    | Q(recipient_organisation_id__startswith="GB-NIC-")
+                (
+                    Q(recipient_id__startswith="GB-CHC-")
+                    | Q(recipient_id__startswith="GB-SC-")
+                    | Q(recipient_id__startswith="GB-NIC-")
                 ),
             ),
             (
                 Grant.RecipientType.LOCAL_AUTHORITY,
-                Q(
-                    Q(recipient_organisation_id__startswith="GB-LAE-")
-                    | Q(recipient_organisation_id__startswith="GB-LAS-")
-                    | Q(recipient_organisation_id__startswith="GB-PLA-")
-                    | Q(recipient_organisation_id__startswith="GB-LANI-")
-                    | Q(recipient_organisation_id__startswith="GB-UKLA-")
+                (
+                    Q(recipient_id__startswith="GB-LAE-")
+                    | Q(recipient_id__startswith="GB-LAS-")
+                    | Q(recipient_id__startswith="GB-PLA-")
+                    | Q(recipient_id__startswith="GB-LANI-")
+                    | Q(recipient_id__startswith="GB-UKLA-")
                 ),
             ),
             (
                 Grant.RecipientType.COMMUNITY_INTEREST_COMPANY,
-                Q(recipient_organisation_name__icontains="community interest company"),
+                Q(name__icontains="community interest company"),
             ),
             (
                 Grant.RecipientType.COMMUNITY_INTEREST_COMPANY,
-                Q(
-                    Q(recipient_organisation_name__iendswith=" cic")
-                    & Q(recipient_organisation_id__startswith="GB-CIC-")
-                ),
+                Q(name__iendswith=" cic") & Q(recipient_id__startswith="GB-CIC-"),
             ),
             (
                 Grant.RecipientType.LOCAL_AUTHORITY,
-                Q(
-                    Q(
-                        Q(
-                            Q(recipient_organisation_id__startswith="GB-UKPRN-")
-                            | Q(recipient_organisation_id__startswith="GB-EDU-")
-                        )
-                    )
-                    & Q(recipient_organisation_name__icontains="council")
-                ),
+                (
+                    Q(recipient_id__startswith="GB-UKPRN-")
+                    | Q(recipient_id__startswith="GB-EDU-")
+                )
+                & Q(name__icontains="council"),
             ),
             (
                 Grant.RecipientType.NHS,
-                Q(
-                    Q(
-                        Q(
-                            Q(recipient_organisation_id__startswith="GB-UKPRN-")
-                            | Q(recipient_organisation_id__startswith="GB-EDU-")
-                        )
-                    )
-                    & Q(recipient_organisation_name__icontains="nhs")
-                ),
+                (
+                    Q(recipient_id__startswith="GB-UKPRN-")
+                    | Q(recipient_id__startswith="GB-EDU-")
+                )
+                & Q(name__icontains="nhs"),
             ),
             (
                 Grant.RecipientType.UNIVERSITY,
-                Q(
-                    Q(recipient_organisation_name__icontains="university")
-                    & ~Q(recipient_organisation_name__icontains="third age")
-                ),
+                Q(name__icontains="university") & ~Q(name__icontains="third age"),
             ),
             (
                 Grant.RecipientType.NHS,
-                Q(recipient_organisation_id__startswith="GB-NHS-"),
+                Q(recipient_id__startswith="GB-NHS-"),
             ),
             (
                 Grant.RecipientType.EDUCATION,
-                Q(
-                    Q(
-                        Q(
-                            Q(recipient_organisation_id__startswith="GB-UKPRN-")
-                            | Q(recipient_organisation_id__startswith="GB-EDU-")
-                            | Q(recipient_organisation_id__startswith="GB-SCOTEDU-")
-                            | Q(recipient_organisation_id__startswith="GB-WALEDU-")
-                            | Q(recipient_organisation_id__startswith="GB-NIEDU-")
-                        )
-                    )
+                (
+                    Q(recipient_id__startswith="GB-UKPRN-")
+                    | Q(recipient_id__startswith="GB-EDU-")
+                    | Q(recipient_id__startswith="GB-SCOTEDU-")
+                    | Q(recipient_id__startswith="GB-WALEDU-")
+                    | Q(recipient_id__startswith="GB-NIEDU-")
                 ),
             ),
             (
                 Grant.RecipientType.SPORTS_CLUB,
-                Q(
-                    Q(recipient_organisation_id__startswith="GB-CASC-")
-                    | Q(funding_organisation_name="Sport England")
-                ),
+                Q(recipient_id__startswith="GB-CASC-"),
             ),
             (
                 Grant.RecipientType.LOCAL_AUTHORITY,
-                Q(
-                    recipient_organisation_name__iregex="(town|parish|community|county|district) Council"
-                ),
+                Q(name__iregex="(town|parish|community|county|district) Council"),
             ),
         ]
         for recipient_type, filter in filters:
             logging.info(f"Finding {recipient_type}")
-            updated = Grant.objects.filter(
-                Q(recipient_type_registered=Grant.RecipientType.ORGANISATION)
-                & Q(recipient_type_manual__isnull=True)
+            updated = GrantRecipient.objects.filter(
+                Q(type_registered=Grant.RecipientType.ORGANISATION)
+                & Q(type_manual__isnull=True)
                 & filter
             ).update(
-                recipient_type_manual=recipient_type,
+                type_manual=recipient_type,
             )
             logging.info(f"{updated:,.0f} grants updated to {recipient_type}")
 
         logging.info("Sort out company numbers")
         all_company_numbers = (
-            Grant.objects.filter(
-                recipient_organisation_id__startswith="GB-COH-",
-                recipient_type_manual__isnull=True,
+            GrantRecipient.objects.filter(
+                recipient_id__startswith="GB-COH-",
+                type_manual__isnull=True,
             )
-            .values_list("recipient_organisation_id", flat=True)
+            .values_list("recipient_id", flat=True)
             .distinct()
         )
         logging.info(f"{len(all_company_numbers)} company numbers to check")
@@ -173,14 +150,14 @@ def recipient_type(db_con, company_batch_size):
                     logging.warning(f"Unknown org type {org_type}")
                     continue
 
-                updated = Grant.objects.filter(
-                    recipient_organisation_id__in=charitable_companies.loc[
+                updated = GrantRecipient.objects.filter(
+                    recipient_id__in=charitable_companies.loc[
                         charitable_companies["organisationTypePrimary_id"] == org_type,
                         "company_id",
                     ].unique(),
-                    recipient_type_manual__isnull=True,
+                    type_manual__isnull=True,
                 ).update(
-                    recipient_type_manual=recipient_type,
+                    type_manual=recipient_type,
                 )
                 logging.info(f"{updated} grants to charitable companies found")
 
@@ -238,80 +215,53 @@ def recipient_type(db_con, company_batch_size):
                     logging.warning(f"Unknown org type {org_type}")
                     continue
 
-                updated = Grant.objects.filter(
-                    recipient_organisation_id__in=all_companies.loc[
+                updated = GrantRecipient.objects.filter(
+                    recipient_id__in=all_companies.loc[
                         all_companies["CompanyCategory"] == org_type,
                         "company_id",
                     ].unique(),
-                    recipient_type_manual__isnull=True,
+                    type_manual__isnull=True,
                 ).update(
-                    recipient_type_manual=recipient_type,
+                    type_manual=recipient_type,
                 )
                 logging.info(
                     f"{updated:,.0f} grants to nonprofit companies found as {recipient_type}",
                 )
 
-        progress = Grant.objects.values("recipient_type_manual").annotate(
-            count=Count("grant_id")
+        progress = GrantRecipient.objects.values("type_manual").annotate(
+            count=Count("recipient_id")
         )
         for p in progress:
-            logging.info(f"{p['recipient_type_manual']}: {p['count']}")
+            logging.info(f"{p['type_manual']}: {p['count']}")
+
+        logging.info("Applying manual overrides from GrantRecipient to Grant")
+        updated = (
+            Grant.objects.select_related("recipient")
+            .select_for_update()
+            .filter(
+                Q(recipient_type_manual__isnull=False)
+                & Q(recipient__type_manual__in=Grant.RecipientType.values)
+            )
+            .update(
+                recipient_type_manual=Subquery(
+                    GrantRecipient.objects.filter(pk=OuterRef("pk")).values(
+                        "type_manual"
+                    )[:1]
+                ),
+            )
+        )
+        logging.info(f"{updated} grants updated with recipient type manual")
 
         logging.info("Update government exclusion list")
-        exclusions = [
-            (
-                Grant.InclusionStatus.LOCAL_AUTHORITY_GRANT,
-                Q(recipient_type_manual=Grant.RecipientType.LOCAL_AUTHORITY),
-            ),
-            (
-                Grant.InclusionStatus.GRANT_TO_EDUCATION,
-                Q(recipient_type_manual=Grant.RecipientType.EDUCATION),
-            ),
-            (
-                Grant.InclusionStatus.PRIVATE_SECTOR_GRANT,
-                Q(recipient_type_manual=Grant.RecipientType.PRIVATE_COMPANY),
-            ),
-            (
-                Grant.InclusionStatus.GOVERNMENT_TRANSFER,
-                Q(
-                    recipient_type_manual__in=[
-                        Grant.RecipientType.NHS,
-                        Grant.RecipientType.NDPB,
-                        Grant.RecipientType.GOVERNMENT_DEPARTMENT,
-                    ]
-                ),
-            ),
-            (
-                Grant.InclusionStatus.INCLUDED,
-                Q(
-                    recipient_type_manual__in=[
-                        Grant.RecipientType.CHARITY,
-                        Grant.RecipientType.COMMUNITY_INTEREST_COMPANY,
-                        Grant.RecipientType.MUTUAL,
-                        Grant.RecipientType.NON_PROFIT_COMPANY,
-                    ]
-                ),
-            ),
-            (
-                Grant.InclusionStatus.OVERSEAS_GOVERNMENT_TRANSFER,
-                Q(
-                    recipient_type_manual__in=[
-                        Grant.RecipientType.OVERSEAS_GOVERNMENT,
-                    ]
-                ),
-            ),
-        ]
-        for inclusion, filter in exclusions:
+        for inclusion, filter in GOVERNMENT_EXCLUSIONS:
             updated = Grant.objects.filter(
-                Q(inclusion=Grant.InclusionStatus.UNSURE)
-                & Q(
-                    funding_organisation_type__in=[
-                        Grant.FunderType.CENTRAL_GOVERNMENT,
-                        Grant.FunderType.LOCAL_GOVERNMENT,
-                        Grant.FunderType.DEVOLVED_GOVERNMENT,
-                    ]
-                )
-                & filter
+                inclusion=Grant.InclusionStatus.UNSURE,
+                funding_organisation_type__in=[
+                    Grant.FunderType.CENTRAL_GOVERNMENT,
+                    Grant.FunderType.LOCAL_GOVERNMENT,
+                    Grant.FunderType.DEVOLVED_GOVERNMENT,
+                ],
+                recipient_type_manual__in=filter,
             ).update(
                 inclusion=inclusion,
             )

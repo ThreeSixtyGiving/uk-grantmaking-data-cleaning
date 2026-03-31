@@ -1,11 +1,13 @@
 from django.contrib import admin
 from django.db import models
 from django.db.models import Count, Q
+from django.db.models.aggregates import Sum
 from django.db.models.functions import ExtractYear
 from django.utils.html import format_html
 
 from ukgrantmaking.admin.csv_upload import CSVUploadModelAdmin
 from ukgrantmaking.admin.utils import Action, add_admin_actions
+from ukgrantmaking.models.financial_years import FinancialYear
 from ukgrantmaking.models.grant import Grant, GrantRecipientYear
 
 
@@ -341,11 +343,97 @@ class GrantRecipientAdmin(CSVUploadModelAdmin):
         "name",
         "type",
         "type_manual",
+        "grant_count_unsure",
+        "total_grant_amount_unsure",
     )
     search_fields = ("name", "recipient_id")
     list_filter = ("type", "org_id_schema")
     list_editable = ("type_manual",)
     inlines = (GrantRecipientYearAdminInline,)
+    readonly_fields = (
+        "recipient_id",
+        "name_registered",
+        # "name_manual",
+        "name",
+        "type_registered",
+        # "type_manual",
+        "type",
+        "date_of_registration",
+        "date_of_removal",
+        "active",
+        "postcode",
+        "how",
+        "what",
+        "who",
+        "la_hq",
+        "la_hq_name",
+        "la_aoo",
+        "la_aoo_name",
+        "rgn_hq",
+        "rgn_hq_name",
+        "rgn_aoo",
+        "rgn_aoo_name",
+        "ctry_hq",
+        "ctry_hq_name",
+        "ctry_aoo",
+        "ctry_aoo_name",
+        "overseas_aoo",
+        "overseas_aoo_name",
+        "london_hq",
+        "london_aoo",
+        "scale_registered",
+        # "scale_manual",
+        "scale",
+        "org_id_schema",
+    )
+    fieldsets = (
+        (
+            None,
+            {
+                "fields": [
+                    "recipient_id",
+                    "org_id_schema",
+                    ("name_registered", "name_manual", "name"),
+                    ("type_registered", "type_manual", "type"),
+                    ("date_of_registration", "date_of_removal", "active"),
+                ]
+            },
+        ),
+        (
+            "Classification",
+            {
+                "fields": [
+                    "how",
+                    "what",
+                    "who",
+                ]
+            },
+        ),
+        (
+            "Location",
+            {
+                "fields": [
+                    "postcode",
+                    "la_hq",
+                    "la_hq_name",
+                    "la_aoo",
+                    "la_aoo_name",
+                    "rgn_hq",
+                    "rgn_hq_name",
+                    "rgn_aoo",
+                    "rgn_aoo_name",
+                    "ctry_hq",
+                    "ctry_hq_name",
+                    "ctry_aoo",
+                    "ctry_aoo_name",
+                    "overseas_aoo",
+                    "overseas_aoo_name",
+                    "london_hq",
+                    "london_aoo",
+                ]
+            },
+        ),
+    )
 
     def get_actions(self, request):
         actions = super().get_actions(request)
@@ -358,6 +446,89 @@ class GrantRecipientAdmin(CSVUploadModelAdmin):
             **actions,
             **add_admin_actions(action_fields),
         }
+
+    @admin.display(
+        description="Grant count",
+        ordering=models.F("num_grants").desc(nulls_last=True),
+    )
+    def grant_count(self, obj):
+        return obj.num_grants
+
+    @admin.display(
+        description="Grant count unsure",
+        ordering=models.F("num_grants_unsure").desc(nulls_last=True),
+    )
+    def grant_count_unsure(self, obj):
+        return obj.num_grants_unsure
+
+    @admin.display(
+        description="Total grant amount",
+        ordering=models.F("sum_grant_amount").desc(nulls_last=True),
+    )
+    def total_grant_amount(self, obj):
+        if obj.sum_grant_amount is not None:
+            return "{:,.0f}".format(obj.sum_grant_amount)
+        return None
+
+    @admin.display(
+        description="Total grant amount unsure",
+        ordering=models.F("sum_grant_amount_unsure").desc(nulls_last=True),
+    )
+    def total_grant_amount_unsure(self, obj):
+        if obj.sum_grant_amount_unsure is not None:
+            return "{:,.0f}".format(obj.sum_grant_amount_unsure)
+        return None
+
+    def get_queryset(self, request):
+        current_year = FinancialYear.objects.filter(current=True).first()
+        if not current_year:
+            return (
+                super()
+                .get_queryset(request)
+                .annotate(
+                    num_grants=models.Value(None, output_field=models.IntegerField()),
+                    sum_grant_amount=models.Value(
+                        None, output_field=models.DecimalField()
+                    ),
+                    num_grants_unsure=Count(
+                        "grants",
+                        filter=Q(grants__inclusion=Grant.InclusionStatus.UNSURE),
+                    ),
+                    sum_grant_amount_unsure=Sum(
+                        "grants__amount_awarded",
+                        filter=Q(
+                            grants__inclusion=Grant.InclusionStatus.UNSURE,
+                            grants__currency="GBP",
+                        ),
+                    ),
+                )
+            )
+        return (
+            super()
+            .get_queryset(request)
+            .annotate(
+                num_grants=Count(
+                    "grants", filter=Q(grants__financial_year_id=current_year.fy)
+                ),
+                sum_grant_amount=Sum(
+                    "grants__amount_awarded",
+                    filter=Q(
+                        grants__financial_year_id=current_year.fy,
+                        grants__currency="GBP",
+                    ),
+                ),
+                num_grants_unsure=Count(
+                    "grants", filter=Q(grants__inclusion=Grant.InclusionStatus.UNSURE)
+                ),
+                sum_grant_amount_unsure=Sum(
+                    "grants__amount_awarded",
+                    filter=Q(
+                        grants__inclusion=Grant.InclusionStatus.UNSURE,
+                        grants__currency="GBP",
+                    ),
+                ),
+            )
+        )
 
 
 class GrantRecipientYearAdmin(CSVUploadModelAdmin):

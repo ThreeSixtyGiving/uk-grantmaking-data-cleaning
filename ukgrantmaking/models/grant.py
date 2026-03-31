@@ -5,234 +5,284 @@ from django.db.models.functions import Coalesce, Left, Length, Right, StrIndex
 from ukgrantmaking.models.financial_years import FinancialYear
 
 
+class RecipientType(models.TextChoices):
+    ORGANISATION = "Organisation", "Organisation"
+    INDIVIDUAL = "Individual", "Individual"
+    CHARITY = "Charity", "Charity"
+    COMMUNITY_INTEREST_COMPANY = (
+        "Community Interest Company",
+        "Community Interest Company",
+    )
+    EDUCATION = "Education", "Education"
+    GOVERNMENT_DEPARTMENT = "Government Department", "Government Department"
+    LOCAL_AUTHORITY = "Local Authority", "Local Authority"
+    MUTUAL = "Mutual", "Mutual"
+    NDPB = "NDPB", "NDPB"
+    NHS = "NHS", "NHS"
+    NON_PROFIT_COMPANY = "Non-profit Company", "Non-profit Company"
+    OVERSEAS_CHARITY = "Overseas Charity", "Overseas Charity"
+    OVERSEAS_GOVERNMENT = "Overseas Government", "Overseas Government"
+    PRIVATE_COMPANY = "Private Company", "Private Company"
+    UNIVERSITY = "University", "University"
+    RELIGIOUS_ORGANISATION = "Religious Organisation", "Religious Organisation"
+    SPORTS_CLUB = "Sports Club", "Sports Club"
+
+
+class FunderType(models.TextChoices):
+    GRANTMAKING_ORGANISATION = (
+        "Grantmaking Organisation",
+        "Grantmaking Organisation",
+    )
+    NATIONAL_LOTTERY_DISTRIBUTOR = (
+        "National Lottery Distributor",
+        "National Lottery Distributor",
+    )
+    CENTRAL_GOVERNMENT = "Central Government", "Central Government"
+    LOCAL_GOVERNMENT = "Local Government", "Local Government"
+    DEVOLVED_GOVERNMENT = "Devolved Government", "Devolved Government"
+
+
+class InclusionStatus(models.TextChoices):
+    INCLUDED = "Included", "Included"
+    UNSURE = "Unsure", "Unsure"
+    DUPLICATE_GRANT = "Duplicate grant", "Duplicate grant"
+    GOVERNMENT_TRANSFER = "Government transfer", "Government transfer"
+    LOCAL_AUTHORITY_GRANT = "Local Authority Grant", "Local Authority Grant"
+    OVERSEAS_GOVERNMENT_TRANSFER = (
+        "Overseas government transfer",
+        "Overseas government transfer",
+    )
+    PRIVATE_SECTOR_GRANT = "Private sector grant", "Private sector grant"
+    GRANT_TO_EDUCATION = "Grant to education", "Grant to education"
+
+
+class LotteryGrantType(models.TextChoices):
+    EXCHEQUER = "Exchequer", "Exchequer"
+    NATIONAL_LOTTERY = "National Lottery", "National Lottery"
+    OTHER = "Other", "Other"
+
+
+class RegrantType(models.TextChoices):
+    FRG010 = (
+        "FRG010",
+        "Common Regrant",
+    )  # A grant awarded to a single grantmaking organisation for onward distribution as grants to end recipients.
+    FRG020 = (
+        "FRG020",
+        "Transfer to intermediary",
+    )  # A grant awarded to an intermediary, such as a network or federated charity, for distribution as payment to organisation(s) for redistribution as grants to end recipients.
+    FRG030 = (
+        "FRG030",
+        "Match funding",
+    )  # A grant awarded to grantmaking organisations for match funding and onwards distribution as grants to end recipients.
+    FRG040 = (
+        "FRG040",
+        "Funder collaboration",
+    )  # Grants awarded by multiple funders to a single grantmaking organisation to create a fund for redistribution as grants to end recipients.
+    FRG050 = (
+        "FRG050",
+        "Fiscal sponsor",
+    )  # Grant awarded to an organisation acting as an agent for the funder, to make grant payments on its behalf to the defined recipient(s).
+    FRG060 = (
+        "FRG060",
+        "Endowment",
+    )  # A single grant awarded or transfer of capital to either establish or substantially fund a grantmaking organisation or Fund.
+    FRG070 = (
+        "FRG070",
+        "Multipurpose",
+    )  # Grant to recipient for activities that include making onward grants, as well as funding other activities not related to the distribution of grants.
+    NOT_REGRANT = (
+        "NOT_REGRANT",
+        "Not regrant",
+    )  # A grant that is not a regrant
+
+
+class LocationScope(models.TextChoices):
+    GLS010 = "GLS010", "Global"  # The location scope is global.
+    GLS020 = (
+        "GLS020",
+        "Supranational",
+    )  # The location scope is a supranational region or continent.
+    GLS030 = (
+        "GLS030",
+        "National",
+    )  # The activity scope covers a country, as defined by ISO 3166.
+    GLS040 = (
+        "GLS040",
+        "Subnational region",
+    )  # The activity scope covers a first-level subnational administrative area.
+    GLS050 = (
+        "GLS050",
+        "Local authority",
+    )  # The activity scope covers a second-level subnational administrative area.
+    GLS060 = "GLS060", "Local area"  # Location scope covers a small area.
+    GLS099 = "GLS099", "Undefined"  # The location scope is undefined.
+
+
+class GrantToIndividualsPurpose(models.TextChoices):
+    GTIP010 = (
+        "GTIP010",
+        "Unrestricted",
+    )  # Unspecified, unrestricted or general support
+    GTIP020 = (
+        "GTIP020",
+        "Furniture and appliances",
+    )  # Furniture, garden and outdoor play equipment, white goods, home appliances
+    GTIP030 = (
+        "GTIP030",
+        "Equipment and home adaptations",
+    )  # Safety equipment, specialist equipment, baby equipment, toys, home adaptations, mobility aids
+    GTIP040 = (
+        "GTIP040",
+        "Devices and digital access",
+    )  # Computers, phones, mobile devices, technology / digital access
+    GTIP050 = (
+        "GTIP050",
+        "Utilities",
+    )  # Energy, water, telephone, TV/entertainment licences, broadband costs - including set-up and meter installation
+    GTIP060 = (
+        "GTIP060",
+        "Other housing related costs",
+    )  # Deposits, rent, mortgage contributions, council tax, arrears, decoration, removal costs, deep cleans
+    GTIP070 = (
+        "GTIP070",
+        "Food and essential items",
+    )  # Food, toiletries, nappies, cleaning products, all essential living costs
+    GTIP080 = (
+        "GTIP080",
+        "Clothing",
+    )  # School uniforms, children’s clothing, workwear, essential clothing
+    GTIP090 = (
+        "GTIP090",
+        "Debt",
+    )  # Credit card debits, non housing-related debts, bankruptcy
+    GTIP100 = (
+        "GTIP100",
+        "Travel and transport",
+    )  # Travel or transport costs including public transport, petrol and repairs
+    GTIP110 = (
+        "GTIP110",
+        "Holiday and activity costs",
+    )  # Family activities, school trips, holidays, sport activities, social activities, breaks for carers
+    GTIP120 = (
+        "GTIP120",
+        "Health, care and wellbeing services",
+    )  # Medical, childcare costs, therapy, dental work, physiotherapy, addiction recovery support, domiciliary/residential care costs, temporary accommodation for patients and carers
+    GTIP130 = (
+        "GTIP130",
+        "Education and training",
+    )  # Tuition, boarding school fees, university fees, books/resources and essential course costs, scholarships, fellowships, PhDs, support for exceptional talent, personal/professional development, sports coaching/development, capacity building
+    GTIP140 = (
+        "GTIP140",
+        "Employment and work",
+    )  # Employment support, business start-up costs, apprenticeships, social enterprise, work ready support
+    GTIP150 = (
+        "GTIP150",
+        "Creative activities",
+    )  # Freelance art and cultural projects and activities, musical instruments
+    GTIP160 = (
+        "GTIP160",
+        "Community projects",
+    )  # Social action, community projects, campaigns and activism
+    GTIP170 = (
+        "GTIP170",
+        "Exceptional costs",
+    )  # Funeral costs, crisis funding, legal fees, benefits applications and time pending benefits receipt
+
+
+class GrantToIndividualsReason(models.TextChoices):
+    GTIR010 = (
+        "GTIR010",
+        "Financial Hardship",
+    )  # Low income, debt, poverty
+    GTIR020 = (
+        "GTIR020",
+        "Disability",
+    )  # Physical, mental or learning disability, difficulty or difference
+    GTIR030 = (
+        "GTIR030",
+        "Health/Condition",
+    )  # Limiting health condition(s) or illness(es), substance misuse, of individual or family members
+    GTIR040 = (
+        "GTIR040",
+        "Mental Health",
+    )  # Mental health condition(s) or illness(es), wellbeing, of individual or family members
+    GTIR050 = (
+        "GTIR050",
+        "Family breakup",
+    )  # Breakdown of family cohesion/stability, estrangement, single parent
+    GTIR060 = (
+        "GTIR060",
+        "Violence or abuse",
+    )  # Domestic violence or abuse, fleeing other violence, neglect
+    GTIR070 = (
+        "GTIR070",
+        "Livelihood",
+    )  # Loss of job or source of income, underemployment, zero hours contracts, reduced hours or income, time out of work for caregiving, sustaining business/livelihood
+    GTIR080 = (
+        "GTIR080",
+        "Homelessness",
+    )  # Homeless or poorly or vulnerably housed
+    GTIR090 = (
+        "GTIR090",
+        "Marginalised",
+    )  # No recourse to public funds, care leavers, people in or leaving the criminal justice system, other marginalised or vulnerable people or people with barriers to access
+    GTIR100 = (
+        "GTIR100",
+        "Emergency/crisis event",
+    )  # Need driven by an incident such as death of a family member or disaster such as housing flood, fire etc, victim of crime
+    GTIR110 = (
+        "GTIR110",
+        "Development opportunity",
+    )  # Skills development, scholarships, artist development, exceptional talent, sporting talent
+    GTIR120 = (
+        "GTIR120",
+        "Social action",
+    )  # Supporting a community or cause not solely driven by the needs of the individual receiving the grant, campaigns, community development
+
+
+GOVERNMENT_EXCLUSIONS: list[tuple[InclusionStatus, list[RecipientType]]] = [
+    (
+        InclusionStatus.LOCAL_AUTHORITY_GRANT,
+        [RecipientType.LOCAL_AUTHORITY],
+    ),
+    (
+        InclusionStatus.GRANT_TO_EDUCATION,
+        [RecipientType.EDUCATION],
+    ),
+    (
+        InclusionStatus.PRIVATE_SECTOR_GRANT,
+        [RecipientType.PRIVATE_COMPANY],
+    ),
+    (
+        InclusionStatus.GOVERNMENT_TRANSFER,
+        [RecipientType.NHS, RecipientType.NDPB, RecipientType.GOVERNMENT_DEPARTMENT],
+    ),
+    (
+        InclusionStatus.INCLUDED,
+        [
+            RecipientType.CHARITY,
+            RecipientType.COMMUNITY_INTEREST_COMPANY,
+            RecipientType.MUTUAL,
+            RecipientType.NON_PROFIT_COMPANY,
+        ],
+    ),
+    (
+        InclusionStatus.OVERSEAS_GOVERNMENT_TRANSFER,
+        [RecipientType.OVERSEAS_GOVERNMENT],
+    ),
+]
+
+
 class Grant(models.Model):
-    class RecipientType(models.TextChoices):
-        ORGANISATION = "Organisation", "Organisation"
-        INDIVIDUAL = "Individual", "Individual"
-        CHARITY = "Charity", "Charity"
-        COMMUNITY_INTEREST_COMPANY = (
-            "Community Interest Company",
-            "Community Interest Company",
-        )
-        EDUCATION = "Education", "Education"
-        GOVERNMENT_DEPARTMENT = "Government Department", "Government Department"
-        LOCAL_AUTHORITY = "Local Authority", "Local Authority"
-        MUTUAL = "Mutual", "Mutual"
-        NDPB = "NDPB", "NDPB"
-        NHS = "NHS", "NHS"
-        NON_PROFIT_COMPANY = "Non-profit Company", "Non-profit Company"
-        OVERSEAS_CHARITY = "Overseas Charity", "Overseas Charity"
-        OVERSEAS_GOVERNMENT = "Overseas Government", "Overseas Government"
-        PRIVATE_COMPANY = "Private Company", "Private Company"
-        UNIVERSITY = "University", "University"
-        RELIGIOUS_ORGANISATION = "Religious Organisation", "Religious Organisation"
-        SPORTS_CLUB = "Sports Club", "Sports Club"
-
-    class FunderType(models.TextChoices):
-        GRANTMAKING_ORGANISATION = (
-            "Grantmaking Organisation",
-            "Grantmaking Organisation",
-        )
-        NATIONAL_LOTTERY_DISTRIBUTOR = (
-            "National Lottery Distributor",
-            "National Lottery Distributor",
-        )
-        CENTRAL_GOVERNMENT = "Central Government", "Central Government"
-        LOCAL_GOVERNMENT = "Local Government", "Local Government"
-        DEVOLVED_GOVERNMENT = "Devolved Government", "Devolved Government"
-
-    class InclusionStatus(models.TextChoices):
-        INCLUDED = "Included", "Included"
-        UNSURE = "Unsure", "Unsure"
-        DUPLICATE_GRANT = "Duplicate grant", "Duplicate grant"
-        GOVERNMENT_TRANSFER = "Government transfer", "Government transfer"
-        LOCAL_AUTHORITY_GRANT = "Local Authority Grant", "Local Authority Grant"
-        OVERSEAS_GOVERNMENT_TRANSFER = (
-            "Overseas government transfer",
-            "Overseas government transfer",
-        )
-        PRIVATE_SECTOR_GRANT = "Private sector grant", "Private sector grant"
-        GRANT_TO_EDUCATION = "Grant to education", "Grant to education"
-
-    class LotteryGrantType(models.TextChoices):
-        EXCHEQUER = "Exchequer", "Exchequer"
-        NATIONAL_LOTTERY = "National Lottery", "National Lottery"
-        OTHER = "Other", "Other"
-
-    class RegrantType(models.TextChoices):
-        FRG010 = (
-            "FRG010",
-            "Common Regrant",
-        )  # A grant awarded to a single grantmaking organisation for onward distribution as grants to end recipients.
-        FRG020 = (
-            "FRG020",
-            "Transfer to intermediary",
-        )  # A grant awarded to an intermediary, such as a network or federated charity, for distribution as payment to organisation(s) for redistribution as grants to end recipients.
-        FRG030 = (
-            "FRG030",
-            "Match funding",
-        )  # A grant awarded to grantmaking organisations for match funding and onwards distribution as grants to end recipients.
-        FRG040 = (
-            "FRG040",
-            "Funder collaboration",
-        )  # Grants awarded by multiple funders to a single grantmaking organisation to create a fund for redistribution as grants to end recipients.
-        FRG050 = (
-            "FRG050",
-            "Fiscal sponsor",
-        )  # Grant awarded to an organisation acting as an agent for the funder, to make grant payments on its behalf to the defined recipient(s).
-        FRG060 = (
-            "FRG060",
-            "Endowment",
-        )  # A single grant awarded or transfer of capital to either establish or substantially fund a grantmaking organisation or Fund.
-        FRG070 = (
-            "FRG070",
-            "Multipurpose",
-        )  # Grant to recipient for activities that include making onward grants, as well as funding other activities not related to the distribution of grants.
-        NOT_REGRANT = (
-            "NOT_REGRANT",
-            "Not regrant",
-        )  # A grant that is not a regrant
-
-    class LocationScope(models.TextChoices):
-        GLS010 = "GLS010", "Global"  # The location scope is global.
-        GLS020 = (
-            "GLS020",
-            "Supranational",
-        )  # The location scope is a supranational region or continent.
-        GLS030 = (
-            "GLS030",
-            "National",
-        )  # The activity scope covers a country, as defined by ISO 3166.
-        GLS040 = (
-            "GLS040",
-            "Subnational region",
-        )  # The activity scope covers a first-level subnational administrative area.
-        GLS050 = (
-            "GLS050",
-            "Local authority",
-        )  # The activity scope covers a second-level subnational administrative area.
-        GLS060 = "GLS060", "Local area"  # Location scope covers a small area.
-        GLS099 = "GLS099", "Undefined"  # The location scope is undefined.
-
-    class GrantToIndividualsPurpose(models.TextChoices):
-        GTIP010 = (
-            "GTIP010",
-            "Unrestricted",
-        )  # Unspecified, unrestricted or general support
-        GTIP020 = (
-            "GTIP020",
-            "Furniture and appliances",
-        )  # Furniture, garden and outdoor play equipment, white goods, home appliances
-        GTIP030 = (
-            "GTIP030",
-            "Equipment and home adaptations",
-        )  # Safety equipment, specialist equipment, baby equipment, toys, home adaptations, mobility aids
-        GTIP040 = (
-            "GTIP040",
-            "Devices and digital access",
-        )  # Computers, phones, mobile devices, technology / digital access
-        GTIP050 = (
-            "GTIP050",
-            "Utilities",
-        )  # Energy, water, telephone, TV/entertainment licences, broadband costs - including set-up and meter installation
-        GTIP060 = (
-            "GTIP060",
-            "Other housing related costs",
-        )  # Deposits, rent, mortgage contributions, council tax, arrears, decoration, removal costs, deep cleans
-        GTIP070 = (
-            "GTIP070",
-            "Food and essential items",
-        )  # Food, toiletries, nappies, cleaning products, all essential living costs
-        GTIP080 = (
-            "GTIP080",
-            "Clothing",
-        )  # School uniforms, children’s clothing, workwear, essential clothing
-        GTIP090 = (
-            "GTIP090",
-            "Debt",
-        )  # Credit card debits, non housing-related debts, bankruptcy
-        GTIP100 = (
-            "GTIP100",
-            "Travel and transport",
-        )  # Travel or transport costs including public transport, petrol and repairs
-        GTIP110 = (
-            "GTIP110",
-            "Holiday and activity costs",
-        )  # Family activities, school trips, holidays, sport activities, social activities, breaks for carers
-        GTIP120 = (
-            "GTIP120",
-            "Health, care and wellbeing services",
-        )  # Medical, childcare costs, therapy, dental work, physiotherapy, addiction recovery support, domiciliary/residential care costs, temporary accommodation for patients and carers
-        GTIP130 = (
-            "GTIP130",
-            "Education and training",
-        )  # Tuition, boarding school fees, university fees, books/resources and essential course costs, scholarships, fellowships, PhDs, support for exceptional talent, personal/professional development, sports coaching/development, capacity building
-        GTIP140 = (
-            "GTIP140",
-            "Employment and work",
-        )  # Employment support, business start-up costs, apprenticeships, social enterprise, work ready support
-        GTIP150 = (
-            "GTIP150",
-            "Creative activities",
-        )  # Freelance art and cultural projects and activities, musical instruments
-        GTIP160 = (
-            "GTIP160",
-            "Community projects",
-        )  # Social action, community projects, campaigns and activism
-        GTIP170 = (
-            "GTIP170",
-            "Exceptional costs",
-        )  # Funeral costs, crisis funding, legal fees, benefits applications and time pending benefits receipt
-
-    class GrantToIndividualsReason(models.TextChoices):
-        GTIR010 = (
-            "GTIR010",
-            "Financial Hardship",
-        )  # Low income, debt, poverty
-        GTIR020 = (
-            "GTIR020",
-            "Disability",
-        )  # Physical, mental or learning disability, difficulty or difference
-        GTIR030 = (
-            "GTIR030",
-            "Health/Condition",
-        )  # Limiting health condition(s) or illness(es), substance misuse, of individual or family members
-        GTIR040 = (
-            "GTIR040",
-            "Mental Health",
-        )  # Mental health condition(s) or illness(es), wellbeing, of individual or family members
-        GTIR050 = (
-            "GTIR050",
-            "Family breakup",
-        )  # Breakdown of family cohesion/stability, estrangement, single parent
-        GTIR060 = (
-            "GTIR060",
-            "Violence or abuse",
-        )  # Domestic violence or abuse, fleeing other violence, neglect
-        GTIR070 = (
-            "GTIR070",
-            "Livelihood",
-        )  # Loss of job or source of income, underemployment, zero hours contracts, reduced hours or income, time out of work for caregiving, sustaining business/livelihood
-        GTIR080 = (
-            "GTIR080",
-            "Homelessness",
-        )  # Homeless or poorly or vulnerably housed
-        GTIR090 = (
-            "GTIR090",
-            "Marginalised",
-        )  # No recourse to public funds, care leavers, people in or leaving the criminal justice system, other marginalised or vulnerable people or people with barriers to access
-        GTIR100 = (
-            "GTIR100",
-            "Emergency/crisis event",
-        )  # Need driven by an incident such as death of a family member or disaster such as housing flood, fire etc, victim of crime
-        GTIR110 = (
-            "GTIR110",
-            "Development opportunity",
-        )  # Skills development, scholarships, artist development, exceptional talent, sporting talent
-        GTIR120 = (
-            "GTIR120",
-            "Social action",
-        )  # Supporting a community or cause not solely driven by the needs of the individual receiving the grant, campaigns, community development
+    RecipientType = RecipientType
+    FunderType = FunderType
+    InclusionStatus = InclusionStatus
+    LotteryGrantType = LotteryGrantType
+    RegrantType = RegrantType
+    LocationScope = LocationScope
+    GrantToIndividualsPurpose = GrantToIndividualsPurpose
+    GrantToIndividualsReason = GrantToIndividualsReason
 
     grant_id = models.CharField(max_length=255, primary_key=True)
     title = models.TextField()
@@ -397,6 +447,26 @@ class Grant(models.Model):
             self.award_date.year if self.award_date else "unknown",
         )
 
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        self.refresh_from_db(
+            fields=["inclusion", "funding_organisation_type", "recipient_type"]
+        )
+        if (
+            self.inclusion == self.InclusionStatus.UNSURE
+            and self.funding_organisation_type
+            in [
+                FunderType.CENTRAL_GOVERNMENT,
+                FunderType.LOCAL_GOVERNMENT,
+                FunderType.DEVOLVED_GOVERNMENT,
+            ]
+        ):
+            for exclusion_status, recipient_types in GOVERNMENT_EXCLUSIONS:
+                if self.recipient_type in recipient_types:
+                    self.inclusion = exclusion_status
+                    super().save(update_fields=["inclusion"])
+                    break
+
 
 class CurrencyConverter(models.Model):
     currency = models.CharField(max_length=3)
@@ -440,11 +510,9 @@ class GrantRecipient(models.Model):
         db_persist=True,
     )
 
-    type_registered = models.CharField(
-        max_length=50, choices=Grant.RecipientType.choices
-    )
+    type_registered = models.CharField(max_length=50, choices=RecipientType.choices)
     type_manual = models.CharField(
-        max_length=50, null=True, blank=True, choices=Grant.RecipientType.choices
+        max_length=50, null=True, blank=True, choices=RecipientType.choices
     )
     type = models.GeneratedField(
         expression=Coalesce("type_manual", "type_registered"),
@@ -653,6 +721,24 @@ class GrantRecipient(models.Model):
 
     def __str__(self):
         return self.name
+
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        self.grants.filter(recipient_type_manual__isnull=True).update(
+            recipient_type_manual=self.type_manual
+        )
+        for inclusion, filter in GOVERNMENT_EXCLUSIONS:
+            self.grants.filter(
+                inclusion=Grant.InclusionStatus.UNSURE,
+                funding_organisation_type__in=[
+                    Grant.FunderType.CENTRAL_GOVERNMENT,
+                    Grant.FunderType.LOCAL_GOVERNMENT,
+                    Grant.FunderType.DEVOLVED_GOVERNMENT,
+                ],
+                recipient_type_manual__in=filter,
+            ).update(
+                inclusion=inclusion,
+            )
 
 
 class GrantRecipientYear(models.Model):

@@ -1,8 +1,7 @@
 from dataclasses import dataclass
 from typing import Optional
 
-from django.urls import reverse
-
+from config.jinja2 import url_for
 from ukgrantmaking.models.financial_years import FinancialYear
 from ukgrantmaking.views.docs import get_docs
 
@@ -32,9 +31,9 @@ class SidebarItem:
     def url(self):
         if self.view:
             if self.url_kwargs:
-                url = reverse(self.view, kwargs=self.url_kwargs)
+                url = url_for(self.view, **self.url_kwargs)
             else:
-                url = reverse(self.view)
+                url = url_for(self.view)
             if self.query:
                 url += f"?{self.query}"
             return url
@@ -68,7 +67,10 @@ def sidebar(request):
                 SidebarItem(
                     title="Grantmakers",
                     view="grantmakers:index",
-                    query="included=true&o=-latest_year__scaling",
+                    url_kwargs={
+                        "o": "-latest_year__scaling",
+                        "included": "true",
+                    },
                     children=[
                         SidebarItem(
                             title="Tasks",
@@ -85,7 +87,15 @@ def sidebar(request):
                     ],
                 ),
                 SidebarItem(
-                    title="Grants", view="admin:ukgrantmaking_grant_changelist"
+                    title="Grants",
+                    view="admin:ukgrantmaking_grant_changelist",
+                    children=[
+                        SidebarItem(
+                            title="Grant Recipients",
+                            view="admin:ukgrantmaking_grantrecipient_changelist",
+                            url_kwargs={"o": "6", "type": "Organisation"},
+                        ),
+                    ],
                 ),
                 SidebarItem(
                     title="Help",

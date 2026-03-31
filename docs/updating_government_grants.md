@@ -68,4 +68,50 @@ one department in the government data, so will also need to be dealt with manual
 
 ## Recipient type and exclusions
 
+The `inclusion` field on the grants object determines whether a grant should be 
+included in the final analysis.
 
+Most grants are marked as "Included" by default, but government grants are instead
+marked as "Unsure", meaning they need to be checked. Whether a government grant is 
+included or excluded from the analysis is based on the type of recipient:
+
+| Recipient type             | Included / Excluded               |
+|----------------------------|-----------------------------------|
+| Education                  | Excluded as Education grant       |
+| Government department      | Excluded as government transfer   |
+| Local Authority            | Excluded as Local Authority grant |
+| NHS                        | Excluded as government transfer   |
+| NDPB                       | Excluded as government transfer   |
+| Overseas government        | Excluded as overseas government   |
+| Private sector             | Excluded as Private sector grant  |
+| University                 | Excluded as grant to University   |
+| Charity                    | Included                          |
+| Community Interest Company | Included                          |
+| Mutual                     | Included                          |
+| Non Profit Company         | Included                          |
+
+Any grants left as "Unsure" are also included, so it is important to deal
+with the bulk of the "Unsure" grants. The inclusion status of grants can also 
+be set manually on the grant record
+
+Recipient type and inclusion status are determined through a mixture of manual and automatic processes:
+
+- In the `fetch grants` command:
+    - all new government grants are set to "Unsure" when the records are imported.
+    - Any Unsure grants where the recipient ID starts with "GB-CHC-", "GB-SC-" or "GB-NIC-"
+      are set to included
+- In the `fetch grant-recipients` command:
+    - All grant recipients (excluding grants to individuals) are given a grant recipient record.
+      This record will have a default `type` based on the recipient type given to the grant. This 
+      is generally "Organisation" by default.
+- In the `update grant-recipients` command:
+    - A series of recipient types are applied based on the Org ID of the recipients
+    - A process checks the company type for recipients with a company number and applies a recipient type to them
+    - The `recipient_type_manual` from the grant recipient is applied to the grant if it is not already filled
+    - Any unsure rows are classified based on the new recipient types.
+
+To change the recipient type manually, you can use [the Grant Recipient admin page](/admin/ukgrantmaking/grantrecipient/?o=6) to find recipients. Ordering by the "Total grant amount unsure" field will show the recipients
+with the largest amount of money in the "Unsure" category. The type manual can be changed from the grant recipient list page
+or from an individual grant recipient page.
+
+Changing the grant recipient type on these pages will then update the grant recipient type and inclusion status.
