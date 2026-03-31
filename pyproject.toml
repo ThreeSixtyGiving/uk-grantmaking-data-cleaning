@@ -1,0 +1,46 @@
+[project]
+name = "uk-grantmaking-data"
+version = "1.0.0"
+description = "A database and editing tool for the UK Grantmaking publication."
+readme = "readme.md"
+authors = [{ name = "David Kane", email = "david@dkane.net" }]
+requires-python = ">=3.13"
+dependencies = [
+    "django",
+    "gunicorn",
+    "django-debug-toolbar",
+    "django-htmx",
+    "dj-database-url",
+    "jinja2",
+    "psycopg2-binary",
+    "python-dotenv",
+    "whitenoise",
+    "inflect",
+    "titlecase",
+    "django-storages",
+    "boto3",
+    "ruff",
+    "django-click",
+    "openpyxl",
+    "pandas",
+    "sqlalchemy",
+    "requests",
+    "caradoc",
+    "datasette",
+    "uvicorn",
+    "datasette-auth-existing-cookies>=1.0a1",
+    "django-markdownx",
+    "django-filter",
+    "pytest-django",
+    "charity-django@git+https://github.com/kanedata/charity-django.git@v0.29.0",
+    "django-admin-sortable2",
+    "django-db-views",
+]
+
+[tool.ruff]
+lint.select = ["E", "F", "I"]
+lint.ignore = ['E501']
+
+[tool.pytest.ini_options]
+python_files = 'tests.py test_*.py *_tests.py'
+DJANGO_SETTINGS_MODULE = "config.settings"
