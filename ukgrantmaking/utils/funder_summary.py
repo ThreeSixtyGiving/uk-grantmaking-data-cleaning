@@ -94,9 +94,9 @@ def funder_summary(current_fy: FinancialYear, effective_date: datetime):
             income=lambda x: x["income"].divide(1_000_000).round(1),
             spending=lambda x: x["spending"].divide(1_000_000).round(1),
             grantmaking=lambda x: x["grantmaking"].divide(1_000_000).round(1),
-            grantmaking_to_individuals=lambda x: x["grantmaking_to_individuals"]
-            .divide(1_000_000)
-            .round(1),
+            grantmaking_to_individuals=lambda x: (
+                x["grantmaking_to_individuals"].divide(1_000_000).round(1)
+            ),
         )
         .rename(
             columns={

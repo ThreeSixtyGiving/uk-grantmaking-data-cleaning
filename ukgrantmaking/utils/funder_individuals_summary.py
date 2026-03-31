@@ -75,9 +75,9 @@ def funder_individuals_summary(current_fy: FinancialYear, effective_date: dateti
         .assign(
             segment=lambda x: x["segment"].fillna("Unknown"),
             category=lambda x: x["segment"].map(FUNDER_CATEGORIES).fillna("Unknown"),
-            grantmaking_to_individuals=lambda x: x["grantmaking_to_individuals"]
-            .divide(1_000_000)
-            .round(1),
+            grantmaking_to_individuals=lambda x: (
+                x["grantmaking_to_individuals"].divide(1_000_000).round(1)
+            ),
         )
         .rename(
             columns={

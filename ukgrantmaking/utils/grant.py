@@ -215,8 +215,8 @@ def get_all_grants(current_fy: FinancialYear):
             category=lambda x: x["funder__category"].fillna("Unknown"),
             amount_awarded_GBP=lambda x: x["amount_awarded_GBP"].astype(float),
             annual_amount=lambda x: x["annual_amount"].astype(float),
-            recipient__org_id_schema=lambda x: (
-                x["recipient__org_id_schema"].fillna("UKG")
+            recipient__org_id_schema=lambda x: x["recipient__org_id_schema"].fillna(
+                "UKG"
             ),
             recipient_individual_primary_grant_reason_name=lambda x: (
                 x["recipient_individual_primary_grant_reason"]

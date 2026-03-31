@@ -265,7 +265,7 @@ class GrantsAnalysisView(DBView):
                 WHEN g.recipient_type = 'Private Company' THEN 'Private Company' WHEN recipient_type IN ('Education', 'University') THEN 'University/Education' 
                 WHEN g.recipient_type IN ('Organisation', 'Unknown') THEN 'Unknown' 
                 ELSE 'Unknown' 
-	        END AS recipient_type_grouped,
+            END AS recipient_type_grouped,
 
             -- recipient regulator details (from recipient table 'r')
             r.name AS regulator_name, 
