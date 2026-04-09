@@ -98,7 +98,15 @@ def test_funder_new(client_logged_in: Client):
     assert "Add a new record" in response.content.decode("utf-8")
 
 
-def test_funder_create_new(client_logged_in: Client):
+def test_funder_create_new(client_logged_in: Client, mocker):
+    mocker.patch(
+        "ukgrantmaking.management.commands.funders.fetch_ftc.do_ftc_funders",
+        lambda *args, **kwargs: None,
+    )
+    mocker.patch(
+        "ukgrantmaking.management.commands.funders.fetch_ftc.do_ftc_finance",
+        lambda *args, **kwargs: None,
+    )
     response = client_logged_in.post(
         "/grantmakers/funder/new",
         data={
