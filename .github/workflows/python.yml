@@ -19,6 +19,7 @@ jobs:
     env:
       DATABASE_URL: "postgres://postgres:postgres@localhost:5432/github_actions_data"
       SECRET_KEY: 1234567890
+      FTC_DB_URL: "postgres://postgres:postgres@localhost:5434/github_actions_data"
 
     steps:
       - uses: actions/checkout@v6
