@@ -19,7 +19,7 @@ def batched(iterable, n: int = DEFAULT_BATCH_SIZE):
 
 
 def do_batched_update(
-    model: models.Model,
+    model: type[models.Model],
     iterable: Generator[Dict, None, None],
     unique_fields: list[str],
     update_fields: list[str],

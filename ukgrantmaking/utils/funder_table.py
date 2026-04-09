@@ -17,9 +17,9 @@ def funder_table(
     n: int = 100,
     sortby: str = "-cy_scale",
     tag_children: Optional[list[str]] = None,
-    spending_threshold: int = 25_000,
+    spending_threshold: int | None = 25_000,
     **filters,
-):
+) -> pd.DataFrame:
     ascending = True
     if sortby.startswith("-"):
         sortby = sortby[1:]
@@ -227,11 +227,11 @@ def funder_table(
         ]
         if not tag_children_df.empty:
             tag_categories = pd.crosstab(
-                tag_children_df["funder_id"],
-                tag_children_df["fundertag__parent"],
+                index=tag_children_df["funder_id"],
+                columns=tag_children_df["fundertag__parent"],
                 values=tag_children_df["fundertag"],
-                aggfunc=lambda x: "; ".join(x),
-            )
+                aggfunc=lambda x: "; ".join(x),  # type: ignore
+            )  # type: ignore
             df = df.join(tag_categories, on="org_id", how="left")
             columns += tag_children
 

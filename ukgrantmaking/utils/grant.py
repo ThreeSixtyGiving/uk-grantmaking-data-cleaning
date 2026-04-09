@@ -145,7 +145,7 @@ GEO_LOOKUPS = {
 }
 
 
-def get_all_grants(current_fy: FinancialYear):
+def get_all_grants(current_fy: FinancialYear) -> pd.DataFrame:
     columns = [
         "grant_id",
         "funding_organisation_id",
@@ -366,7 +366,7 @@ def grant_table(
     columns: list[str] = DEFAULT_COLUMNS,
     n: int = 100,
     sortby: str = "-amount_awarded_GBP",
-):
+) -> pd.DataFrame:
     sort_ascending = True
     if sortby.startswith("-"):
         sortby = sortby[1:]
@@ -382,7 +382,7 @@ def grant_table(
 def grant_summary(
     df: pd.DataFrame,
     groupby: list[str] = ["category", "segment"],
-):
+) -> pd.DataFrame:
     summary = (
         df.groupby(groupby)
         .agg(**AGG_COLUMNS)
@@ -448,7 +448,7 @@ def grant_summary(
     total_key = tuple("Total" for k in groupby)
     if len(total_key) == 1:
         total_key = total_key[0]
-    summary.loc[total_key, :] = total_row.loc[total_key]
+    summary.loc[total_key, :] = total_row.loc[total_key]  # type: ignore
 
     summary = summary.rename(
         columns={
@@ -472,7 +472,7 @@ def grant_crosstab(
     groupby: list[str] = ["category", "segment"],
     column_field="amount_awarded_GBP_band",
     values_field="grant_id",
-):
+) -> pd.DataFrame:
     aggfunc = "count" if values_field == "grant_id" else "sum"
     summary = (
         pd.crosstab(
@@ -484,7 +484,7 @@ def grant_crosstab(
         .assign(
             Total=lambda x: x.sum(axis=1),
         )
-        .mask(lambda x: x["Total"] == 0)
+        .mask(lambda x: x["Total"] == 0)  # type: ignore
         .dropna(how="all")
     )
 
@@ -515,7 +515,7 @@ def grant_crosstab(
     total_key = tuple("Total" for k in groupby)
     if len(total_key) == 1:
         total_key = total_key[0]
-    summary.loc[total_key, :] = total_row.loc[total_key]
+    summary.loc[total_key, :] = total_row.loc[total_key]  # type: ignore
 
     if values_field in ("amount_awarded_GBP", "annual_amount"):
         summary = summary.divide(1_000_000).astype(float).round(1)
@@ -533,7 +533,7 @@ def grant_by_size(
     df: pd.DataFrame,
     groupby: list[str] = ["category", "segment"],
     **kwargs,
-):
+) -> pd.DataFrame:
     return grant_crosstab(df, groupby, column_field="amount_awarded_GBP_band", **kwargs)
 
 
@@ -541,7 +541,7 @@ def grant_by_duration(
     df: pd.DataFrame,
     groupby: list[str] = ["category", "segment"],
     **kwargs,
-):
+) -> pd.DataFrame:
     return grant_crosstab(
         df, groupby, column_field="planned_dates_duration_band", **kwargs
     )
@@ -551,7 +551,7 @@ def recipient_types(
     df: pd.DataFrame,
     groupby: list[str] = ["category", "segment"],
     **kwargs,
-):
+) -> pd.DataFrame:
     return grant_crosstab(df, groupby, column_field="recipient_type", **kwargs)
 
 
@@ -559,7 +559,7 @@ def recipients_by_size(
     df: pd.DataFrame,
     groupby: list[str] = ["category", "segment"],
     **kwargs,
-):
+) -> pd.DataFrame:
     return grant_crosstab(df, groupby, column_field="recipient_income_band", **kwargs)
 
 
@@ -567,7 +567,7 @@ def recipients_by_scale(
     df: pd.DataFrame,
     groupby: list[str] = ["category", "segment"],
     **kwargs,
-):
+) -> pd.DataFrame:
     return grant_crosstab(df, groupby, column_field="recipient__scale", **kwargs)
 
 
@@ -575,7 +575,7 @@ def grants_by_region(
     df: pd.DataFrame,
     groupby: list[str] = ["category", "segment"],
     **kwargs,
-):
+) -> pd.DataFrame:
     return grant_crosstab(df, groupby, column_field="region", **kwargs)
 
 
@@ -583,11 +583,13 @@ def grants_by_country(
     df: pd.DataFrame,
     groupby: list[str] = ["category", "segment"],
     **kwargs,
-):
+) -> pd.DataFrame:
     return grant_crosstab(df, groupby, column_field="country", **kwargs)
 
 
-def explode_crosstab(df: pd.DataFrame, groupby: list[str], field: str, **kwargs):
+def explode_crosstab(
+    df: pd.DataFrame, groupby: list[str], field: str, **kwargs
+) -> pd.DataFrame:
     ct = grant_crosstab(
         df[df[field].notnull()].explode(field).reset_index(),
         groupby,
@@ -608,7 +610,7 @@ def grants_by_who(
     df: pd.DataFrame,
     groupby: list[str] = ["category", "segment"],
     **kwargs,
-):
+) -> pd.DataFrame:
     field = "recipient__who"
     return explode_crosstab(
         df,
@@ -622,7 +624,7 @@ def grants_by_how(
     df: pd.DataFrame,
     groupby: list[str] = ["category", "segment"],
     **kwargs,
-):
+) -> pd.DataFrame:
     field = "recipient__how"
     return explode_crosstab(
         df,
@@ -636,7 +638,7 @@ def grants_by_what(
     df: pd.DataFrame,
     groupby: list[str] = ["category", "segment"],
     **kwargs,
-):
+) -> pd.DataFrame:
     field = "recipient__what"
     return explode_crosstab(
         df,
@@ -646,7 +648,7 @@ def grants_by_what(
     )
 
 
-def recipient_size_by_amount_awarded(df: pd.DataFrame, **kwargs):
+def recipient_size_by_amount_awarded(df: pd.DataFrame, **kwargs) -> pd.DataFrame:
     return grant_crosstab(
         df,
         ["amount_awarded_GBP_band"],
@@ -655,7 +657,7 @@ def recipient_size_by_amount_awarded(df: pd.DataFrame, **kwargs):
     )
 
 
-def number_of_grants_by_recipient(df: pd.DataFrame):
+def number_of_grants_by_recipient(df: pd.DataFrame) -> pd.DataFrame:
     summary = (
         df.groupby("recipient_id")
         .agg(
@@ -698,7 +700,7 @@ def number_of_grants_by_recipient(df: pd.DataFrame):
     return summary
 
 
-def who_funds_with_who(df: pd.DataFrame, groupby: str = "segment"):
+def who_funds_with_who(df: pd.DataFrame, groupby: str = "segment") -> pd.DataFrame:
     wfww = pd.crosstab(
         df["recipient_id"],
         df[groupby],

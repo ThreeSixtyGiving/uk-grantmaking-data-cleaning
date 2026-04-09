@@ -1,10 +1,11 @@
 import dataclasses
 import os
+from typing import Generator
 
 import markdown
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
-from django.http import Http404, HttpResponse
+from django.http import Http404, HttpRequest, HttpResponse
 from django.shortcuts import render
 
 DOCS_DIR = os.path.join(settings.BASE_DIR, "docs")
@@ -14,25 +15,25 @@ DOCS_DIR = os.path.join(settings.BASE_DIR, "docs")
 class Doc:
     location: str
     filename: str
-    content: str = None
-    meta: dict = None
-    toc: str = None
+    content: str | None = None
+    meta: dict | None = None
+    toc: str | None = None
 
     @property
-    def title(self):
+    def title(self) -> str:
         return (
             self.filename.replace(".md", "").replace("-", " ").replace("_", " ").title()
         )
 
     @property
-    def path(self):
+    def path(self) -> str:
         return os.path.relpath(self.location, DOCS_DIR)
 
     @property
-    def doc_path(self):
+    def doc_path(self) -> str:
         return self.path.removesuffix(".md")
 
-    def fetch(self):
+    def fetch(self) -> None:
         md = markdown.Markdown(
             extensions=[
                 "fenced_code",
@@ -47,11 +48,11 @@ class Doc:
 
         with open(self.location, "r", encoding="utf-8") as f:
             self.content = md.convert(f.read())
-            self.meta = md.Meta
-            self.toc = md.toc
+            self.meta = getattr(md, "Meta", None)
+            self.toc = getattr(md, "toc", None)
 
 
-def get_docs():
+def get_docs() -> Generator[Doc, None, None]:
     for root, dirs, files in os.walk(DOCS_DIR):
         for file in files:
             if not file.endswith(".md"):
@@ -59,7 +60,7 @@ def get_docs():
             yield Doc(location=os.path.join(root, file), filename=file)
 
 
-def get_images():
+def get_images() -> Generator[Doc, None, None]:
     for root, dirs, files in os.walk(DOCS_DIR):
         for file in files:
             if not file.endswith(".png"):
@@ -68,12 +69,12 @@ def get_images():
 
 
 @login_required
-def index(request):
+def index(request: HttpRequest) -> HttpResponse:
     return render(request, "docs/index.html", context={"object_list": get_docs()})
 
 
 @login_required
-def detail(request, doc_path):
+def detail(request: HttpRequest, doc_path: str) -> HttpResponse:
     if doc_path.endswith(".png"):
         for image in get_images():
             if os.path.normpath(image.path) == os.path.normpath(doc_path):

@@ -5,7 +5,7 @@ import pandas as pd
 from caradoc import DataOutput, FinancialYear
 from django.contrib.auth.decorators import login_required
 from django.db import models
-from django.http import HttpResponse
+from django.http import HttpRequest, HttpResponse
 from django.shortcuts import render
 from django.urls import reverse
 from django.utils.text import slugify
@@ -27,7 +27,9 @@ from ukgrantmaking.utils.funder import (
 
 
 @login_required
-def grantmakers_trends(request, fy, filetype="html"):
+def grantmakers_trends(
+    request: HttpRequest, fy: str, filetype: str = "html"
+) -> HttpResponse:
     current_fy = FinancialYear(fy)
     effective_date = request.GET.get("effective_date", date.today().isoformat())
     effective_date = datetime.combine(
@@ -73,7 +75,7 @@ def grantmakers_trends(request, fy, filetype="html"):
 
     if filetype == "xlsx":
         buffer = BytesIO()
-        output.write(buffer)
+        output.write(buffer)  # type: ignore
         buffer.seek(0)
         response = HttpResponse(
             buffer.read(),
@@ -111,7 +113,9 @@ def grantmakers_trends(request, fy, filetype="html"):
 
 
 @login_required
-def financial_year(request, fy, filetype="html"):
+def financial_year(
+    request: HttpRequest, fy: str, filetype: str = "html"
+) -> HttpResponse:
     current_fy = FinancialYear(fy)
     effective_date = request.GET.get("effective_date", date.today().isoformat())
     effective_date = datetime.combine(
@@ -137,12 +141,13 @@ def financial_year(request, fy, filetype="html"):
     )
 
     # summary table
-    summary = funder_summary(current_fy - 1, effective_date=effective_date)
+    summary = funder_summary(current_fy - 1, effective_date=effective_date)  # type: ignore
     output.add_table(summary, "Summary", title="Summary (previous year)")
 
     # summary by size
     summary_by_size = funder_summary_by_size(
-        current_fy - 1, effective_date=effective_date
+        current_fy - 1,  # type: ignore
+        effective_date=effective_date,
     )
     output.add_table(
         summary_by_size,
@@ -152,7 +157,8 @@ def financial_year(request, fy, filetype="html"):
 
     # summary table grants to individuals
     summary_individuals = funder_individuals_summary(
-        current_fy - 1, effective_date=effective_date
+        current_fy - 1,  # type: ignore
+        effective_date=effective_date,
     )
     output.add_table(
         summary_individuals,
@@ -471,7 +477,7 @@ def financial_year(request, fy, filetype="html"):
 
     if filetype == "xlsx":
         buffer = BytesIO()
-        output.write(buffer)
+        output.write(buffer)  # type: ignore
         buffer.seek(0)
         response = HttpResponse(
             buffer.read(),
@@ -507,7 +513,7 @@ def financial_year(request, fy, filetype="html"):
 
 
 @login_required
-def all_grantmakers_csv(request, fy):
+def all_grantmakers_csv(request: HttpRequest, fy: str) -> HttpResponse:
     current_fy = FinancialYear(fy)
     all_funders = funder_table(
         current_fy,
@@ -541,15 +547,17 @@ def all_grantmakers_csv(request, fy):
             "py_employees",
             "py_notes",
         ],
-        n=None,
+        effective_date=datetime(
+            current_fy.end_date.year, current_fy.end_date.month, current_fy.end_date.day
+        ),
+        n=10_000,
         included=True,
     )
-
     response = HttpResponse(
         content_type="text/csv",
         headers={
             "Content-Disposition": f'attachment; filename="all-grantmakers-{current_fy}.csv"'
         },
     )
-    all_funders.to_csv(path_or_buf=response, index=False)
+    all_funders.to_csv(path_or_buf=response, index=False)  # type: ignore
     return response

@@ -1,8 +1,10 @@
 from io import BytesIO
+from typing import Sequence
 
 import pandas as pd
 from django.contrib.auth.decorators import login_required
-from django.http import HttpResponse, HttpResponseForbidden, JsonResponse
+from django.db import models
+from django.http import HttpRequest, HttpResponse, HttpResponseForbidden, JsonResponse
 from django.shortcuts import render
 
 from ukgrantmaking.models.funder import Funder, FunderTag
@@ -34,7 +36,7 @@ __all__ = [
 
 
 @login_required
-def index(request):
+def index(request: HttpRequest) -> HttpResponse:
     context = {
         "stats": [
             {"title": "Number of grantmakers", "value": Funder.objects.count()},
@@ -61,11 +63,11 @@ def index(request):
     return render(request, "index.html.j2", context)
 
 
-def check_cookies(request):
+def check_cookies(request: HttpRequest) -> HttpResponse:
     if request.user.is_superuser:
         return JsonResponse(
             {
-                "id": request.user.id,
+                "id": request.user.id,  # type: ignore
                 "is_superuser": True,
                 "username": request.user.username,
             }
@@ -73,7 +75,9 @@ def check_cookies(request):
     return HttpResponseForbidden("You are not allowed to access this page")
 
 
-def export_all_data_excel(models, filename):
+def export_all_data_excel(
+    models: Sequence[type[models.Model]], filename: BytesIO
+) -> BytesIO:
     with pd.ExcelWriter(filename, engine="xlsxwriter") as writer:
         for model in models:
             print(model.__name__)
@@ -85,7 +89,7 @@ def export_all_data_excel(models, filename):
 
 
 @login_required
-def export_funders_excel(request):
+def export_funders_excel(request: HttpRequest) -> HttpResponse:
     models = [Funder, FunderYear, FunderTag]
     buffer = export_all_data_excel(models, BytesIO())
     buffer.seek(0)
@@ -96,7 +100,7 @@ def export_funders_excel(request):
 
 
 @login_required
-def export_grants_excel(request):
+def export_grants_excel(request: HttpRequest) -> HttpResponse:
     models = [Grant]
     buffer = export_all_data_excel(models, BytesIO())
     buffer.seek(0)
@@ -107,5 +111,5 @@ def export_grants_excel(request):
 
 
 @login_required
-def table_creator(request):
+def table_creator(request: HttpRequest) -> HttpResponse:
     return render(request, "table_creator.html.j2")

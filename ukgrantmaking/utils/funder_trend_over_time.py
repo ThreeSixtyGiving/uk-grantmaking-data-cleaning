@@ -11,9 +11,9 @@ from ukgrantmaking.models.funder_utils import FUNDER_CATEGORIES
 def funder_trend_over_time(
     years: list[str],
     field: str,
-    aggregation: models.Aggregate,
+    aggregation: type[models.Aggregate],
     effective_date: datetime,
-):
+) -> pd.DataFrame:
     year_annotations = {}
     for year in years:
         year_annotations[year] = aggregation(

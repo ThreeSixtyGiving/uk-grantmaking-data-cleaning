@@ -9,7 +9,7 @@ from ukgrantmaking.models.funder import Funder
 from ukgrantmaking.models.funder_utils import FUNDER_CATEGORIES
 
 
-def funder_summary(current_fy: FinancialYear, effective_date: datetime):
+def funder_summary(current_fy: FinancialYear, effective_date: datetime) -> pd.DataFrame:
     result = (
         pd.DataFrame.from_records(
             Funder.objects.filter(

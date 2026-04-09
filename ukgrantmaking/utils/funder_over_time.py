@@ -11,13 +11,13 @@ from ukgrantmaking.utils.funder_table import funder_table
 
 def funder_over_time(
     current_fy: FinancialYear,
-    columns: list[tuple[str, str, models.Aggregate]],
+    columns: list[tuple[str, str, type[models.Aggregate]]],
     effective_date: datetime,
     n: int = 100,
     n_years: int = 5,
     sortby: str = "-cy_scale",
     **filters,
-):
+) -> pd.DataFrame:
     orgs = funder_table(
         current_fy,
         [

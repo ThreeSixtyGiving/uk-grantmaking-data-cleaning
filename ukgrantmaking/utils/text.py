@@ -1,4 +1,5 @@
 import re
+from typing import Any
 
 import titlecase
 
@@ -7,7 +8,7 @@ ORD_NUMBERS_RE = re.compile(r"([0-9]+(?:st|nd|rd|th))")
 SENTENCE_SPLIT = re.compile(r"(\. )")
 
 
-def title_exceptions(word, **kwargs):
+def title_exceptions(word: str, **kwargs) -> str | None:
     word_test = word.strip("(){}<>.")
 
     # lowercase words
@@ -95,7 +96,7 @@ def title_exceptions(word, **kwargs):
     return None
 
 
-def to_titlecase(s, sentence=False):
+def to_titlecase(s: Any, sentence: bool = False) -> Any:
     if not isinstance(s, str):
         return s
 
@@ -116,11 +117,11 @@ def to_titlecase(s, sentence=False):
     return s[0].upper() + s[1:]
 
 
-def regex_search(s, regex):
+def regex_search(s: str, regex: str) -> bool:
     return re.search(regex, s) is not None
 
 
-def list_to_string(items, sep=", ", final_sep=" and "):
+def list_to_string(items: Any, sep: str = ", ", final_sep: str = " and ") -> str:
     if isinstance(items, str):
         return items
     if isinstance(items, set):
@@ -134,7 +135,7 @@ def list_to_string(items, sep=", ", final_sep=" and "):
         return sep.join(items[0:-1]) + final_sep + items[-1]
 
 
-def clean_url(url):
+def clean_url(url: str | None) -> str | None:
     if not url:
         return None
     url = re.sub(r"(https?:)?//", "", url)
@@ -145,7 +146,7 @@ def clean_url(url):
     return url
 
 
-def working_url(url):
+def working_url(url: str | None) -> str | None:
     if not url:
         return None
     if url.startswith("http") and not url.startswith("//"):

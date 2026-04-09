@@ -9,7 +9,9 @@ from ukgrantmaking.models.funder import Funder
 from ukgrantmaking.models.funder_utils import FUNDER_CATEGORIES
 
 
-def funder_individuals_summary(current_fy: FinancialYear, effective_date: datetime):
+def funder_individuals_summary(
+    current_fy: FinancialYear, effective_date: datetime
+) -> pd.DataFrame:
     summary_individuals = (
         pd.DataFrame.from_records(
             Funder.objects.filter(
