@@ -180,11 +180,11 @@ def detail(request, org_id=None):
             {"org_id": org_id, "object": None, "form": form},
         )
     try:
-        r = requests.get(
-            "{api_url}/organisations/{organisation_id}".format(
-                api_url=settings.FTC_API_URL, organisation_id=org_id
-            )
+        organisation_url = "{api_url}/organisations/{organisation_id}".format(
+            api_url=settings.FTC_API_URL, organisation_id=org_id
         )
+        print(organisation_url)
+        r = requests.get(organisation_url)
         r.raise_for_status()
         data = r.json()
         if data.get("success"):

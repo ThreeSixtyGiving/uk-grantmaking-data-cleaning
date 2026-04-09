@@ -35,6 +35,8 @@ dependencies = [
     "charity-django@git+https://github.com/kanedata/charity-django.git@v0.29.0",
     "django-admin-sortable2",
     "django-db-views",
+    "pytest-socket>=0.7.0",
+    "requests-mock>=1.12.1",
 ]
 
 [tool.ruff]
@@ -42,5 +44,6 @@ lint.select = ["E", "F", "I"]
 lint.ignore = ['E501']
 
 [tool.pytest.ini_options]
+addopts = '--disable-socket'
 python_files = 'tests.py test_*.py *_tests.py'
 DJANGO_SETTINGS_MODULE = "config.settings"

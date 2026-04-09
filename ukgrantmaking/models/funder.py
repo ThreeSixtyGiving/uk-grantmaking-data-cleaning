@@ -491,14 +491,17 @@ class Funder(models.Model):
         return reverse("grantmakers:detail", kwargs={"org_id": self.pk})
 
     def update_from_ftc(self):
+        db_con = os.environ.get("FTC_DB_URL")
+        if not db_con:
+            raise ValueError("FTC_DB_URL environment variable not set")
         do_ftc_funders(
-            db_con=os.environ.get("FTC_DB_URL"),
+            db_con=db_con,
             org_ids=(self.org_id,),
             debug=True,
         )
         self.refresh_from_db()
         do_ftc_finance(
-            db_con=os.environ.get("FTC_DB_URL"),
+            db_con=db_con,
             org_ids=(self.org_id,),
             debug=True,
         )

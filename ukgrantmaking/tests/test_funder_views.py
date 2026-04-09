@@ -82,7 +82,11 @@ def test_task_csv(client_logged_in: Client, complex_task: CleaningStatus):
     assert len(lines) == 2
 
 
-def test_funder_not_exist(client_logged_in: Client):
+def test_funder_not_exist(client_logged_in: Client, requests_mock):
+    requests_mock.get(
+        "https://findthatcharity.uk/api/v1/organisations/GB-CHC-12345679",
+        status_code=404,
+    )
     response = client_logged_in.get("/grantmakers/funder/GB-CHC-12345679/")
     assert response.status_code == 200
     assert "Grantmaker: GB-CHC-12345679 Not Found" in response.content.decode("utf-8")
@@ -111,7 +115,11 @@ def test_funder_create_new(client_logged_in: Client):
     assert funder.name == "Test Funder 12345679"
 
 
-def test_funder_new_check_api(client_logged_in: Client):
+def test_funder_new_check_api(client_logged_in: Client, requests_mock):
+    requests_mock.get(
+        "https://findthatcharity.uk/api/v1/organisations/GB-CHC-12345679",
+        status_code=404,
+    )
     response = client_logged_in.get(
         "/grantmakers/funder/new?org_id=GB-CHC-12345679", follow=True
     )
