@@ -100,11 +100,11 @@ def test_funder_new(client_logged_in: Client):
 
 def test_funder_create_new(client_logged_in: Client, mocker):
     mocker.patch(
-        "ukgrantmaking.management.commands.funders.fetch_ftc.do_ftc_funders",
+        "ukgrantmaking.models.funder.do_ftc_funders",
         lambda *args, **kwargs: None,
     )
     mocker.patch(
-        "ukgrantmaking.management.commands.funders.fetch_ftc.do_ftc_finance",
+        "ukgrantmaking.models.funder.do_ftc_finance",
         lambda *args, **kwargs: None,
     )
     response = client_logged_in.post(
