@@ -17,9 +17,9 @@ jobs:
         options: --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 5
 
     env:
-      DATABASE_URL: "postgres://postgres:postgres@localhost:5432/github_actions_data"
+      DATABASE_URL: "postgresql://postgres:postgres@localhost:5432/github_actions_data"
       SECRET_KEY: 1234567890
-      FTC_DB_URL: "postgres://postgres:postgres@localhost:5434/github_actions_data"
+      FTC_DB_URL: "postgresql://postgres:postgres@localhost:5434/github_actions_data"
 
     steps:
       - uses: actions/checkout@v6
