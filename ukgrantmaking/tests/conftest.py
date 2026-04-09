@@ -1,6 +1,11 @@
+from typing import Callable
+
 import pytest
 from django.contrib.admin.models import ADDITION, CHANGE, DELETION, LogEntry
+from django.contrib.auth.models import AbstractBaseUser
 from django.contrib.contenttypes.models import ContentType
+from django.db.models import Model, QuerySet
+from django.test import Client
 
 from ukgrantmaking.models.cleaningstatus import (
     CleaningStatus,
@@ -12,13 +17,13 @@ from ukgrantmaking.models.funder import Funder, FunderTag
 
 
 @pytest.fixture
-def client_logged_in(admin_user, client):
+def client_logged_in(admin_user: AbstractBaseUser, client: Client) -> Client:
     client.force_login(admin_user)
     return client
 
 
 @pytest.fixture
-def financial_year():
+def financial_year() -> FinancialYear:
     fy, _ = FinancialYear.objects.update_or_create(
         fy="2022-23",
         defaults={
@@ -30,7 +35,7 @@ def financial_year():
 
 
 @pytest.fixture
-def tag():
+def tag() -> FunderTag:
     tag, _ = FunderTag.objects.get_or_create(
         slug="example-tag",
         defaults={
@@ -41,8 +46,10 @@ def tag():
 
 
 @pytest.fixture
-def make_funder(financial_year, tag):
-    def _make_funder(n=1):
+def make_funder(
+    financial_year: FinancialYear, tag: FunderTag
+) -> Callable[[int], Funder]:
+    def _make_funder(n: int = 1) -> Funder:
         funder = Funder.objects.create(
             org_id=f"GB-CHC-{n:08}",
             name_registered=f"Test Funder {n}",
@@ -62,12 +69,12 @@ def make_funder(financial_year, tag):
 
 
 @pytest.fixture
-def funder(make_funder):
+def funder(make_funder: Callable[[int], Funder]) -> Funder:
     return make_funder()
 
 
 @pytest.fixture
-def funder_with_py(make_funder):
+def funder_with_py(make_funder: Callable[[int], Funder]) -> Funder:
     funder = make_funder(2)
 
     fy, _ = FinancialYear.objects.update_or_create(
@@ -89,7 +96,7 @@ def funder_with_py(make_funder):
 
 
 @pytest.fixture
-def task():
+def task() -> CleaningStatus:
     return CleaningStatus.objects.create(
         type=CleaningStatusType.GRANTMAKER,
         name="Test Task",
@@ -97,7 +104,7 @@ def task():
 
 
 @pytest.fixture
-def complex_task(make_funder):
+def complex_task(make_funder: Callable[[int], Funder]) -> CleaningStatus:
     task = CleaningStatus.objects.create(
         type=CleaningStatusType.GRANTMAKER,
         name="Test Task",
@@ -117,8 +124,12 @@ def complex_task(make_funder):
 
 
 @pytest.fixture
-def check_log_entry(admin_user):
-    def _check_log_entry(obj, action="Changed"):
+def check_log_entry(
+    admin_user: AbstractBaseUser,
+) -> Callable[[object, str], QuerySet[LogEntry] | None]:
+    def _check_log_entry(
+        obj: Model, action: str = "Changed"
+    ) -> QuerySet[LogEntry] | None:
         action = {
             "added": ADDITION,
             "changed": CHANGE,

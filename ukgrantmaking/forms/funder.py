@@ -5,7 +5,7 @@ from ukgrantmaking.models.funder import Funder
 
 class FunderForm(forms.ModelForm):
     org_id = forms.CharField(widget=forms.HiddenInput)
-    name_registered = forms.CharField(widget=forms.HiddenInput)
+    name_registered = forms.CharField(widget=forms.HiddenInput, required=False)
     name_manual = forms.CharField(
         label="Name",
         required=False,
@@ -29,6 +29,14 @@ class FunderForm(forms.ModelForm):
             "activities",
             "website",
         ]
+
+    def clean(self):
+        data = self.cleaned_data
+        if not data.get("name_registered") and data.get("name_manual"):
+            data["name_registered"] = data["name_manual"]
+        if not data.get("name_registered"):
+            raise forms.ValidationError("Please provide a name for this funder.")
+        return data
 
 
 class FunderFormNoOrgID(FunderForm):

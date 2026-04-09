@@ -124,6 +124,27 @@ def detail(request, org_id=None):
             return HttpResponseRedirect(
                 reverse("grantmakers:detail", args=[org_id_from_get])
             )
+        elif request.method == "POST":
+            form = FunderFormNoOrgID(request.POST)
+            if form.is_valid():
+                funder = form.save()
+                LogEntry.objects.log_actions(
+                    user_id=request.user.id,
+                    queryset=[funder],
+                    action_flag=CHANGE,
+                    change_message="Created funder",
+                )
+                funder.update_from_ftc()
+                funder.save()
+                funder.save()  # to ensure funder financial years are created
+                return HttpResponseRedirect(
+                    reverse("grantmakers:detail", args=[funder.org_id])
+                )
+            return render(
+                request,
+                "grantmakers/notfound.html.j2",
+                {"org_id": org_id, "object": None, "form": form},
+            )
         else:
             form = FunderFormNoOrgID()
             return render(

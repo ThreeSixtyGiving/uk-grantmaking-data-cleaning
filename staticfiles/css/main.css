@@ -968,11 +968,13 @@ data.number {
     }
 }
 
-form div:has(>.errorlist) {
+form div:has(>.errorlist),
+form > .errorlist {
     background-color: var(--color-red-lightest);
     border: 5px solid var(--color-red-dark);
     padding: 0.5rem;
-
+}
+form {
     .errorlist {
         list-style-type: none;
         padding-left: 0;
