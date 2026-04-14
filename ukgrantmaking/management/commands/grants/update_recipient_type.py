@@ -244,9 +244,9 @@ def recipient_type(db_con, company_batch_size):
             )
             .update(
                 recipient_type_manual=Subquery(
-                    GrantRecipient.objects.filter(pk=OuterRef("pk")).values(
-                        "type_manual"
-                    )[:1]
+                    GrantRecipient.objects.filter(
+                        recipient_id=OuterRef("recipient_id")
+                    ).values("type_manual")[:1]
                 ),
             )
         )
