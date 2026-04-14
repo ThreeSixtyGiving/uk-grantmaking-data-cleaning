@@ -239,7 +239,7 @@ def recipient_type(db_con, company_batch_size):
             Grant.objects.select_related("recipient")
             .select_for_update()
             .filter(
-                Q(recipient_type_manual__isnull=False)
+                Q(recipient_type_manual__isnull=True)
                 & Q(recipient__type_manual__in=Grant.RecipientType.values)
             )
             .update(
