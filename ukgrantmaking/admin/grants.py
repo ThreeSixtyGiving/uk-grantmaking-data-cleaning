@@ -311,6 +311,10 @@ class GrantAdmin(CSVUploadModelAdmin):
             **add_admin_actions(action_fields),
         }
 
+    def get_queryset(self, request):
+        qs = super().get_queryset(request)
+        return qs.select_related("funder")
+
 
 class GrantRecipientYearAdminInline(admin.TabularInline):
     model = GrantRecipientYear
