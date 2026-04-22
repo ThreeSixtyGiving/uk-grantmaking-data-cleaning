@@ -156,7 +156,7 @@ def grants(financial_year, funder_ids):
                             "Organisation": 0,
                             "Individual": 0,
                         }
-                        changed = False
+                        changed = True
                         for grant_amount in grants_amount_by_recipient:
                             if grant_amount["recipient_type"] != "Individual":
                                 grant_amounts["Organisation"] += grant_amount[
@@ -250,7 +250,7 @@ def grants(financial_year, funder_ids):
                             "Organisation": 0,
                             "Individual": 0,
                         }
-                        changed = False
+                        changed = True
                         for grant_amount in grants_amount_by_recipient:
                             if grant_amount["recipient_type"] != "Individual":
                                 grant_amounts["Organisation"] += grant_amount[
