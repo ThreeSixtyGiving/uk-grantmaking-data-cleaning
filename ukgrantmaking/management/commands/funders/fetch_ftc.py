@@ -147,6 +147,14 @@ def do_ftc_funders(db_con: str, org_ids: tuple[str, ...], debug: bool = False):
 
         def iterate_organisations():
             for org_record in bar:
+                ctry_hq = org_record.ctry_hq
+                ctry_hq_name = org_record.ctry_hq_name
+                if ctry_hq is None and org_record.org_id.startswith("GB-SC-"):
+                    ctry_hq = "S92000003"
+                    ctry_hq_name = "Scotland"
+                if ctry_hq is None and org_record.org_id.startswith("GB-NIC-"):
+                    ctry_hq = "N92000002"
+                    ctry_hq_name = "Northern Ireland"
                 yield dict(
                     org_id=org_record.org_id,
                     name_registered=to_titlecase(org_record.name),
@@ -165,8 +173,8 @@ def do_ftc_funders(db_con: str, org_ids: tuple[str, ...], debug: bool = False):
                     rgn_hq_name=org_record.rgn_hq_name,
                     rgn_aoo=org_record.rgn_aoo,
                     rgn_aoo_name=org_record.rgn_aoo_name,
-                    ctry_hq=org_record.ctry_hq,
-                    ctry_hq_name=org_record.ctry_hq_name,
+                    ctry_hq=ctry_hq,
+                    ctry_hq_name=ctry_hq_name,
                     ctry_aoo=org_record.ctry_aoo,
                     ctry_aoo_name=org_record.ctry_aoo_name,
                     overseas_aoo=org_record.overseas_aoo,
