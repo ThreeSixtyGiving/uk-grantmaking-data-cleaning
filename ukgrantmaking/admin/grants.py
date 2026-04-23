@@ -160,7 +160,6 @@ class GrantAdmin(CSVUploadModelAdmin):
         "funder__segment",
         "funder__category",
         "funding_organisation_type",
-        "funding_organisation_name",
     )
     readonly_fields = (
         "grant_id",
