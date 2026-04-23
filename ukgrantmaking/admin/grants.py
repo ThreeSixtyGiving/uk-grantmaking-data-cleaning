@@ -341,6 +341,27 @@ class GrantRecipientYearAdminInline(admin.TabularInline):
     )
 
 
+class HasUnsureListFilter(admin.SimpleListFilter):
+    title = "Has unsure grants"
+    parameter_name = "has_unsure_grants"
+
+    def lookups(self, request, model_admin):
+        return [
+            ("yes", "Yes"),
+            ("no", "No"),
+        ]
+
+    def queryset(self, request, queryset):
+        if self.value() == "yes":
+            return queryset.filter(
+                num_grants_unsure__gt=0,
+            )
+        if self.value() == "no":
+            return queryset.filter(
+                num_grants_unsure=0,
+            )
+
+
 class GrantRecipientAdmin(CSVUploadModelAdmin):
     list_display = (
         "recipient_id",
@@ -351,7 +372,7 @@ class GrantRecipientAdmin(CSVUploadModelAdmin):
         "total_grant_amount_unsure",
     )
     search_fields = ("name", "recipient_id")
-    list_filter = ("type", "org_id_schema")
+    list_filter = ("type", HasUnsureListFilter)
     list_editable = ("type_manual",)
     inlines = (GrantRecipientYearAdminInline,)
     readonly_fields = (
