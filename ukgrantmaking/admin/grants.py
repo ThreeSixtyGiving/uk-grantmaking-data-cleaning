@@ -186,6 +186,7 @@ class GrantAdmin(CSVUploadModelAdmin):
         "funding_organisation_name",
         "funding_organisation_type",
         "funding_organisation_department",
+        "regrant_type_registered",
         "regrant_type",
         "location_scope",
         "grant_programme_title",
