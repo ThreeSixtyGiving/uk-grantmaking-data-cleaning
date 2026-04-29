@@ -99,6 +99,9 @@ def grants(db_con: str, extra_file: list[str]):
     )
     logger.info(f"Found {len(df):,.0f} grants")
 
+    # strip any whitespace from the index
+    df.index = df.index.str.strip()
+
     # To clean the data we need to make sure that the values are in the right format.
 
     # Next, the `planned_dates_duration` should also be a number. We use
@@ -175,6 +178,11 @@ def grants(db_con: str, extra_file: list[str]):
         )
         .set_index("grant_id")
     )
+
+    # strip any whitespace from the index
+    nl.index = nl.index.str.strip()
+
+    # Identify any grants to individuals
     nl.loc[
         (
             nl["recipient_organization_name"]
