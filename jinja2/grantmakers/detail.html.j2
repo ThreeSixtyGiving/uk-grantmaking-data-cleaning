@@ -138,29 +138,47 @@
     </tbody>
 </table>
 
-
-{% set grants_made = object.grants.order_by("-award_date").all()[0:25] %}
-{% if grants_made %}
-<h3>Grants made</h3>
+{% if object.grants_by_year %}
+<h3>
+    Grants by year
+    <a href="{{ url_for('admin:ukgrantmaking_grant_changelist', funder_id=object.org_id) }}">[Show all grants]</a>
+</h3>
 
 <table class="table striped">
     <thead>
         <tr>
-            <th>Recipient</th>
-            <th>Recipient Type</th>
-            <th class="tr">Amount Awarded</th>
-            <th>Award Date</th>
-            <th>Inclusion</th>
+            <th rowspan="2">Financial Year</th>
+            <th class="tr" colspan="">Excluded</th>
+            <th class="tr" colspan="">Excluded</th>
+            <th class="tr" colspan="">Included</th>
+            <th class="tr" colspan="">Included</th>
+            <th class="tr" colspan="">Total</th>
+            <th class="tr" colspan="">Total</th>
+        </tr>
+        <tr>
+            <th class="tr">Grants</th>
+            <th class="tr">Amount (£)</th>
+            <th class="tr">Grants</th>
+            <th class="tr">Amount (£)</th>
+            <th class="tr">Grants</th>
+            <th class="tr">Amount (£)</th>
         </tr>
     </thead>
     <tbody>
-        {% for grant in grants_made %}
+        {% for grant in object.grants_by_year %}
         <tr>
-            <td>{{ grant.recipient }}</td>
-            <td>{{ grant.recipient_type }}</td>
-            <td class="tr">£{{ display_number(grant.amount_awarded) }}</td>
-            <td>{{ display_date(grant.award_date) }}</td>
-            <td>{{ grant.inclusion }}</td>
+            <td>
+                <a
+                    href="{{ url_for('admin:ukgrantmaking_grant_changelist', funder_id=object.org_id, financial_year_id__fy__exact=grant.financial_year_id) }}">
+                    {{ grant.financial_year_id }}
+                </a>
+            </td>
+            <td class="tr">{{ display_number(grant.excluded_grants, format_str='{:,.0f}') }}</td>
+            <td class="tr">{{ display_number(grant.excluded_amount, format_str='{:,.0f}') }}</td>
+            <td class="tr">{{ display_number(grant.included_grants, format_str='{:,.0f}') }}</td>
+            <td class="tr">{{ display_number(grant.included_amount, format_str='{:,.0f}') }}</td>
+            <td class="tr">{{ display_number(grant.total_grants, format_str='{:,.0f}') }}</td>
+            <td class="tr">{{ display_number(grant.total_amount, format_str='{:,.0f}') }}</td>
         </tr>
         {% endfor %}
 </table>

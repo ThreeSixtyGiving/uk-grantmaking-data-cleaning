@@ -22,6 +22,7 @@ from ukgrantmaking.models.funder_utils import (
     RecordStatus,
 )
 from ukgrantmaking.models.funder_year import FunderYear
+from ukgrantmaking.models.grant import InclusionStatus
 
 
 class FunderTag(models.Model):
@@ -449,6 +450,38 @@ class Funder(models.Model):
                         )
                     )
                     funder_year.save()
+
+    @property
+    def grants_by_year(self):
+        included_filter = models.Q(
+            inclusion__in=[InclusionStatus.INCLUDED, InclusionStatus.UNSURE]
+        )
+        return (
+            self.grants.values("financial_year_id")
+            .annotate(
+                total_grants=models.Count("grant_id"),
+                total_amount=models.Sum(
+                    "amount_awarded", filter=models.Q(currency="GBP")
+                ),
+                included_grants=models.Count(
+                    "grant_id",
+                    filter=included_filter,
+                ),
+                included_amount=models.Sum(
+                    "amount_awarded",
+                    filter=models.Q(currency="GBP") & included_filter,
+                ),
+                excluded_grants=models.Count(
+                    "grant_id",
+                    filter=~included_filter,
+                ),
+                excluded_amount=models.Sum(
+                    "amount_awarded",
+                    filter=~included_filter & models.Q(currency="GBP"),
+                ),
+            )
+            .order_by("-financial_year_id")
+        )
 
     @property
     def country_aoo_display(self):
