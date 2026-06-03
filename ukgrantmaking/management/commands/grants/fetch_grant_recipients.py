@@ -15,6 +15,8 @@ from ukgrantmaking.utils.text import to_titlecase
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
+IMD_FILE = "https://assets.publishing.service.gov.uk/media/691dece32c6b98ecdbc500d5/File_1_IoD2025_Index_of_Multiple_Deprivation.xlsx"
+
 
 @click.command()
 @click.argument("db_con", envvar="FTC_DB_URL")
@@ -122,6 +124,13 @@ def grant_recipients(db_con):
             )
         logger.info(f"Updated {len(to_create):,.0f} existing recipients")
 
+        # Get English IMD data
+        logger.info("Fetching IMD data")
+        imd_data = pd.read_excel(IMD_FILE, sheet_name="IMD25")
+        imd_lookup = imd_data.set_index("LSOA code (2021)")[
+            "Index of Multiple Deprivation (IMD) Decile (where 1 is most deprived 10% of LSOA"
+        ].to_dict()
+
         # get list of org IDs
         org_ids = tuple(GrantRecipient.objects.values_list("recipient_id", flat=True))
 
@@ -155,7 +164,8 @@ def grant_recipients(db_con):
                     array_agg(DISTINCT l.geo_iso) FILTER (WHERE "locationType" = 'AOO' AND l.geo_iso IS NOT NULL AND l.geo_iso != 'GB') AS overseas_aoo,
                     json_object_agg(DISTINCT l.geo_iso, iso."name") FILTER (WHERE "locationType" = 'AOO' AND l.geo_iso IS NOT NULL AND l.geo_iso != 'GB') AS overseas_aoo_name,
                     SUM(CASE WHEN l.geo_rgn = 'E12000007' AND "locationType" = 'HQ' THEN 1 ELSE 0 END) > 0 AS london_hq,
-                    SUM(CASE WHEN l.geo_rgn = 'E12000007' AND "locationType" = 'AOO' THEN 1 ELSE 0 END) > 0 AS london_aoo
+                    SUM(CASE WHEN l.geo_rgn = 'E12000007' AND "locationType" = 'AOO' THEN 1 ELSE 0 END) > 0 AS london_aoo,
+                    array_agg(DISTINCT l.geo_lsoa21) FILTER (WHERE "locationType" = 'HQ' AND l.geo_lsoa21 IS NOT NULL) AS lsoa_hq
                 FROM ftc_organisationlocation l
                     LEFT OUTER JOIN geo_geolookup rgn
                         ON l.geo_rgn = rgn."geoCode"
@@ -202,7 +212,8 @@ def grant_recipients(db_con):
                 overseas_aoo_name,
                 london_hq,
                 london_aoo,
-                s.scale as scale_registered
+                s.scale as scale_registered,
+                lsoa_hq[1] AS lsoa_hq
             FROM ftc_organisation o
                 LEFT OUTER JOIN c
                     ON o.org_id = c.org_id
@@ -253,6 +264,7 @@ def grant_recipients(db_con):
                         london_hq=org_record.london_hq,
                         london_aoo=org_record.london_aoo,
                         scale_registered=org_record.scale_registered,
+                        imd_decile=imd_lookup.get(org_record.lsoa_hq),
                     )
 
             do_batched_update(
@@ -285,6 +297,7 @@ def grant_recipients(db_con):
                     "london_hq",
                     "london_aoo",
                     "scale_registered",
+                    "imd_decile",
                 ],
             )
         logger.info(f"Updated {len(org_records):,.0f} records with data from FTC")

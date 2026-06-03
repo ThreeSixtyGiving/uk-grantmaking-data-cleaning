@@ -546,6 +546,10 @@ class GrantRecipient(models.Model):
     london_hq = models.BooleanField(null=True, blank=True)
     london_aoo = models.BooleanField(null=True, blank=True)
 
+    imd_decile = models.IntegerField(
+        null=True, blank=True, verbose_name="Index of Multiple Deprivation decile"
+    )
+
     scale_registered = models.CharField(
         max_length=50, null=True, blank=True, choices=RecipientScale.choices
     )
