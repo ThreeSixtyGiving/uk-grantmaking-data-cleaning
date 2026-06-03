@@ -4,15 +4,21 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('ukgrantmaking', '0001_squashed_0143_rename_award_date_grant_award_date_registered_and_more'),
+        (
+            "ukgrantmaking",
+            "0001_squashed_0143_rename_award_date_grant_award_date_registered_and_more",
+        ),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='grantrecipient',
-            name='imd_decile',
-            field=models.IntegerField(blank=True, null=True, verbose_name='Index of Multiple Deprivation decile'),
+            model_name="grantrecipient",
+            name="imd_decile",
+            field=models.IntegerField(
+                blank=True,
+                null=True,
+                verbose_name="Index of Multiple Deprivation decile",
+            ),
         ),
     ]
