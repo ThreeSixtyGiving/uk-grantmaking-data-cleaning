@@ -189,7 +189,10 @@ def grants(db_con: str, extra_file: list[str]):
             .str.strip()
             .isin(["Grant to Individual", "Grant Awarded to Individual"])
         )
-        | nl["description"].isin(["Athlete Performance Award"]),
+        | nl["description"].isin(["Athlete Performance Award"])
+        | nl["recipient_organization_id"].str.contains(
+            "grant-to-individual", case=False, na=False
+        ),
         "recipient_type",
     ] = "Individual"
 

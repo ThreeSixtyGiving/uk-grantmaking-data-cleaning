@@ -104,7 +104,7 @@ Recipient type and inclusion status are determined through a mixture of manual a
     - All grant recipients (excluding grants to individuals) are given a grant recipient record.
       This record will have a default `type` based on the recipient type given to the grant. This 
       is generally "Organisation" by default.
-- In the `update grant-recipients` command:
+- In the `update grant-recipient-type` command:
     - A series of recipient types are applied based on the Org ID of the recipients
     - A process checks the company type for recipients with a company number and applies a recipient type to them
     - The `recipient_type_manual` from the grant recipient is applied to the grant if it is not already filled
